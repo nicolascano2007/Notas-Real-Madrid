@@ -21,6 +21,7 @@
         .modal.active { display: flex; }
         .fade-in { animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .position-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
         .pos-portero, .pos-portera { background: #fef3c7; color: #92400e; }
         .pos-defensa { background: #dbeafe; color: #1e40af; }
@@ -28,22 +29,31 @@
         .pos-extremo { background: #ede9fe; color: #5b21b6; }
         .pos-delantero, .pos-delantera { background: #fee2e2; color: #991b1b; }
         .pos-entrenador { background: #1f2937; color: #fbbf24; border: 1px solid #fbbf24; }
+        
         .status-active { background: #d1fae5; color: #065f46; }
         .status-inactive { background: #f3f4f6; color: #6b7280; }
+        
         input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
         .table-container { overflow-x: auto; }
         table { min-width: 1000px; }
         .sortable { cursor: pointer; user-select: none; }
         .sortable:hover { background: #374151; }
+        
         .result-win { background: #d1fae5; color: #065f46; }
         .result-draw { background: #fef3c7; color: #92400e; }
         .result-loss { background: #fee2e2; color: #991b1b; }
-        .match-past { border-left: 4px solid #10b981; cursor: pointer; }
-        .match-past:hover { background: #f0fdf4; }
-        .match-future { border-left: 4px solid #6366f1; }
-        .match-selectable { cursor: pointer; }
-        .match-selectable:hover { background: #f0fdf4; }
-        .match-registered { border-left: 4px solid #9ca3af; background: #f9fafb; opacity: 0.7; cursor: not-allowed; }
+        
+        /* Calendar Styles based on Competition Colors */
+        .match-card { border-left: 4px solid #9ca3af; }
+        .match-registered { opacity: 0.6; background-color: #f9fafb; border-color: #6b7280 !important; }
+        
+        /* Competition Colors for Calendar Borders */
+        .border-comp-liga { border-left-color: #1e40af; }
+        .border-comp-champions { border-left-color: #5b21b6; }
+        .border-comp-copa { border-left-color: #065f46; }
+        .border-comp-supercopa { border-left-color: #991b1b; }
+        .border-comp-mundial { border-left-color: #92400e; }
+        
         .comp-mundial { background: #fef3c7; color: #92400e; }
         .comp-liga { background: #dbeafe; color: #1e40af; }
         .comp-champions { background: #ede9fe; color: #5b21b6; }
@@ -51,10 +61,12 @@
         .comp-supercopa { background: #fee2e2; color: #991b1b; }
         .comp-unknown { background: #e5e7eb; color: #374151; }
         .comp-eliminated { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
+        
         .rm-gradient { background: linear-gradient(135deg, #1e3a5f 0%, #0a1628 100%); }
         .rm-gold { color: #fbbf24; }
         .calendar-loading { animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
         .player-inactive { opacity: 0.6; }
         .round-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
         .round-available { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
@@ -80,16 +92,13 @@
         .day-number { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block; }
         .cal-event-dot { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; display: block; }
         .cal-event-dot:hover { opacity: 0.8; }
-        
-        /* Standings Table */
-        .standings-table th { background-color: #1f2937; color: white; padding: 10px; font-size: 0.85rem; }
-        .standings-table td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
-        .standings-pos { width: 40px; text-align: center; font-weight: bold; }
-        .standings-team { display: flex; align-items: center; gap: 8px; }
-        .team-logo-mini { width: 24px; height: 24px; object-fit: contain; }
-        .qual-ucl { border-left: 4px solid #10b981; }
-        .qual-uel { border-left: 4px solid #fbbf24; }
-        .qual-relegation { border-left: 4px solid #ef4444; }
+
+        /* Comparator */
+        .stat-better { background-color: #dcfce7; color: #166534; font-weight: bold; }
+        .streak-dot { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; items-center; justify-content: center; font-size: 10px; font-weight: bold; color: white; }
+        .streak-w { background-color: #22c55e; }
+        .streak-d { background-color: #9ca3af; }
+        .streak-l { background-color: #ef4444; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -157,8 +166,8 @@
                     <button onclick="showTab('stats')" id="tab-stats" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
                         📊 Estadísticas
                     </button>
-                    <button onclick="showTab('clasificacion')" id="tab-clasificacion" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
-                        🏆 Clasificación
+                    <button onclick="showTab('comparador')" id="tab-comparador" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        🆚 Comparador
                     </button>
                 </div>
             </div>
@@ -227,10 +236,14 @@
                 </div>
 
                 <!-- Calendar Select Hint -->
-                <div class="calendar-select-hint rounded-xl p-4 mb-4">
+                <div class="calendar-select-hint rounded-xl p-4 mb-4 flex justify-between items-center">
                     <p class="text-sm">
-                        <strong>💡 Consejo:</strong> Los partidos marcados en gris ya han sido registrados. Haz clic en partidos pasados en verde para añadirlos.
+                        <strong>💡 Consejo:</strong> Los partidos marcados en gris ya han sido registrados.
                     </p>
+                    <label class="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                        <input type="checkbox" id="hide-registered-matches" onchange="renderCalendar()" class="w-4 h-4 text-slate-800">
+                        Ocultar registrados
+                    </label>
                 </div>
                 
                 <!-- Competition Filters -->
@@ -244,7 +257,7 @@
                 <div id="cal-time-filters" class="bg-white rounded-xl shadow-sm p-4 mb-4">
                     <div class="flex flex-wrap gap-2">
                         <button onclick="filterCalendarTime('all')" class="time-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todos</button>
-                        <button onclick="filterCalendarTime('past')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Pasados (registrables)</button>
+                        <button onclick="filterCalendarTime('past')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Pasados</button>
                         <button onclick="filterCalendarTime('future')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Próximos</button>
                     </div>
                 </div>
@@ -260,24 +273,6 @@
                     <div class="calendar-loading text-center py-12">
                         <div class="text-4xl mb-4">⏳</div>
                         <p class="text-gray-600">Cargando calendario...</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CLASIFICACION SECTION -->
-            <section id="section-clasificacion" class="hidden fade-in">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Clasificación</h2>
-                        <p class="text-gray-500 text-sm">Tabla de posiciones actualizada</p>
-                    </div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div id="standings-container" class="table-container p-4">
-                        <!-- Populated by JS -->
-                        <div class="text-center py-12 text-gray-500">
-                             Cargando clasificación...
-                        </div>
                     </div>
                 </div>
             </section>
@@ -449,6 +444,26 @@
                 </div>
             </section>
 
+            <!-- COMPARATOR SECTION -->
+            <section id="section-comparador" class="hidden fade-in">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Comparador de Jugadores</h2>
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 1</label>
+                            <select id="compare-p1" onchange="renderComparator()" class="w-full px-3 py-2 border rounded-lg"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 2</label>
+                            <select id="compare-p2" onchange="renderComparator()" class="w-full px-3 py-2 border rounded-lg"></select>
+                        </div>
+                    </div>
+                    <div id="comparator-result" class="hidden">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </section>
+
             <!-- STATS SECTION -->
             <section id="section-stats" class="hidden fade-in">
                 <div class="flex justify-between items-center mb-6">
@@ -456,6 +471,22 @@
                     <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
                         📥 Exportar CSV
                     </button>
+                </div>
+                
+                <!-- NEW: Team Streak & Top Form -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-xl shadow-sm p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">Racha del Equipo</h3>
+                        <div id="team-streak" class="flex items-center gap-3">
+                            <span class="text-gray-500 text-sm">Sin datos</span>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm p-4">
+                        <h3 class="font-bold text-gray-800 mb-3">🔥 En mejor forma (Últimos 5 PJ)</h3>
+                        <div id="top-form-players" class="space-y-2">
+                            <span class="text-gray-500 text-sm">Sin datos suficientes</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Summary Cards -->
@@ -591,7 +622,7 @@
             <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl">
                 <div class="flex justify-between items-center">
                     <h3 id="match-detail-title" class="text-xl font-bold">Detalles del Partido</h3>
-                    <button onclick="closeMatchDetailModal()" class="text-slate-300 hover:text-white">
+                    <button onclick="closeMatchDetailModal()" class="text-slate-300 hover:text-white cursor-pointer z-50 p-2">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
@@ -735,6 +766,7 @@
                 id: 'liga',
                 nombre: 'Liga EA Sports',
                 color: 'comp-liga',
+                borderColor: 'border-comp-liga',
                 tipo: 'liga',
                 ordenLibre: true,
                 fases: [{ tipo: 'liga', rondas: Array.from({length: 38}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
@@ -743,6 +775,7 @@
                 id: 'mundial',
                 nombre: 'Mundial de Clubes',
                 color: 'comp-mundial',
+                borderColor: 'border-comp-mundial',
                 tipo: 'copa',
                 campoNeutral: true,
                 fases: [
@@ -763,6 +796,7 @@
                 id: 'champions',
                 nombre: 'Champions League',
                 color: 'comp-champions',
+                borderColor: 'border-comp-champions',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'liga', nombre: 'Fase de Liga', ordenLibre: true, rondas: Array.from({length: 8}, (_, i) => ({ id: `fase-liga-${i+1}`, nombre: `Fase de Liga - Jornada ${i+1}`, orden: i+1 })) },
@@ -781,6 +815,7 @@
                 id: 'copa',
                 nombre: 'Copa del Rey',
                 color: 'comp-copa',
+                borderColor: 'border-comp-copa',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
@@ -797,6 +832,7 @@
                 id: 'supercopa',
                 nombre: 'Supercopa de España',
                 color: 'comp-supercopa',
+                borderColor: 'border-comp-supercopa',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
@@ -812,6 +848,7 @@
                 id: 'liga-f',
                 nombre: 'Liga F',
                 color: 'comp-liga',
+                borderColor: 'border-comp-liga',
                 tipo: 'liga',
                 ordenLibre: true,
                 fases: [{ tipo: 'liga', rondas: Array.from({length: 30}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
@@ -820,6 +857,7 @@
                 id: 'uwcl',
                 nombre: 'UWCL',
                 color: 'comp-champions',
+                borderColor: 'border-comp-champions',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+1 })) },
@@ -836,6 +874,7 @@
                 id: 'copa-reina',
                 nombre: 'Copa de la Reina',
                 color: 'comp-copa',
+                borderColor: 'border-comp-copa',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
@@ -851,6 +890,7 @@
                 id: 'supercopa-fem',
                 nombre: 'Supercopa Femenina',
                 color: 'comp-supercopa',
+                borderColor: 'border-comp-supercopa',
                 tipo: 'copa',
                 fases: [
                     { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
@@ -859,50 +899,6 @@
                     ]}
                 ]
             }
-        };
-
-        // MOCK STANDINGS DATA
-        const MOCK_STANDINGS = {
-            masculino: [
-                { rank: 1, team: "Real Madrid", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 14, goalsAgainst: 2, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" },
-                { rank: 2, team: "FC Barcelona", played: 5, win: 4, draw: 1, loss: 0, goalsFor: 12, goalsAgainst: 3, points: 13, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png" },
-                { rank: 3, team: "Atlético Madrid", played: 5, win: 3, draw: 2, loss: 0, goalsFor: 9, goalsAgainst: 3, points: 11, logo: "https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg" },
-                { rank: 4, team: "Villarreal CF", played: 5, win: 3, draw: 1, loss: 1, goalsFor: 8, goalsAgainst: 5, points: 10, logo: "https://upload.wikimedia.org/wikipedia/en/7/70/Villarreal_CF_logo.svg" },
-                { rank: 5, team: "Athletic Club", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 7, goalsAgainst: 6, points: 9, logo: "https://upload.wikimedia.org/wikipedia/en/9/98/Club_Athletic_Bilbao_logo.svg" },
-                { rank: 6, team: "Girona FC", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 6, goalsAgainst: 5, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/9/90/For_Girona_FC.svg" },
-                { rank: 7, team: "Real Betis", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 5, goalsAgainst: 4, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/1/13/Real_betis_logo.svg" },
-                { rank: 8, team: "Real Sociedad", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 6, goalsAgainst: 7, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg" },
-                { rank: 9, team: "RCD Mallorca", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 4, goalsAgainst: 5, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/e/e0/RCD_Mallorca_logo.svg" },
-                { rank: 10, team: "Celta Vigo", played: 5, win: 2, draw: 0, loss: 3, goalsFor: 7, goalsAgainst: 9, points: 6, logo: "https://upload.wikimedia.org/wikipedia/en/1/12/RC_Celta_de_Vigo_logo.svg" },
-                { rank: 11, team: "Rayo Vallecano", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 5, goalsAgainst: 6, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/1/17/Rayo_Vallecano_logo.svg" },
-                { rank: 12, team: "Sevilla FC", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 4, goalsAgainst: 6, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/Sevilla_FC_logo.svg" },
-                { rank: 13, team: "Osasuna", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 3, goalsAgainst: 5, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/d/db/Osasuna_logo.svg" },
-                { rank: 14, team: "Alavés", played: 5, win: 1, draw: 1, loss: 3, goalsFor: 3, goalsAgainst: 7, points: 4, logo: "https://upload.wikimedia.org/wikipedia/en/2/2e/Deportivo_Alaves_logo.svg" },
-                { rank: 15, team: "Las Palmas", played: 5, win: 0, draw: 3, loss: 2, goalsFor: 4, goalsAgainst: 8, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/7/77/UD_Las_Palmas_logo.svg" },
-                { rank: 16, team: "Getafe CF", played: 5, win: 0, draw: 3, loss: 2, goalsFor: 2, goalsAgainst: 6, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/4/4c/Getafe_CF_logo.svg" },
-                { rank: 17, team: "Espanyol", played: 5, win: 0, draw: 2, loss: 3, goalsFor: 3, goalsAgainst: 8, points: 2, logo: "https://upload.wikimedia.org/wikipedia/en/d/d6/Rcd_espanyol_logo.svg" },
-                { rank: 18, team: "Real Valladolid", played: 5, win: 0, draw: 2, loss: 3, goalsFor: 2, goalsAgainst: 9, points: 2, logo: "https://upload.wikimedia.org/wikipedia/en/6/6e/Real_Valladolid_Logo.svg" },
-                { rank: 19, team: "Leganés", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 1, goalsAgainst: 7, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/b/b8/Club_Deportivo_Legan%C3%A9s_logo.svg" },
-                { rank: 20, team: "Valencia CF", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 2, goalsAgainst: 9, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/c/ce/Valenciacf.svg" }
-            ],
-            femenino: [
-                { rank: 1, team: "FC Barcelona", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 25, goalsAgainst: 1, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png" },
-                { rank: 2, team: "Real Madrid", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 18, goalsAgainst: 2, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" },
-                { rank: 3, team: "Atlético Madrid", played: 5, win: 4, draw: 1, loss: 0, goalsFor: 12, goalsAgainst: 3, points: 13, logo: "https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg" },
-                { rank: 4, team: "Levante UD", played: 5, win: 3, draw: 1, loss: 1, goalsFor: 10, goalsAgainst: 6, points: 10, logo: "https://upload.wikimedia.org/wikipedia/en/7/7b/Levante_Uni%C3%B3n_Deportiva_logo.svg" },
-                { rank: 5, team: "Madrid CFF", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 9, goalsAgainst: 8, points: 9, logo: "https://via.placeholder.com/24x24?text=M" },
-                { rank: 6, team: "Athletic Club", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 7, goalsAgainst: 7, points: 9, logo: "https://upload.wikimedia.org/wikipedia/en/9/98/Club_Athletic_Bilbao_logo.svg" },
-                { rank: 7, team: "Real Sociedad", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 8, goalsAgainst: 6, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg" },
-                { rank: 8, team: "Sevilla FC", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 9, goalsAgainst: 10, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/Sevilla_FC_logo.svg" },
-                { rank: 9, team: "UDG Tenerife", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 5, goalsAgainst: 7, points: 7, logo: "https://via.placeholder.com/24x24?text=T" },
-                { rank: 10, team: "Valencia CF", played: 5, win: 2, draw: 0, loss: 3, goalsFor: 6, goalsAgainst: 12, points: 6, logo: "https://upload.wikimedia.org/wikipedia/en/c/ce/Valenciacf.svg" },
-                { rank: 11, team: "Real Betis", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 4, goalsAgainst: 8, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/1/13/Real_betis_logo.svg" },
-                { rank: 12, team: "Levante Las Planas", played: 5, win: 1, draw: 1, loss: 3, goalsFor: 3, goalsAgainst: 9, points: 4, logo: "https://via.placeholder.com/24x24?text=L" },
-                { rank: 13, team: "Villarreal CF", played: 5, win: 1, draw: 0, loss: 4, goalsFor: 4, goalsAgainst: 11, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/7/70/Villarreal_CF_logo.svg" },
-                { rank: 14, team: "SD Eibar", played: 5, win: 1, draw: 0, loss: 4, goalsFor: 3, goalsAgainst: 10, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/SD_Eibar_logo_2016.svg" },
-                { rank: 15, team: "Granada CF", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 2, goalsAgainst: 13, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/d/d5/Logo_of_Granada_Club_de_F%C3%BAtbol.svg" },
-                { rank: 16, team: "Sporting Huelva", played: 5, win: 0, draw: 0, loss: 5, goalsFor: 2, goalsAgainst: 15, points: 0, logo: "https://via.placeholder.com/24x24?text=S" }
-            ]
         };
 
         const TEAMS_CONFIG = {
@@ -928,6 +924,7 @@
         let currentPositionFilter = '';
         let currentCalendarFilter = '';
         let currentTimeFilter = 'all';
+        let hideRegisteredMatches = false;
         let selectedCalendarFixture = null;
         let currentStatsOrder = 'desc';
         let calendarViewMode = 'list'; // 'list' or 'month'
@@ -953,10 +950,13 @@
             // RESET FILTERS TO ENSURE CALENDAR SHOWS DATA IMMEDIATELY
             currentTimeFilter = 'all';
             currentCalendarFilter = '';
+            hideRegisteredMatches = false;
+            document.getElementById('hide-registered-matches').checked = false;
             calendarViewMode = 'list';
             currentCalendarDate = new Date();
             
             renderPlayers();
+            populateComparatorSelects();
             // Force load calendar immediately
             loadCalendar();
             populateCompetitionSelect();
@@ -1180,6 +1180,23 @@
                 filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
             }
 
+            // Streak Logic
+            const streakContainer = document.getElementById('team-streak');
+            const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            
+            if (last5Matches.length > 0) {
+                streakContainer.innerHTML = last5Matches.map(m => {
+                    let outcomeClass = 'streak-d';
+                    let letter = 'E';
+                    if (m.outcome === 'victoria') { outcomeClass = 'streak-w'; letter = 'V'; }
+                    else if (m.outcome === 'derrota') { outcomeClass = 'streak-l'; letter = 'D'; }
+                    return `<span class="streak-dot ${outcomeClass}" title="${m.opponent} (${m.result})">${letter}</span>`;
+                }).join('');
+            } else {
+                streakContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin partidos jugados</span>';
+            }
+
+            // Global Stats
             let totalWins = 0, totalDraws = 0, totalLosses = 0;
             let totalGoalsFor = 0, totalGoalsAgainst = 0;
             let totalAssists = 0;
@@ -1198,9 +1215,6 @@
                         totalGoalsFor += parts[1];
                         totalGoalsAgainst += parts[0];
                     } else { // Neutral
-                         // Default logic: Usually Us-Them is entered.
-                         // But input says 'local-visitante'. If neutral, we check the result input convention.
-                         // For now, assuming first number is Real Madrid.
                          totalGoalsFor += parts[0]; 
                          totalGoalsAgainst += parts[1];
                     }
@@ -1240,10 +1254,14 @@
                     draws: 0,
                     losses: 0,
                     yellowCards: 0,
-                    redCards: 0
+                    redCards: 0,
+                    last5Ratings: [] // For top form calc
                 };
                 
-                filteredMatches.forEach(match => {
+                // Matches sorted by date desc for 'last 5' logic
+                const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                playerMatchesSorted.forEach(match => {
                     const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
                     
                     if (ps) {
@@ -1254,10 +1272,11 @@
                         stats.yellowCards += (ps.yellowCards || 0);
                         stats.redCards += (ps.redCards || 0);
                         
-                        // FIX: Ensure 0 is counted
                         if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                            stats.totalRating += parseFloat(ps.rating);
+                            const r = parseFloat(ps.rating);
+                            stats.totalRating += r;
                             stats.ratingCount++;
+                            stats.last5Ratings.push(r);
                         }
                         
                         if (match.outcome === 'victoria') stats.wins++;
@@ -1278,6 +1297,34 @@
             });
             
             document.getElementById('stat-total-assists').textContent = totalAssists;
+
+            // Top Form Players Logic
+            const formContainer = document.getElementById('top-form-players');
+            const playersWithRecentGames = playerStats
+                .filter(p => p.last5Ratings.length > 0 && p.posicion !== 'entrenador')
+                .map(p => {
+                    const recent = p.last5Ratings.slice(0, 5);
+                    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                    return { ...p, recentAvg: avg };
+                })
+                .sort((a, b) => b.recentAvg - a.recentAvg)
+                .slice(0, 3);
+
+            if (playersWithRecentGames.length > 0) {
+                formContainer.innerHTML = playersWithRecentGames.map((p, i) => `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-gray-400 w-4">${i+1}.</span>
+                            <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover">
+                            <span class="text-sm font-medium">${p.name}</span>
+                        </div>
+                        <span class="text-sm font-bold text-green-600">${p.recentAvg.toFixed(2)}</span>
+                    </div>
+                `).join('');
+            } else {
+                formContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin datos suficientes</span>';
+            }
+
 
             playerStats.sort((a, b) => {
                 let valA = a[sortField];
@@ -1355,7 +1402,8 @@
                         stats.assists += ps.assists || 0;
                         stats.yellow += ps.yellowCards || 0;
                         stats.red += ps.redCards || 0;
-                        if (ps.rating !== null && ps.rating !== "") { stats.totalRating += ps.rating; stats.ratingCount++; }
+                        // FIX: Ensure 0 is counted
+                        if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) { stats.totalRating += ps.rating; stats.ratingCount++; }
                         if (m.outcome === 'victoria') stats.wins++;
                         else if (m.outcome === 'empate') stats.draws++;
                         else if (m.outcome === 'derrota') stats.losses++;
@@ -1379,6 +1427,135 @@
         }
 
         // ==========================================
+        // COMPARATOR LOGIC
+        // ==========================================
+        function populateComparatorSelects() {
+            const players = getActivePlayers().sort((a,b) => {
+                if (a.posicion === 'entrenador') return -1;
+                if (b.posicion === 'entrenador') return 1;
+                return a.dorsal - b.dorsal;
+            });
+            const options = '<option value="">Seleccionar jugador...</option>' + 
+                players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
+            
+            document.getElementById('compare-p1').innerHTML = options;
+            document.getElementById('compare-p2').innerHTML = options;
+        }
+
+        function getPlayerStatsForComparator(playerId) {
+            const matches = getData('matches');
+            const stats = {
+                matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, ga: 0, 
+                totalRating: 0, ratingCount: 0, avgRating: 0,
+                yellowCards: 0, redCards: 0, mvpCount: 0
+            };
+
+            matches.forEach(m => {
+                const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
+                if (ps) {
+                    stats.matchesPlayed++;
+                    stats.goals += (ps.goals || 0);
+                    stats.assists += (ps.assists || 0);
+                    stats.minutes += (ps.minutes || 0);
+                    stats.yellowCards += (ps.yellowCards || 0);
+                    stats.redCards += (ps.redCards || 0);
+                    if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                        stats.totalRating += parseFloat(ps.rating);
+                        stats.ratingCount++;
+                    }
+                }
+                if (String(m.mvp) === String(playerId)) stats.mvpCount++;
+            });
+            
+            stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : 0;
+            stats.ga = stats.goals + stats.assists;
+            return stats;
+        }
+
+        function renderComparator() {
+            const p1Id = document.getElementById('compare-p1').value;
+            const p2Id = document.getElementById('compare-p2').value;
+            const resultContainer = document.getElementById('comparator-result');
+            
+            if (!p1Id || !p2Id) {
+                resultContainer.innerHTML = '';
+                resultContainer.classList.add('hidden');
+                return;
+            }
+
+            const players = getPlayers();
+            const p1 = players.find(p => p.id === p1Id);
+            const p2 = players.find(p => p.id === p2Id);
+            const s1 = getPlayerStatsForComparator(p1Id);
+            const s2 = getPlayerStatsForComparator(p2Id);
+
+            const isBetter = (val1, val2) => parseFloat(val1) > parseFloat(val2) ? 'stat-better' : '';
+            
+            // Allow comparison even if stats are 0
+            resultContainer.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-center">
+                        <thead>
+                            <tr class="text-sm text-gray-500">
+                                <th class="w-1/3 p-2">
+                                    <div class="flex flex-col items-center">
+                                        <img src="${p1.foto}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-slate-200">
+                                        <span>${p1.nombre}</span>
+                                    </div>
+                                </th>
+                                <th class="w-1/3 p-2">Estadística</th>
+                                <th class="w-1/3 p-2">
+                                    <div class="flex flex-col items-center">
+                                        <img src="${p2.foto}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-slate-200">
+                                        <span>${p2.nombre}</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-slate-800 font-medium">
+                            <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.matchesPlayed, s2.matchesPlayed)}">${s1.matchesPlayed}</td>
+                                <td class="p-3 text-gray-500 text-sm">Partidos</td>
+                                <td class="p-3 ${isBetter(s2.matchesPlayed, s1.matchesPlayed)}">${s2.matchesPlayed}</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.avgRating, s2.avgRating)}">${s1.avgRating}</td>
+                                <td class="p-3 text-gray-500 text-sm">Nota Media</td>
+                                <td class="p-3 ${isBetter(s2.avgRating, s1.avgRating)}">${s2.avgRating}</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.goals, s2.goals)}">${s1.goals}</td>
+                                <td class="p-3 text-gray-500 text-sm">Goles</td>
+                                <td class="p-3 ${isBetter(s2.goals, s1.goals)}">${s2.goals}</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.assists, s2.assists)}">${s1.assists}</td>
+                                <td class="p-3 text-gray-500 text-sm">Asistencias</td>
+                                <td class="p-3 ${isBetter(s2.assists, s1.assists)}">${s2.assists}</td>
+                            </tr>
+                            <tr class="border-t bg-slate-50">
+                                <td class="p-3 ${isBetter(s1.ga, s2.ga)}">${s1.ga}</td>
+                                <td class="p-3 text-gray-500 text-sm font-bold">Goles + Asist</td>
+                                <td class="p-3 ${isBetter(s2.ga, s1.ga)}">${s2.ga}</td>
+                            </tr>
+                             <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.minutes, s2.minutes)}">${s1.minutes}</td>
+                                <td class="p-3 text-gray-500 text-sm">Minutos</td>
+                                <td class="p-3 ${isBetter(s2.minutes, s1.minutes)}">${s2.minutes}</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="p-3 ${isBetter(s1.mvpCount, s2.mvpCount)}">${s1.mvpCount}</td>
+                                <td class="p-3 text-gray-500 text-sm">MVPs</td>
+                                <td class="p-3 ${isBetter(s2.mvpCount, s1.mvpCount)}">${s2.mvpCount}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            resultContainer.classList.remove('hidden');
+        }
+
+        // ==========================================
         // TAB NAVIGATION
         // ==========================================
         
@@ -1394,7 +1571,7 @@
             if (tabName === 'nuevo') initNewMatchForm();
             if (tabName === 'partidos') renderMatches();
             if (tabName === 'stats') renderStats();
-            if (tabName === 'clasificacion') renderStandings();
+            if (tabName === 'comparador') { populateComparatorSelects(); renderComparator(); }
         }
 
         // ==========================================
@@ -1504,7 +1681,7 @@
                     stats.redCards += ps.redCards || 0;
                     // FIX: Ensure 0 is counted
                     if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                        stats.totalRating += ps.rating;
+                        stats.totalRating += parseFloat(ps.rating);
                         stats.ratingCount++;
                     }
                     if (m.outcome === 'victoria') stats.wins++;
@@ -1613,67 +1790,6 @@
                 </div>
             `;
             modal.classList.add('active');
-        }
-
-        // ==========================================
-        // STANDINGS MOCK IMPLEMENTATION
-        // ==========================================
-        function renderStandings() {
-            const container = document.getElementById('standings-container');
-            const data = MOCK_STANDINGS[currentTeam];
-            
-            if (!data) {
-                container.innerHTML = '<div class="text-center py-12 text-gray-500">No hay datos de clasificación disponibles.</div>';
-                return;
-            }
-
-            container.innerHTML = `
-                <table class="w-full text-left standings-table">
-                    <thead>
-                        <tr>
-                            <th class="standings-pos">#</th>
-                            <th>Equipo</th>
-                            <th class="text-center">PJ</th>
-                            <th class="text-center">V</th>
-                            <th class="text-center">E</th>
-                            <th class="text-center">D</th>
-                            <th class="text-center">GF</th>
-                            <th class="text-center">GC</th>
-                            <th class="text-center font-bold">PTS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.map((row, index) => {
-                            let qualClass = "";
-                            if (index < 4) qualClass = "qual-ucl";
-                            else if (index < 6) qualClass = "qual-uel";
-                            else if (index >= data.length - 3) qualClass = "qual-relegation";
-
-                            return `
-                            <tr class="${qualClass} hover:bg-gray-50 ${row.team.includes('Real Madrid') ? 'bg-amber-50 font-medium' : ''}">
-                                <td class="standings-pos">${row.rank}</td>
-                                <td class="standings-team">
-                                    <img src="${row.logo}" class="team-logo-mini" onerror="this.src='https://via.placeholder.com/24x24?text=T'">
-                                    <span>${row.team}</span>
-                                </td>
-                                <td class="text-center">${row.played}</td>
-                                <td class="text-center text-green-600">${row.win}</td>
-                                <td class="text-center text-amber-600">${row.draw}</td>
-                                <td class="text-center text-red-600">${row.loss}</td>
-                                <td class="text-center">${row.goalsFor}</td>
-                                <td class="text-center">${row.goalsAgainst}</td>
-                                <td class="text-center font-bold text-slate-800">${row.points}</td>
-                            </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-                <div class="mt-4 text-xs text-gray-500 flex gap-4">
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 inline-block"></span> Champions League / UWCL</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-400 inline-block"></span> Europa League</span>
-                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-500 inline-block"></span> Descenso</span>
-                </div>
-            `;
         }
 
         // ==========================================
@@ -2078,10 +2194,13 @@
                         starterCount++;
                     }
                     
+                    const ratingInput = row.querySelector('.stat-rating').value;
+                    const rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
+
                     playerStats.push({
                         playerId: row.dataset.playerId,
                         isStarter: isStarter,
-                        rating: parseFloat(row.querySelector('.stat-rating').value) || null,
+                        rating: rating,
                         goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
                         assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
                         minutes: isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0),
@@ -2207,9 +2326,23 @@
                     currentEvent = { id: generateId() };
                 } else if (line === 'END:VEVENT' && currentEvent) {
                     if (currentEvent.summary && currentEvent.start) {
-                        // Use raw summary for opponent extraction
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
+                        // Better detect competition from keys
+                        const summaryLower = currentEvent.summary.toLowerCase();
+                        let detectedComp = null;
+                        Object.values(COMPETICIONES_ACTUALES).forEach(c => {
+                            if (summaryLower.includes(c.nombre.toLowerCase())) detectedComp = c.nombre;
+                        });
+                        // Fallback logic
+                        if (!detectedComp) {
+                             if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Champions') || c.nombre.includes('UWCL'))?.nombre;
+                             else if (summaryLower.includes('copa')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Copa'))?.nombre;
+                             else if (summaryLower.includes('supercopa')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Supercopa'))?.nombre;
+                             else if (summaryLower.includes('mundial')) detectedComp = 'Mundial de Clubes';
+                             else detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.tipo === 'liga')?.nombre; // Default to League
+                        }
+                        currentEvent.competition = detectedComp;
                         events.push(currentEvent);
                     }
                     currentEvent = null;
@@ -2312,6 +2445,7 @@
         }
         
         function renderCalendar() {
+            hideRegisteredMatches = document.getElementById('hide-registered-matches').checked;
             if (calendarViewMode === 'list') {
                 renderCalendarList();
             } else {
@@ -2329,14 +2463,19 @@
             
             let events = [...calendarEvents];
             
+            if (hideRegisteredMatches) {
+                events = events.filter(e => !registeredEventIds.includes(e.id));
+            }
+
             if (currentCalendarFilter) {
                  events = events.filter(e => {
                      const isReg = registeredEventIds.includes(e.id);
                      if (isReg) {
                          const m = matches.find(m => m.calendarEventId === e.id);
                          return m.competition === currentCalendarFilter;
+                     } else {
+                         return e.competition === COMPETICIONES_ACTUALES[currentCalendarFilter]?.nombre;
                      }
-                     return false; 
                  });
             }
             
@@ -2356,18 +2495,22 @@
                 const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
                 const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                 
-                const compName = isRegistered ? registeredMatch.competition : '';
-                const compClass = isRegistered ? COMPETICIONES_ACTUALES[registeredMatch.competition].color : '';
+                const compName = isRegistered ? registeredMatch.competition : (event.competition || 'Competición');
+                const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
+                const compColorClass = compObj ? compObj.color : 'bg-gray-200 text-gray-700';
+                const borderColorClass = compObj ? compObj.borderColor : 'border-gray-400';
+
                 const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
                                                : (event.venue === 'local' ? '🏠 Local' : (event.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante'));
                 
                 return `
-                    <div class="bg-white rounded-xl shadow-sm p-4 ${isRegistered ? 'match-registered' : (isPast ? 'match-past' : 'match-future')}" 
-                         ${isPast && !isRegistered ? `onclick="selectCalendarFixture('${event.id}')"` : ''}>
+                    <div class="bg-white rounded-xl shadow-sm p-4 match-card ${borderColorClass} ${isRegistered ? 'match-registered' : ''}" 
+                         ${isPast && !isRegistered ? `onclick="selectCalendarFixture('${event.id}')"` : ''} 
+                         style="cursor: ${isPast && !isRegistered ? 'pointer' : 'default'}">
                         <div class="flex flex-col md:flex-row md:items-center gap-3">
                             <div class="flex-1">
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    ${isRegistered ? `<span class="${compClass} px-2 py-0.5 rounded text-xs font-medium">${compName}</span>` : ''}
+                                    <span class="${compColorClass} px-2 py-0.5 rounded text-xs font-medium">${compName}</span>
                                     <span class="text-xs text-gray-500">${venueText}</span>
                                     ${isRegistered ? '<span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">✅ Registrado</span>' : 
                                       (isPast ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">📝 Clic para registrar</span>' : '')}
@@ -2438,15 +2581,28 @@
                 let eventsHtml = '';
                 daysEvents.forEach(e => {
                     const isRegistered = registeredEventIds.includes(e.id);
+                    if (hideRegisteredMatches && isRegistered) return;
+
                     const isPast = e.start <= new Date();
                     
-                    let bgColor = 'bg-blue-100 text-blue-800';
-                    if (isRegistered) bgColor = 'bg-gray-200 text-gray-600 line-through';
-                    else if (isPast) bgColor = 'bg-green-100 text-green-800';
+                    const compName = e.competition || 'Competición';
+                    const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
+                    const borderColorClass = compObj ? compObj.borderColor.replace('border-left-color', 'border-color') : 'border-gray-400'; // Simplify for dot
                     
+                    // Style dots
+                    let style = 'background-color: #e5e7eb; color: #374151;';
+                    if (compObj) {
+                        // Extract color from class name is tricky without mapping, using hardcoded map for simplicity or just classes
+                         if (compObj.id.includes('liga')) style = 'background-color: #dbeafe; color: #1e40af;';
+                         else if (compObj.id.includes('champions') || compObj.id.includes('uwcl')) style = 'background-color: #ede9fe; color: #5b21b6;';
+                         else if (compObj.id.includes('copa')) style = 'background-color: #d1fae5; color: #065f46;';
+                         else if (compObj.id.includes('mundial')) style = 'background-color: #fef3c7; color: #92400e;';
+                    }
+                    if (isRegistered) style = 'background-color: #f3f4f6; color: #9ca3af; text-decoration: line-through;';
+
                     const action = (isPast && !isRegistered) ? `onclick="selectCalendarFixture('${e.id}')"` : '';
                     
-                    eventsHtml += `<div class="cal-event-dot ${bgColor}" ${action} title="${e.opponent}">
+                    eventsHtml += `<div class="cal-event-dot" style="${style}" ${action} title="${e.opponent}">
                         ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
                     </div>`;
                 });
@@ -2487,7 +2643,7 @@
             let bestPlayer = null;
             let highestRating = -1;
             playerStats.forEach(ps => {
-                if (ps.rating && ps.rating > highestRating) {
+                if (ps.rating !== null && ps.rating !== "" && ps.rating > highestRating) {
                     highestRating = ps.rating;
                     bestPlayer = ps.playerId;
                 }
@@ -2590,10 +2746,30 @@
             
             title.textContent = `vs ${match.opponent}`;
             
+            // Auto Analysis
+            const mvpPlayer = players.find(p => p.id === match.mvp);
+            const mvpStats = match.playerStats.find(ps => ps.playerId === match.mvp);
+            let analysisText = "";
+            
+            if (match.outcome === 'victoria') analysisText += `El Real Madrid logró una victoria`;
+            else if (match.outcome === 'derrota') analysisText += `El Real Madrid sufrió una derrota`;
+            else analysisText += `El partido terminó en empate`;
+            
+            analysisText += ` contra ${match.opponent} con un resultado de ${match.result}.`;
+            
+            if (mvpPlayer) {
+                analysisText += ` El jugador más destacado fue <strong>${mvpPlayer.nombre} ${mvpPlayer.apellido}</strong>`;
+                if (mvpStats && mvpStats.rating) analysisText += ` con una nota de <span class="${getRatingColor(mvpStats.rating)} font-bold">${mvpStats.rating}</span>.`;
+                else analysisText += ".";
+            }
+
             content.innerHTML = `
-                <div class="mb-4">
-                    <p class="text-gray-600"><strong>Resultado:</strong> ${match.result} (${match.outcome})</p>
-                    <p class="text-gray-600"><strong>Estadio:</strong> ${match.stadium}</p>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-sm text-blue-900">
+                    🤖 <strong>Análisis Automático:</strong> ${analysisText}
+                </div>
+                <div class="mb-4 flex gap-4 text-sm text-gray-600">
+                    <p><strong>Estadio:</strong> ${match.stadium}</p>
+                    <p><strong>Competición:</strong> ${match.competition}</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
@@ -2613,11 +2789,15 @@
                                 const isCoach = p && p.posicion === 'entrenador';
                                 return `
                                     <tr class="border-t">
-                                        <td class="px-3 py-2">${p ? p.nombre + ' ' + p.apellido : 'Unknown'}</td>
-                                        <td class="px-3 py-2 text-center">
-                                            ${ps.isStarter === true || ps.isStarter === 'true' ? '<span class="starter-badge">T</span>' : '<span class="sub-badge">S</span>'}
+                                        <td class="px-3 py-2 flex items-center gap-2">
+                                            ${match.mvp === ps.playerId ? '🏆' : ''}
+                                            ${p ? p.nombre + ' ' + p.apellido : 'Unknown'}
                                         </td>
-                                        <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating !== null && ps.rating !== undefined ? ps.rating : '-'}</td>
+                                        <td class="px-3 py-2 text-center">
+                                            ${isCoach ? '<span class="text-xs text-gray-500">Staff</span>' : 
+                                              (ps.isStarter === true || ps.isStarter === 'true' ? '<span class="starter-badge">T</span>' : '<span class="sub-badge">S</span>')}
+                                        </td>
+                                        <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating !== null && ps.rating !== undefined && ps.rating !== "" ? ps.rating : '-'}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.goals || 0)}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.assists || 0)}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.minutes || 0)}</td>
@@ -2751,7 +2931,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Nota</label>
-                                <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating || ''}" placeholder="–">
+                                <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating !== null && ps?.rating !== undefined ? ps.rating : ''}" placeholder="–">
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Goles</label>
@@ -2813,11 +2993,14 @@
                     if (!isCoach && isStarter) {
                         starterCount++;
                     }
+                    
+                    const ratingInput = row.querySelector('.stat-rating').value;
+                    const rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
 
                     playerStats.push({
                         playerId: row.dataset.playerId,
                         isStarter: isStarter,
-                        rating: parseFloat(row.querySelector('.stat-rating').value) || null,
+                        rating: rating,
                         goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
                         assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
                         minutes: isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0),
@@ -2863,6 +3046,10 @@
         
         function closePlayerDetailsModal() {
              document.getElementById('player-details-modal').classList.remove('active');
+        }
+        
+        function closeMatchDetailModal() {
+             document.getElementById('match-detail-modal').classList.remove('active');
         }
         
         function openPlayerStatusModal(playerId) {
