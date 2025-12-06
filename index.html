@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas - Real Madrid CF</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .tab-active { border-bottom: 3px solid #fbbf24; color: #fbbf24; }
+        .card { transition: all 0.3s ease; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        
+        .player-photo { width: 80px; height: 80px; object-fit: cover; object-position: top; border-radius: 50%; }
+        .player-photo-small { width: 40px; height: 40px; object-fit: cover; object-position: top; border-radius: 50%; }
+        .player-photo-xs { width: 32px; height: 32px; object-fit: cover; object-position: top; border-radius: 50%; }
+        .player-photo-lg { width: 120px; height: 120px; object-fit: cover; object-position: top; border-radius: 50%; }
+        
+        .modal { display: none; }
+        .modal.active { display: flex; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .position-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .pos-portero, .pos-portera { background: #fef3c7; color: #92400e; }
+        .pos-defensa { background: #dbeafe; color: #1e40af; }
+        .pos-centrocampista { background: #d1fae5; color: #065f46; }
+        .pos-extremo { background: #ede9fe; color: #5b21b6; }
+        .pos-delantero, .pos-delantera { background: #fee2e2; color: #991b1b; }
+        .pos-entrenador { background: #1f2937; color: #fbbf24; border: 1px solid #fbbf24; }
+        .status-active { background: #d1fae5; color: #065f46; }
+        .status-inactive { background: #f3f4f6; color: #6b7280; }
+        input[type="number"]::-webkit-inner-spin-button { opacity: 1; }
+        .table-container { overflow-x: auto; }
+        table { min-width: 1000px; }
+        .sortable { cursor: pointer; user-select: none; }
+        .sortable:hover { background: #374151; }
+        .result-win { background: #d1fae5; color: #065f46; }
+        .result-draw { background: #fef3c7; color: #92400e; }
+        .result-loss { background: #fee2e2; color: #991b1b; }
+        .match-past { border-left: 4px solid #10b981; cursor: pointer; }
+        .match-past:hover { background: #f0fdf4; }
+        .match-future { border-left: 4px solid #6366f1; }
+        .match-selectable { cursor: pointer; }
+        .match-selectable:hover { background: #f0fdf4; }
+        .match-registered { border-left: 4px solid #9ca3af; background: #f9fafb; opacity: 0.7; cursor: not-allowed; }
+        .comp-mundial { background: #fef3c7; color: #92400e; }
+        .comp-liga { background: #dbeafe; color: #1e40af; }
+        .comp-champions { background: #ede9fe; color: #5b21b6; }
+        .comp-copa { background: #d1fae5; color: #065f46; }
+        .comp-supercopa { background: #fee2e2; color: #991b1b; }
+        .comp-unknown { background: #e5e7eb; color: #374151; }
+        .comp-eliminated { background: #f3f4f6; color: #9ca3af; text-decoration: line-through; }
+        .rm-gradient { background: linear-gradient(135deg, #1e3a5f 0%, #0a1628 100%); }
+        .rm-gold { color: #fbbf24; }
+        .calendar-loading { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .player-inactive { opacity: 0.6; }
+        .round-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+        .round-available { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .round-completed { background: #e0e7ff; color: #3730a3; }
+        .round-locked { background: #f3f4f6; color: #9ca3af; }
+        .elimination-warning { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .global-result { background: #f0f9ff; border: 1px solid #bae6fd; }
+        .calendar-select-hint { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .selected-fixture { background: #fef3c7; border: 2px solid #f59e0b; }
+        .readonly-input { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
+        .welcome-card { transition: all 0.3s; cursor: pointer; }
+        .welcome-card:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- WELCOME SCREEN -->
+    <section id="section-welcome" class="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+        <div class="text-center mb-10">
+            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" 
+                 alt="Real Madrid" class="w-24 h-24 object-contain mx-auto mb-4">
+            <h1 class="text-3xl md:text-5xl font-bold mb-2">Notas Real Madrid</h1>
+            <p class="text-blue-200">Selecciona tu equipo para comenzar</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
+            <!-- MASCULINO -->
+            <div onclick="selectTeam('masculino')" class="welcome-card bg-white text-slate-900 rounded-2xl p-8 text-center shadow-xl border-b-8 border-blue-600">
+                <h2 class="text-2xl font-bold mb-2">Real Madrid Masculino</h2>
+                <p class="text-gray-500 font-semibold">Temporada 2025/2026</p>
+                <p class="text-sm text-gray-400 mt-2">La Liga, Champions, Copa del Rey...</p>
+            </div>
+
+            <!-- FEMENINO -->
+            <div onclick="selectTeam('femenino')" class="welcome-card bg-white text-slate-900 rounded-2xl p-8 text-center shadow-xl border-b-8 border-purple-500">
+                <h2 class="text-2xl font-bold mb-2">Real Madrid Femenino</h2>
+                <p class="text-gray-500 font-semibold">Temporada 2025/2026</p>
+                <p class="text-sm text-gray-400 mt-2">Liga F, UWCL, Copa de la Reina...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- APP CONTAINER (Hidden initially) -->
+    <div id="app-container" class="hidden">
+        <!-- Header Real Madrid -->
+        <header class="rm-gradient text-white shadow-lg">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" title="Volver a selección de equipo">
+                        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" 
+                             alt="Real Madrid" class="w-12 h-12 object-contain">
+                        <div>
+                            <h1 class="text-2xl font-bold">Gestor de Rendimiento</h1>
+                            <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-slate-800 shadow-sm sticky top-0 z-40">
+            <div class="container mx-auto px-4">
+                <div class="flex gap-1 overflow-x-auto">
+                    <button onclick="showTab('plantilla')" id="tab-plantilla" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap tab-active">
+                        👥 Plantilla
+                    </button>
+                    <button onclick="showTab('calendario')" id="tab-calendario" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        📅 Calendario
+                    </button>
+                    <button onclick="showTab('nuevo')" id="tab-nuevo" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        ➕ Registrar Partido
+                    </button>
+                    <button onclick="showTab('partidos')" id="tab-partidos" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        ⚽ Partidos
+                    </button>
+                    <button onclick="showTab('stats')" id="tab-stats" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        📊 Estadísticas
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container mx-auto px-4 py-6">
+            
+            <!-- PLANTILLA SECTION -->
+            <section id="section-plantilla" class="fade-in">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Plantilla</h2>
+                        <p class="text-gray-500 text-sm">Gestión de estado de jugadores</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="filterPlayers('all')" id="filter-all" class="px-3 py-1.5 text-sm bg-slate-800 text-white rounded-lg">
+                            Todos
+                        </button>
+                        <button onclick="filterPlayers('active')" id="filter-active" class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Activos
+                        </button>
+                        <button onclick="filterPlayers('inactive')" id="filter-inactive" class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Inactivos
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filter by Position -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="filterByPosition('')" class="pos-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todas</button>
+                        <button onclick="filterByPosition('entrenador')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-slate-300 font-bold border border-slate-400">Entrenador</button>
+                        <button onclick="filterByPosition('portero')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-amber-100">Portería</button>
+                        <button onclick="filterByPosition('defensa')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-blue-100">Defensa</button>
+                        <button onclick="filterByPosition('centrocampista')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-green-100">Medio</button>
+                        <button onclick="filterByPosition('extremo')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-purple-100">Extremo</button>
+                        <button onclick="filterByPosition('delantero')" class="pos-filter px-3 py-1 text-sm rounded-full bg-gray-200 hover:bg-red-100">Delantera</button>
+                    </div>
+                </div>
+                
+                <div id="players-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                </div>
+            </section>
+
+            <!-- CALENDARIO SECTION -->
+            <section id="section-calendario" class="hidden fade-in">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Calendario Oficial</h2>
+                        <p class="text-gray-500 text-sm">Haz clic en partidos pasados para registrar estadísticas</p>
+                    </div>
+                    <button onclick="loadCalendar()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                        🔄 Actualizar
+                    </button>
+                </div>
+
+                <!-- Calendar Select Hint -->
+                <div class="calendar-select-hint rounded-xl p-4 mb-4">
+                    <p class="text-sm">
+                        <strong>💡 Consejo:</strong> Los partidos marcados en gris ya han sido registrados. Haz clic en partidos pasados en verde para añadirlos.
+                    </p>
+                </div>
+                
+                <!-- Competition Filters -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div id="calendar-filters-container" class="flex flex-wrap gap-2">
+                        <!-- Filters populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Time Filter -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="filterCalendarTime('all')" class="time-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todos</button>
+                        <button onclick="filterCalendarTime('past')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Pasados (registrables)</button>
+                        <button onclick="filterCalendarTime('future')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Próximos</button>
+                    </div>
+                </div>
+                
+                <div id="calendar-container" class="space-y-3">
+                    <div class="calendar-loading text-center py-12">
+                        <div class="text-4xl mb-4">⏳</div>
+                        <p class="text-gray-600">Cargando calendario...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NUEVO PARTIDO SECTION -->
+            <section id="section-nuevo" class="hidden fade-in">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Registrar Nuevo Partido</h2>
+                    <p class="text-gray-500 text-sm">Selecciona competición y ronda para registrar estadísticas</p>
+                </div>
+                
+                <!-- Prompt to select from Calendar -->
+                <div id="select-match-prompt" class="text-center py-12 bg-white rounded-xl shadow-sm">
+                    <div class="text-6xl mb-4">📅</div>
+                    <h3 class="text-xl font-medium text-gray-800 mb-2">Selecciona un partido del calendario</h3>
+                    <p class="text-gray-500 mb-6 max-w-md mx-auto">Para garantizar la integridad de los datos, todos los partidos deben ser seleccionados primero desde la sección de Calendario.</p>
+                    <button onclick="showTab('calendario')" class="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-lg font-medium transition">
+                        Ir al Calendario
+                    </button>
+                </div>
+
+                <div id="new-match-form-container" class="hidden">
+                    <!-- Selected Fixture Info -->
+                    <div id="selected-fixture-info" class="bg-amber-50 border-2 border-amber-400 rounded-xl p-4 mb-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-amber-800 font-medium">📅 Partido seleccionado del calendario:</p>
+                                <p id="selected-fixture-details" class="text-amber-900 font-semibold"></p>
+                            </div>
+                            <button onclick="clearSelectedFixture()" class="text-amber-600 hover:text-amber-800 text-sm font-medium">
+                                ✕ Cancelar selección
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Status Cards -->
+                    <div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    </div>
+
+                    <!-- New Match Form -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <form id="new-match-form" class="space-y-6">
+                            <input type="hidden" id="calendar-event-id" value="">
+                            
+                            <!-- Competition Selection -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Competición *</label>
+                                    <select id="new-competition" required onchange="updateRoundOptions()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                                        <option value="">Seleccionar competición...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jornada / Ronda *</label>
+                                    <select id="new-round" required onchange="handleRoundChange()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                                        <option value="">Primero selecciona competición...</option>
+                                    </select>
+                                    <p id="round-info" class="text-xs text-gray-500 mt-1"></p>
+                                </div>
+                            </div>
+
+                            <!-- Match Details -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha del Partido *</label>
+                                    <input type="date" id="new-date" required class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Rival *</label>
+                                    <input type="text" id="new-opponent" required class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-500" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Condición *</label>
+                                    <select id="new-venue" required onchange="updateStadiumField()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="local">🏠 Local</option>
+                                        <option value="visitante">✈️ Visitante</option>
+                                        <option value="neutral">🏟️ Campo Neutral</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div id="stadium-container">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Estadio</label>
+                                    <input type="text" id="new-stadium" class="w-full px-3 py-2 border rounded-lg bg-gray-100" value="Santiago Bernabéu" readonly>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Resultado *</label>
+                                    <input type="text" id="new-result" required placeholder="ej: 2-1 (local-visitante)" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500" pattern="^\d+-\d+$">
+                                    <p class="text-xs text-gray-500 mt-1">Formato: goles_local-goles_visitante</p>
+                                </div>
+                            </div>
+
+                            <!-- Ida/Vuelta indicator for two-leg ties -->
+                            <div id="leg-indicator" class="hidden p-4 global-result rounded-lg">
+                                <p id="leg-info" class="text-sm text-blue-800"></p>
+                            </div>
+
+                            <!-- Venue alternation warning -->
+                            <div id="venue-alternation-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p id="venue-alternation-info" class="text-sm text-amber-800"></p>
+                            </div>
+
+                            <!-- Player Stats -->
+                            <div>
+                                <h4 class="font-semibold text-gray-800 mb-3">Estadísticas de Jugadores (solo activos)</h4>
+                                <div id="new-match-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                            </div>
+
+                            <div class="flex gap-3 pt-4 border-t">
+                                <button type="button" onclick="resetNewMatchForm()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium">
+                                    Guardar Partido
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTIDOS REGISTRADOS SECTION -->
+            <section id="section-partidos" class="hidden fade-in">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Partidos Registrados</h2>
+                        <p class="text-gray-500 text-sm">Historial de partidos con estadísticas</p>
+                    </div>
+                </div>
+
+                <!-- Match Filters -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Competición</label>
+                            <select id="filter-competition" onchange="renderMatches()" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Todas las competiciones</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Condición</label>
+                            <select id="filter-venue" onchange="renderMatches()" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Todos</option>
+                                <option value="local">Local</option>
+                                <option value="visitante">Visitante</option>
+                                <option value="neutral">Campo Neutral</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Resultado</label>
+                            <select id="filter-result" onchange="renderMatches()" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Todos</option>
+                                <option value="victoria">Victorias</option>
+                                <option value="empate">Empates</option>
+                                <option value="derrota">Derrotas</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="matches-list" class="space-y-4"></div>
+                <div id="no-matches" class="hidden text-center py-12">
+                    <div class="text-6xl mb-4">📅</div>
+                    <h3 class="text-xl font-medium text-gray-600">No hay partidos registrados</h3>
+                    <p class="text-gray-500">Ve a "📅 Calendario" y haz clic en un partido pasado para registrarlo</p>
+                </div>
+            </section>
+
+            <!-- STATS SECTION -->
+            <section id="section-stats" class="hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Estadísticas</h2>
+                    <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                        📥 Exportar CSV
+                    </button>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 text-white">
+                        <p class="text-slate-300 text-sm">Partidos</p>
+                        <p id="stat-total-matches" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
+                        <p class="text-green-100 text-sm">Victorias</p>
+                        <p id="stat-wins" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
+                        <p class="text-amber-100 text-sm">Empates</p>
+                        <p id="stat-draws" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white">
+                        <p class="text-red-100 text-sm">Derrotas</p>
+                        <p id="stat-losses" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white">
+                        <p class="text-emerald-100 text-sm">Goles</p>
+                        <p id="stat-total-goals" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+                        <p class="text-purple-100 text-sm">Asistencias</p>
+                        <p id="stat-total-assists" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-4 text-white">
+                        <p class="text-indigo-100 text-sm">Jugadores</p>
+                        <p id="stat-total-players" class="text-3xl font-bold">0</p>
+                    </div>
+                </div>
+
+                <!-- Stats Filters -->
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Competición</label>
+                            <select id="stats-filter-competition" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Todas las competiciones</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Jugador</label>
+                            <select id="stats-filter-status" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                <option value="">Todos</option>
+                                <option value="Activo">Solo Activos</option>
+                                <option value="Inactivo">Solo Inactivos</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+                            <div class="flex gap-2">
+                                <select id="stats-sort" onchange="renderStats()" class="flex-1 px-3 py-2 border rounded-lg">
+                                    <option value="matchesPlayed">Partidos Jugados</option>
+                                    <option value="avgRating">Nota Media</option>
+                                    <option value="goals">Goles</option>
+                                    <option value="assists">Asistencias</option>
+                                    <option value="ga">Goles + Asist (G/A)</option>
+                                    <option value="minutes">Minutos</option>
+                                    <option value="mvpCount">MVP</option>
+                                    <option value="wins">Victorias</option>
+                                    <option value="number">Dorsal</option>
+                                </select>
+                                <button id="stats-order-toggle" onclick="toggleStatsOrder()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold w-12" title="Cambiar orden (Ascendente/Descendente)">
+                                    ⬇️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Table -->
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="p-4 border-b bg-slate-800 text-white">
+                        <h3 class="font-semibold">Rendimiento Individual</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead class="bg-slate-700 text-white">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Jugador</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('matchesPlayed')">PJ</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('avgRating')">Nota</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('goals')">Gol</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('assists')">Asist</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-600 cursor-pointer" onclick="setSort('ga')">G/A</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('minutes')">Min</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('mvpCount')">MVP</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('wins')">V</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('draws')">E</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('losses')">D</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟨</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟥</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stats-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="no-stats" class="hidden text-center py-8 text-gray-500">
+                        No hay estadísticas disponibles.
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- PLAYER DETAILS & STATS MODAL -->
+    <div id="player-details-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl z-10">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Ficha de Jugador</h3>
+                    <button onclick="closePlayerDetailsModal()" class="text-slate-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="player-details-content" class="p-6"></div>
+        </div>
+    </div>
+
+    <!-- MATCH DETAIL MODAL -->
+    <div id="match-detail-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 id="match-detail-title" class="text-xl font-bold">Detalles del Partido</h3>
+                    <button onclick="closeMatchDetailModal()" class="text-slate-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="match-detail-content" class="p-6"></div>
+        </div>
+    </div>
+
+    <!-- EDIT MATCH MODAL -->
+    <div id="edit-match-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl z-10">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-bold">Editar Partido</h3>
+                        <p id="edit-match-subtitle" class="text-slate-300 text-sm"></p>
+                    </div>
+                    <button onclick="closeEditMatchModal()" class="text-slate-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form id="edit-match-form" class="p-6 space-y-6">
+                <input type="hidden" id="edit-match-id">
+                <div id="edit-match-content"></div>
+                <div class="flex gap-3 pt-4 border-t">
+                    <button type="button" onclick="closeEditMatchModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PLAYER STATUS MODAL -->
+    <div id="player-status-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md">
+            <div class="p-6 border-b bg-slate-800 text-white rounded-t-2xl">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold">Cambiar Estado</h3>
+                    <button onclick="closePlayerStatusModal()" class="text-slate-300 hover:text-white">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div id="player-status-content" class="p-6"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATA & CONSTANTS
+        // ==========================================
+        
+        let currentTeam = null; 
+        let PLANTILLA_ACTUAL = [];
+        let COMPETICIONES_ACTUALES = {};
+        
+        const PLANTILLA_MASCULINO = [
+            { id: "dt1", nombre: "Xabi", apellido: "Alonso", posicion: "entrenador", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "p1", nombre: "Thibaut", apellido: "Courtois", posicion: "portero", dorsal: 1, nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p2", nombre: "Dani", apellido: "Carvajal", posicion: "defensa", dorsal: 2, nacionalidad: "España", fechaNacimiento: "1992-01-11", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARVAJAL_EQUIPO_CARITA_380x501%20%E2%80%93%206?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p3", nombre: "Éder", apellido: "Militão", posicion: "defensa", dorsal: 3, nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p4", nombre: "David", apellido: "Alaba", posicion: "defensa", dorsal: 4, nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p5", nombre: "Jude", apellido: "Bellingham", posicion: "centrocampista", dorsal: 5, nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p6", nombre: "Eduardo", apellido: "Camavinga", posicion: "centrocampista", dorsal: 6, nacionalidad: "Francia", fechaNacimiento: "2002-11-10", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CAMAVINGA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p7", nombre: "Vinícius", apellido: "Júnior", posicion: "extremo", dorsal: 7, nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p8", nombre: "Federico", apellido: "Valverde", posicion: "centrocampista", dorsal: 8, nacionalidad: "Uruguay", fechaNacimiento: "1998-07-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VALVERDE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p9", nombre: "Endrick", apellido: "Felipe", posicion: "delantero", dorsal: 9, nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p10", nombre: "Kylian", apellido: "Mbappé", posicion: "delantero", dorsal: 10, nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p10b", nombre: "Luka", apellido: "Modrić", posicion: "centrocampista", dorsal: 10, nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1" },
+            { id: "p11", nombre: "Rodrygo", apellido: "Goes", posicion: "extremo", dorsal: 11, nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", posicion: "defensa", dorsal: 12, nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p13", nombre: "Andriy", apellido: "Lunin", posicion: "portero", dorsal: 13, nacionalidad: "Ucrania", fechaNacimiento: "1999-02-11", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20LUNIN_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p14", nombre: "Aurélien", apellido: "Tchouaméni", posicion: "centrocampista", dorsal: 14, nacionalidad: "Francia", fechaNacimiento: "2000-01-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TCHOUAMENI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p15", nombre: "Arda", apellido: "Güler", posicion: "centrocampista", dorsal: 15, nacionalidad: "Turquía", fechaNacimiento: "2005-02-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ARDA_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p16", nombre: "Gonzalo", apellido: "García", posicion: "delantero", dorsal: 16, nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p17", nombre: "Lucas", apellido: "Vázquez", posicion: "defensa", dorsal: 17, nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
+            { id: "p17b", nombre: "Raúl", apellido: "Asencio", posicion: "defensa", dorsal: 17, nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p18", nombre: "Álvaro", apellido: "Carreras", posicion: "defensa", dorsal: 18, nacionalidad: "España", fechaNacimiento: "2003-03-23", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARRERAS_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p19", nombre: "Dani", apellido: "Ceballos", posicion: "centrocampista", dorsal: 19, nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p20", nombre: "Fran", apellido: "García", posicion: "defensa", dorsal: 20, nacionalidad: "España", fechaNacimiento: "1999-08-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20FRAN_GARCIA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p21", nombre: "Brahim", apellido: "Díaz", posicion: "extremo", dorsal: 21, nacionalidad: "Marruecos", fechaNacimiento: "1999-08-03", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BRAHIM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p22", nombre: "Antonio", apellido: "Rüdiger", posicion: "defensa", dorsal: 22, nacionalidad: "Alemania", fechaNacimiento: "1993-03-03", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RUDIGUER_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p23", nombre: "Ferland", apellido: "Mendy", posicion: "defensa", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "1995-06-08", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MENDY_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
+            { id: "p24", nombre: "Dean", apellido: "Huijsen", posicion: "defensa", dorsal: 24, nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
+            { id: "p30", nombre: "Franco", apellido: "Mastantuono", posicion: "extremo", dorsal: 30, nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p31", nombre: "Jacobo", apellido: "Ramón", posicion: "defensa", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
+            { id: "p44", nombre: "Víctor", apellido: "Muñoz", posicion: "extremo", dorsal: 44, nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
+        ];
+
+        const PLANTILLA_FEMENINO = [
+            { id: "dt_fem", nombre: "Pau", apellido: "Quesada", posicion: "entrenador", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1992-10-31", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_QUESADA_CT_AV39125_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf1", nombre: "Misa", apellido: "Rodríguez", posicion: "portero", dorsal: 1, nacionalidad: "España", fechaNacimiento: "1999-07-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MISA_AV38131_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf2", nombre: "Antônia", apellido: "Silva", posicion: "defensa", dorsal: 2, nacionalidad: "Brasil", fechaNacimiento: "1994-04-26", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANTONIA_AV38661_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf3", nombre: "Teresa", apellido: "Abelleira", posicion: "centrocampista", dorsal: 3, nacionalidad: "España", fechaNacimiento: "2000-01-09", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/TERESA_AV38432_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf4", nombre: "Rocío", apellido: "Gálvez", posicion: "defensa", dorsal: 4, nacionalidad: "España", fechaNacimiento: "1997-04-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ROCIO_SG11273_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf5", nombre: "Paula", apellido: "Comendador", posicion: "delantero", dorsal: 5, nacionalidad: "España", fechaNacimiento: "2007-06-18", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf6", nombre: "Sandie", apellido: "Toletti", posicion: "centrocampista", dorsal: 6, nacionalidad: "Francia", fechaNacimiento: "1995-07-13", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/TOLETTI__AV39153_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf7", nombre: "Athenea", apellido: "del Castillo", posicion: "extremo", dorsal: 7, nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf8", nombre: "Sara", apellido: "Däbritz", posicion: "centrocampista", dorsal: 8, nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf9", nombre: "Signe", apellido: "Bruun", posicion: "delantero", dorsal: 9, nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf10", nombre: "Caroline", apellido: "Weir", posicion: "centrocampista", dorsal: 10, nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf11", nombre: "Alba", apellido: "Redondo", posicion: "delantero", dorsal: 11, nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf12", nombre: "Yasmim", apellido: "Ribeiro", posicion: "defensa", dorsal: 12, nacionalidad: "Brasil", fechaNacimiento: "1996-10-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/YASMIM_AV38779_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf13", nombre: "Merle", apellido: "Frohms", posicion: "portero", dorsal: 13, nacionalidad: "Alemania", fechaNacimiento: "1995-01-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/FROHMS_SG11686_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf14", nombre: "María", apellido: "Méndez", posicion: "defensa", dorsal: 14, nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf15", nombre: "Sheila", apellido: "García", posicion: "defensa", dorsal: 15, nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", posicion: "centrocampista", dorsal: 16, nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf17", nombre: "Hanna", apellido: "Bennison", posicion: "centrocampista", dorsal: 17, nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf18", nombre: "Linda", apellido: "Caicedo", posicion: "extremo", dorsal: 18, nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf19", nombre: "Eva", apellido: "Navarro", posicion: "extremo", dorsal: 19, nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf20", nombre: "Naomie", apellido: "Feller", posicion: "extremo", dorsal: 20, nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf21", nombre: "Sara", apellido: "Holmgaard", posicion: "defensa", dorsal: 21, nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf22", nombre: "Bella", apellido: "Andersson", posicion: "defensa", dorsal: 22, nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", posicion: "defensa", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf28", nombre: "Irune", apellido: "Dorado", posicion: "centrocampista", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf29", nombre: "Silvia", apellido: "Cristobal", posicion: "defensa", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf33", nombre: "Adriana", apellido: "Folgado", posicion: "centrocampista", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf43", nombre: "Iris", apellido: "Ashley", posicion: "delantero", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=288&hei=384" }
+        ];
+
+        const COMPETICIONES_MASCULINO = {
+            'Liga EA Sports': {
+                id: 'liga',
+                nombre: 'Liga EA Sports',
+                color: 'comp-liga',
+                tipo: 'liga',
+                ordenLibre: true,
+                fases: [{ tipo: 'liga', rondas: Array.from({length: 38}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
+            },
+            'Mundial de Clubes': {
+                id: 'mundial',
+                nombre: 'Mundial de Clubes',
+                color: 'comp-mundial',
+                tipo: 'copa',
+                campoNeutral: true,
+                fases: [
+                    { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: [
+                        { id: 'grupos-1', nombre: 'Fase de Grupos - Jornada 1', orden: 1 },
+                        { id: 'grupos-2', nombre: 'Fase de Grupos - Jornada 2', orden: 2 },
+                        { id: 'grupos-3', nombre: 'Fase de Grupos - Jornada 3', orden: 3 }
+                    ]},
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'octavos', nombre: 'Octavos de Final', orden: 4, eliminatoria: true, partidoUnico: true },
+                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 5, eliminatoria: true, partidoUnico: true },
+                        { id: 'semifinal', nombre: 'Semifinal', orden: 6, eliminatoria: true, partidoUnico: true },
+                        { id: 'final', nombre: 'Final', orden: 7, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
+            'Champions League': {
+                id: 'champions',
+                nombre: 'Champions League',
+                color: 'comp-champions',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'liga', nombre: 'Fase de Liga', ordenLibre: true, rondas: Array.from({length: 8}, (_, i) => ({ id: `fase-liga-${i+1}`, nombre: `Fase de Liga - Jornada ${i+1}`, orden: i+1 })) },
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta' },
+                        { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida' },
+                        { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
+                        { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
+                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 13, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 14, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                        { id: 'final', nombre: 'Final', orden: 15, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
+            'Copa del Rey': {
+                id: 'copa',
+                nombre: 'Copa del Rey',
+                color: 'comp-copa',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'dieciseisavos', nombre: 'Dieciseisavos de Final', orden: 1, eliminatoria: true, partidoUnico: true },
+                        { id: 'octavos', nombre: 'Octavos de Final', orden: 2, eliminatoria: true, partidoUnico: true },
+                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 3, eliminatoria: true, partidoUnico: true },
+                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 4, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 5, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                        { id: 'final', nombre: 'Final', orden: 6, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
+            'Supercopa de España': {
+                id: 'supercopa',
+                nombre: 'Supercopa de España',
+                color: 'comp-supercopa',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true },
+                        { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            }
+        };
+
+        const COMPETICIONES_FEMENINO = {
+             'Liga F': {
+                id: 'liga-f',
+                nombre: 'Liga F',
+                color: 'comp-liga',
+                tipo: 'liga',
+                ordenLibre: true,
+                fases: [{ tipo: 'liga', rondas: Array.from({length: 30}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
+            },
+            'UWCL': {
+                id: 'uwcl',
+                nombre: 'UWCL',
+                color: 'comp-champions',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+1 })) },
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 7, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
+                        { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 8, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
+                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                        { id: 'final', nombre: 'Final', orden: 11, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
+             'Copa de la Reina': {
+                id: 'copa-reina',
+                nombre: 'Copa de la Reina',
+                color: 'comp-copa',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'octavos', nombre: 'Octavos de Final', orden: 1, eliminatoria: true, partidoUnico: true },
+                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 2, eliminatoria: true, partidoUnico: true },
+                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 3, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 4, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                        { id: 'final', nombre: 'Final', orden: 5, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
+            'Supercopa Femenina': {
+                id: 'supercopa-fem',
+                nombre: 'Supercopa Femenina',
+                color: 'comp-supercopa',
+                tipo: 'copa',
+                fases: [
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true },
+                        { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            }
+        };
+
+        const TEAMS_CONFIG = {
+            masculino: {
+                icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.3kq9cckrnlogidldtdie2fkbl.es-es.ics',
+                plantilla: PLANTILLA_MASCULINO,
+                competiciones: COMPETICIONES_MASCULINO,
+                title: 'Real Madrid Masculino',
+                manualJuneMatches: true
+            },
+            femenino: {
+                icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.vaikl8nl7hdr4y9jj4jyb9ey.es-es.ics',
+                plantilla: PLANTILLA_FEMENINO,
+                competiciones: COMPETICIONES_FEMENINO,
+                title: 'Real Madrid Femenino',
+                manualJuneMatches: false
+            }
+        };
+
+        // Variables globales
+        let calendarEvents = [];
+        let currentPlayerFilter = 'all';
+        let currentPositionFilter = '';
+        let currentCalendarFilter = '';
+        let currentTimeFilter = 'all';
+        let selectedCalendarFixture = null;
+        let currentStatsOrder = 'desc';
+
+        // ==========================================
+        // TEAM SELECTION & INIT
+        // ==========================================
+
+        function selectTeam(team) {
+            currentTeam = team;
+            const config = TEAMS_CONFIG[team];
+            PLANTILLA_ACTUAL = config.plantilla;
+            COMPETICIONES_ACTUALES = config.competiciones;
+
+            document.getElementById('header-subtitle').textContent = config.title;
+            document.getElementById('section-welcome').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+
+            currentPlayerFilter = 'all';
+            currentPositionFilter = '';
+            
+            // RESET FILTERS TO ENSURE CALENDAR SHOWS DATA IMMEDIATELY
+            currentTimeFilter = 'all';
+            currentCalendarFilter = '';
+            
+            renderPlayers();
+            // Force load calendar immediately
+            loadCalendar();
+            populateCompetitionSelect();
+            showTab('plantilla');
+        }
+
+        function returnToWelcome() {
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('section-welcome').classList.remove('hidden');
+            currentTeam = null;
+            PLANTILLA_ACTUAL = [];
+            COMPETICIONES_ACTUALES = {};
+            calendarEvents = [];
+        }
+
+        // ==========================================
+        // DATA MANAGEMENT (TEAM SCOPED)
+        // ==========================================
+        
+        function getData(key) {
+            if (!currentTeam) return [];
+            const scopedKey = `${currentTeam}_${key}`;
+            const data = localStorage.getItem(scopedKey);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function saveData(key, data) {
+            if (!currentTeam) return;
+            const scopedKey = `${currentTeam}_${key}`;
+            localStorage.setItem(scopedKey, JSON.stringify(data));
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function getPlayers() {
+            if (!currentTeam) return [];
+            const customStates = getData('playerStates');
+            return PLANTILLA_ACTUAL.map(p => {
+                const customState = customStates.find(cs => cs.id === p.id);
+                return customState ? { ...p, estado: customState.estado } : p;
+            });
+        }
+
+        function getActivePlayers() {
+            return getPlayers().filter(p => p.estado === 'Activo');
+        }
+
+        function updatePlayerState(playerId, newState) {
+            let customStates = getData('playerStates');
+            const existingIndex = customStates.findIndex(cs => cs.id === playerId);
+            if (existingIndex !== -1) {
+                customStates[existingIndex].estado = newState;
+            } else {
+                customStates.push({ id: playerId, estado: newState });
+            }
+            saveData('playerStates', customStates);
+        }
+
+        // ==========================================
+        // COMPETITION STATE MANAGEMENT
+        // ==========================================
+        
+        function getCompetitionState() {
+            return getData('competitionState') || {};
+        }
+
+        function saveCompetitionState(state) {
+            saveData('competitionState', state);
+        }
+
+        function getAvailableRounds(compName) {
+            const comp = COMPETICIONES_ACTUALES[compName];
+            if (!comp) return [];
+            
+            const matches = getData('matches').filter(m => m.competition === compName);
+            const state = getCompetitionState();
+            
+            const allRounds = [];
+            comp.fases.forEach(fase => {
+                fase.rondas.forEach(ronda => {
+                    allRounds.push({ ...ronda, faseTipo: fase.tipo, faseNombre: fase.nombre, faseOrdenLibre: fase.ordenLibre });
+                });
+            });
+            
+            const completedRoundIds = matches.map(m => m.roundId);
+            const result = [];
+            const isLeagueFormat = comp.ordenLibre || comp.tipo === 'liga';
+            
+            for (let ronda of allRounds) {
+                const isCompleted = completedRoundIds.includes(ronda.id);
+                let isAvailable = false;
+                
+                if (ronda.faseTipo === 'liga' || ronda.faseOrdenLibre || isLeagueFormat) {
+                    isAvailable = !isCompleted;
+                } else {
+                    const prevRound = allRounds.find(r => r.orden === ronda.orden - 1);
+                    const isPrevCompleted = !prevRound || completedRoundIds.includes(prevRound.id) || prevRound.faseTipo === 'liga' || prevRound.faseOrdenLibre;
+                    isAvailable = !isCompleted && isPrevCompleted;
+                }
+                
+                if (state[compName]?.eliminatedAt) {
+                    const eliminatedRound = allRounds.find(r => r.id === state[compName].eliminatedAt);
+                    if (eliminatedRound && ronda.orden > eliminatedRound.orden) {
+                        isAvailable = false;
+                    }
+                }
+                
+                result.push({
+                    ...ronda,
+                    status: isCompleted ? 'completed' : (isAvailable ? 'available' : 'locked')
+                });
+            }
+            return result;
+        }
+
+        function checkEliminationAfterMatch(match) {
+            const comp = COMPETICIONES_ACTUALES[match.competition];
+            if (!comp) return;
+            
+            let roundInfo = null;
+            comp.fases.forEach(fase => {
+                const found = fase.rondas.find(r => r.id === match.roundId);
+                if (found) roundInfo = { ...found, faseTipo: fase.tipo };
+            });
+            
+            if (!roundInfo || !roundInfo.eliminatoria) return;
+            if (roundInfo.faseTipo === 'liga') return;
+            
+            let isEliminated = false;
+            
+            if (roundInfo.partidoUnico) {
+                isEliminated = match.outcome === 'derrota';
+            } 
+            else if (roundInfo.idaVuelta === 'vuelta') {
+                const matches = getData('matches').filter(m => m.competition === match.competition);
+                const idaMatch = matches.find(m => m.roundId === roundInfo.pareja);
+                
+                if (idaMatch) {
+                    const globalResult = calculateGlobalResult(idaMatch, match);
+                    isEliminated = globalResult.outcome === 'derrota';
+                }
+            }
+            
+            if (isEliminated) {
+                const state = getCompetitionState();
+                state[match.competition] = { eliminated: true, eliminatedAt: match.roundId };
+                saveCompetitionState(state);
+            }
+        }
+
+        function calculateGlobalResult(idaMatch, vueltaMatch) {
+            const getGoals = (m) => {
+                const parts = m.result.split('-').map(Number);
+                if (m.venue === 'local') return { us: parts[0], them: parts[1] };
+                if (m.venue === 'visitante') return { us: parts[1], them: parts[0] };
+                return { us: parts[0], them: parts[1] }; 
+            };
+
+            const ida = getGoals(idaMatch);
+            const vuelta = getGoals(vueltaMatch);
+
+            const totalUs = ida.us + vuelta.us;
+            const totalThem = ida.them + vuelta.them;
+
+            let outcome;
+            if (totalUs > totalThem) outcome = 'victoria';
+            else if (totalUs < totalThem) outcome = 'derrota';
+            else {
+                const awayGoalsUs = (idaMatch.venue === 'visitante' ? ida.us : 0) + (vueltaMatch.venue === 'visitante' ? vuelta.us : 0);
+                const awayGoalsThem = (idaMatch.venue === 'local' ? ida.them : 0) + (vueltaMatch.venue === 'local' ? vuelta.them : 0);
+
+                if (awayGoalsUs > awayGoalsThem) outcome = 'victoria';
+                else if (awayGoalsUs < awayGoalsThem) outcome = 'derrota';
+                else outcome = 'empate'; 
+            }
+            
+            return { totalFavor: totalUs, totalContra: totalThem, outcome };
+        }
+        
+        function recalculateCompetitionState(compName) {
+            let state = getCompetitionState();
+            if (state[compName]) {
+                delete state[compName];
+            }
+            saveCompetitionState(state);
+            
+            const matches = getData('matches')
+                .filter(m => m.competition === compName)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+            matches.forEach(match => checkEliminationAfterMatch(match));
+        }
+
+        // ==========================================
+        // STATISTICS
+        // ==========================================
+
+        function toggleStatsOrder() {
+            currentStatsOrder = currentStatsOrder === 'desc' ? 'asc' : 'desc';
+            document.getElementById('stats-order-toggle').innerText = currentStatsOrder === 'desc' ? '⬇️' : '⬆️';
+            renderStats();
+        }
+
+        function setSort(field) {
+            document.getElementById('stats-sort').value = field;
+            renderStats();
+        }
+
+        function renderStats() {
+            const matches = getData('matches');
+            const players = getPlayers();
+            
+            const competitionFilter = document.getElementById('stats-filter-competition').value;
+            const statusFilter = document.getElementById('stats-filter-status').value;
+            const sortField = document.getElementById('stats-sort').value;
+            
+            let filteredMatches = matches;
+            if (competitionFilter) {
+                filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
+            }
+
+            let totalWins = 0, totalDraws = 0, totalLosses = 0;
+            let totalGoals = 0, totalAssists = 0;
+            
+            filteredMatches.forEach(m => {
+                if (m.outcome === 'victoria') totalWins++;
+                else if (m.outcome === 'empate') totalDraws++;
+                else if (m.outcome === 'derrota') totalLosses++;
+            });
+            
+            document.getElementById('stat-total-matches').textContent = filteredMatches.length;
+            document.getElementById('stat-wins').textContent = totalWins;
+            document.getElementById('stat-draws').textContent = totalDraws;
+            document.getElementById('stat-losses').textContent = totalLosses;
+
+            let filteredPlayers = [...players];
+            if (statusFilter) {
+                filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
+            }
+            document.getElementById('stat-total-players').textContent = filteredPlayers.length;
+
+            const playerStats = filteredPlayers.map(player => {
+                const stats = {
+                    id: player.id,
+                    name: `${player.nombre} ${player.apellido}`,
+                    number: player.dorsal,
+                    foto: player.foto,
+                    posicion: player.posicion,
+                    estado: player.estado,
+                    matchesPlayed: 0,
+                    totalRating: 0,
+                    ratingCount: 0,
+                    goals: 0,
+                    assists: 0,
+                    ga: 0,
+                    minutes: 0,
+                    mvpCount: 0,
+                    wins: 0,
+                    draws: 0,
+                    losses: 0,
+                    yellowCards: 0,
+                    redCards: 0
+                };
+                
+                filteredMatches.forEach(match => {
+                    const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
+                    
+                    if (ps) {
+                        stats.matchesPlayed++;
+                        stats.goals += (ps.goals || 0);
+                        stats.assists += (ps.assists || 0);
+                        stats.minutes += (ps.minutes || 0);
+                        stats.yellowCards += (ps.yellowCards || 0);
+                        stats.redCards += (ps.redCards || 0);
+                        
+                        if (ps.rating) {
+                            stats.totalRating += parseFloat(ps.rating);
+                            stats.ratingCount++;
+                        }
+                        
+                        if (match.outcome === 'victoria') stats.wins++;
+                        else if (match.outcome === 'empate') stats.draws++;
+                        else if (match.outcome === 'derrota') stats.losses++;
+                    }
+                    if (String(match.mvp) === String(player.id)) {
+                        stats.mvpCount++;
+                    }
+                });
+                
+                stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
+                stats.ga = stats.goals + stats.assists;
+
+                totalGoals += stats.goals;
+                totalAssists += stats.assists;
+                
+                return stats;
+            });
+            
+            document.getElementById('stat-total-goals').textContent = totalGoals;
+            document.getElementById('stat-total-assists').textContent = totalAssists;
+
+            playerStats.sort((a, b) => {
+                let valA = a[sortField];
+                let valB = b[sortField];
+                
+                if (sortField === 'avgRating') {
+                    valA = valA === '-' ? -1 : parseFloat(valA);
+                    valB = valB === '-' ? -1 : parseFloat(valB);
+                }
+                
+                if(sortField === 'number' && valA === 'DT') valA = -1;
+                if(sortField === 'number' && valB === 'DT') valB = -1;
+
+                return currentStatsOrder === 'asc' ? valA - valB : valB - valA;
+            });
+
+            const tableBody = document.getElementById('stats-table-body');
+            const noStats = document.getElementById('no-stats');
+            
+            if (playerStats.length === 0) {
+                tableBody.innerHTML = '';
+                noStats.classList.remove('hidden');
+                return;
+            }
+            
+            noStats.classList.add('hidden');
+            tableBody.innerHTML = playerStats.map(stats => {
+                // Check if the player is a Coach
+                const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
+                
+                return `
+                <tr class="border-t hover:bg-gray-50 ${stats.estado === 'Inactivo' ? 'opacity-60' : ''}">
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${stats.foto}" class="player-photo-small" onerror="this.src='https://via.placeholder.com/40x40?text=${stats.number}'">
+                            <div>
+                                <span class="font-medium text-gray-800">${stats.name}</span>
+                                <span class="text-gray-500 text-sm ml-1">${stats.number === 'DT' ? 'DT' : '#' + stats.number}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center font-medium">${stats.matchesPlayed}</td>
+                    <td class="px-4 py-3 text-center font-semibold ${getRatingColor(stats.avgRating)}">${stats.avgRating}</td>
+                    <td class="px-4 py-3 text-center font-medium text-emerald-600">${isCoach ? '-' : stats.goals}</td>
+                    <td class="px-4 py-3 text-center">${isCoach ? '-' : stats.assists}</td>
+                    <td class="px-4 py-3 text-center bg-slate-50 font-bold text-slate-700">${isCoach ? '-' : stats.ga}</td>
+                    <td class="px-4 py-3 text-center text-gray-600">${isCoach ? '-' : stats.minutes + "'"}</td>
+                    <td class="px-4 py-3 text-center">
+                        ${stats.mvpCount > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-sm font-medium">${stats.mvpCount}</span>` : '-'}
+                    </td>
+                    <td class="px-4 py-3 text-center text-green-600 font-medium">${stats.wins}</td>
+                    <td class="px-4 py-3 text-center text-amber-600">${stats.draws}</td>
+                    <td class="px-4 py-3 text-center text-red-600">${stats.losses}</td>
+                    <td class="px-4 py-3 text-center">${stats.yellowCards > 0 ? stats.yellowCards : '-'}</td>
+                    <td class="px-4 py-3 text-center">${stats.redCards > 0 ? `<span class="text-red-600 font-medium">${stats.redCards}</span>` : '-'}</td>
+                </tr>
+            `}).join('');
+        }
+        
+        function exportStats() {
+            const matches = getData('matches');
+            const players = getPlayers();
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "ID,Nombre,Dorsal,Posicion,Estado,Partidos Jugados,Minutos,Goles,Asistencias,G/A,Nota Media,Tarjetas Amarillas,Tarjetas Rojas,MVPs,Victorias,Empates,Derrotas\n";
+
+            players.forEach(player => {
+                const stats = { matchesPlayed: 0, minutes: 0, goals: 0, assists: 0, totalRating: 0, ratingCount: 0, yellow: 0, red: 0, mvp: 0, wins: 0, draws: 0, losses: 0 };
+                matches.forEach(m => {
+                    const ps = m.playerStats?.find(s => String(s.playerId) === String(player.id));
+                    if (ps) {
+                        stats.matchesPlayed++;
+                        stats.minutes += ps.minutes || 0;
+                        stats.goals += ps.goals || 0;
+                        stats.assists += ps.assists || 0;
+                        stats.yellow += ps.yellowCards || 0;
+                        stats.red += ps.redCards || 0;
+                        if (ps.rating) { stats.totalRating += ps.rating; stats.ratingCount++; }
+                        if (m.outcome === 'victoria') stats.wins++;
+                        else if (m.outcome === 'empate') stats.draws++;
+                        else if (m.outcome === 'derrota') stats.losses++;
+                    }
+                    if (String(m.mvp) === String(player.id)) stats.mvp++;
+                });
+
+                const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '0';
+                const ga = stats.goals + stats.assists;
+                const row = [player.id, `${player.nombre} ${player.apellido}`, player.dorsal, player.posicion, player.estado, stats.matchesPlayed, stats.minutes, stats.goals, stats.assists, ga, avgRating, stats.yellow, stats.red, stats.mvp, stats.wins, stats.draws, stats.losses].join(",");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `real_madrid_${currentTeam}_stats.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // ==========================================
+        // TAB NAVIGATION
+        // ==========================================
+        
+        function showTab(tabName) {
+            document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('tab-active'));
+            
+            document.getElementById(`section-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).classList.add('tab-active');
+            
+            if (tabName === 'plantilla') renderPlayers();
+            if (tabName === 'calendario') renderCalendar();
+            if (tabName === 'nuevo') initNewMatchForm();
+            if (tabName === 'partidos') renderMatches();
+            if (tabName === 'stats') renderStats();
+        }
+
+        // ==========================================
+        // PLAYERS RENDERING
+        // ==========================================
+        
+        function filterPlayers(filter) {
+            currentPlayerFilter = filter;
+            document.querySelectorAll('#section-plantilla > div:first-of-type button').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            document.getElementById(`filter-${filter}`).classList.remove('bg-gray-200', 'text-gray-700');
+            document.getElementById(`filter-${filter}`).classList.add('bg-slate-800', 'text-white');
+            renderPlayers();
+        }
+
+        function filterByPosition(position) {
+            currentPositionFilter = position;
+            document.querySelectorAll('.pos-filter').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('bg-gray-200');
+                if (btn.textContent.includes('Entrenador')) btn.classList.remove('bg-gray-200');
+            });
+            event.target.classList.remove('bg-gray-200');
+            event.target.classList.add('bg-slate-800', 'text-white');
+            renderPlayers();
+        }
+
+        function renderPlayers() {
+            let players = getPlayers();
+            if (currentPlayerFilter === 'active') players = players.filter(p => p.estado === 'Activo');
+            else if (currentPlayerFilter === 'inactive') players = players.filter(p => p.estado === 'Inactivo');
+            
+            if (currentPositionFilter) players = players.filter(p => p.posicion === currentPositionFilter);
+            
+            players.sort((a, b) => {
+                if (a.posicion === 'entrenador') return -1;
+                if (b.posicion === 'entrenador') return 1;
+                return a.dorsal - b.dorsal;
+            });
+            
+            const container = document.getElementById('players-list');
+            container.innerHTML = players.map(player => `
+                <div class="card bg-white rounded-xl shadow-sm p-4 ${player.estado === 'Inactivo' ? 'player-inactive' : ''} cursor-pointer" onclick="viewPlayerDetails('${player.id}')">
+                    <div class="flex items-start gap-4">
+                        <img src="${player.foto}" 
+                             class="player-photo border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-300'}" 
+                             onerror="this.src='https://via.placeholder.com/80x80?text=${player.dorsal}'"
+                             alt="${player.nombre}">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-2xl font-bold text-slate-700">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                            </div>
+                            <h3 class="font-semibold text-gray-800 truncate">${player.nombre} ${player.apellido}</h3>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                <span class="position-badge pos-${player.posicion}">${capitalizeFirst(player.posicion)}</span>
+                                <button onclick="event.stopPropagation(); openPlayerStatusModal('${player.id}')" class="position-badge ${player.estado === 'Activo' ? 'status-active' : 'status-inactive'} cursor-pointer hover:opacity-80">
+                                    ${player.estado} ✏️
+                                </button>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-500">
+                                <p>🎂 ${formatDate(player.fechaNacimiento)} (${calculateAge(player.fechaNacimiento)} años)</p>
+                                <p>🌍 ${player.nacionalidad}</p>
+                                <p>📋 ${player.categoria}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // PLAYER DETAILS MODAL
+        // ==========================================
+
+        function viewPlayerDetails(playerId) {
+            const players = getPlayers();
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+
+            const modal = document.getElementById('player-details-modal');
+            const content = document.getElementById('player-details-content');
+            
+            const matches = getData('matches');
+            const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, yellowCards: 0, redCards: 0, totalRating: 0, ratingCount: 0, wins: 0 };
+
+            matches.forEach(m => {
+                const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
+                if (ps) {
+                    stats.matchesPlayed++;
+                    stats.goals += ps.goals || 0;
+                    stats.assists += ps.assists || 0;
+                    stats.minutes += ps.minutes || 0;
+                    stats.yellowCards += ps.yellowCards || 0;
+                    stats.redCards += ps.redCards || 0;
+                    if (ps.rating) { stats.totalRating += ps.rating; stats.ratingCount++; }
+                    if (m.outcome === 'victoria') stats.wins++;
+                }
+            });
+
+            const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(1) : '-';
+            const isCoach = player.posicion === 'entrenador';
+
+            content.innerHTML = `
+                <div class="flex flex-col md:flex-row gap-6 mb-8 items-center md:items-start">
+                    <img src="${player.foto}" class="player-photo-lg border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-300'} shadow-lg" 
+                         onerror="this.src='https://via.placeholder.com/120x120?text=${player.dorsal}'">
+                    <div class="text-center md:text-left flex-1">
+                        <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
+                             <span class="text-3xl font-bold text-slate-800">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                             <span class="position-badge pos-${player.posicion} text-base px-3 py-1">${capitalizeFirst(player.posicion)}</span>
+                        </div>
+                        <h2 class="text-3xl font-bold text-slate-800 mb-1">${player.nombre} ${player.apellido}</h2>
+                        <div class="text-gray-600 mb-4">
+                            <p>🌍 ${player.nacionalidad} | 🎂 ${calculateAge(player.fechaNacimiento)} años</p>
+                            <p class="text-sm mt-1">${player.categoria}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Estadísticas de Temporada</h3>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gray-50 p-4 rounded-xl text-center">
+                        <p class="text-gray-500 text-sm">Partidos</p>
+                        <p class="text-2xl font-bold text-slate-800">${stats.matchesPlayed}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl text-center">
+                        <p class="text-gray-500 text-sm">Nota Media</p>
+                        <p class="text-2xl font-bold ${getRatingColor(avgRating)}">${avgRating}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl text-center">
+                        <p class="text-gray-500 text-sm">Victorias</p>
+                        <p class="text-2xl font-bold text-green-600">${stats.wins}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-xl text-center">
+                         <p class="text-gray-500 text-sm">Tarjetas</p>
+                         <div class="flex justify-center gap-3">
+                            <span class="text-amber-500 font-bold text-xl">🟨 ${stats.yellowCards}</span>
+                            <span class="text-red-500 font-bold text-xl">🟥 ${stats.redCards}</span>
+                         </div>
+                    </div>
+                </div>
+
+                ${!isCoach ? `
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="bg-slate-800 text-white p-4 rounded-xl text-center">
+                        <p class="text-slate-300 text-sm">Goles</p>
+                        <p class="text-2xl font-bold">${stats.goals}</p>
+                    </div>
+                    <div class="bg-slate-700 text-white p-4 rounded-xl text-center">
+                        <p class="text-slate-300 text-sm">Asistencias</p>
+                        <p class="text-2xl font-bold">${stats.assists}</p>
+                    </div>
+                    <div class="bg-slate-600 text-white p-4 rounded-xl text-center">
+                        <p class="text-slate-300 text-sm">Minutos</p>
+                        <p class="text-2xl font-bold">${stats.minutes}'</p>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            modal.classList.add('active');
+        }
+
+        // ==========================================
+        // CALENDAR FIXTURE SELECTION
+        // ==========================================
+        
+        function selectCalendarFixture(fixtureId) {
+            const fixture = calendarEvents.find(e => e.id === fixtureId);
+            if (!fixture) return;
+
+            const matches = getData('matches');
+            const isRegistered = matches.some(m => m.calendarEventId === fixtureId);
+            if (isRegistered) {
+                alert('⚠️ Este partido ya ha sido registrado.');
+                return;
+            }
+            
+            const now = new Date();
+            now.setHours(23, 59, 59, 999);
+            
+            if (fixture.start > now) {
+                alert('⚠️ Solo puedes registrar partidos pasados o de hoy.');
+                return;
+            }
+            
+            selectedCalendarFixture = fixture;
+            
+            // Switch tab and Show Form
+            showTab('nuevo');
+            document.getElementById('select-match-prompt').classList.add('hidden');
+            document.getElementById('new-match-form-container').classList.remove('hidden');
+            
+            populateFormFromFixture(fixture);
+        }
+
+        function populateFormFromFixture(fixture) {
+            document.getElementById('selected-fixture-info').classList.remove('hidden');
+            document.getElementById('selected-fixture-details').textContent = 
+                `${fixture.opponent} - ${fixture.start.toLocaleDateString('es-ES')} - ${fixture.location || 'Estadio'}`;
+            
+            const dateInput = document.getElementById('new-date');
+            dateInput.value = fixture.start.toISOString().split('T')[0];
+            
+            const opponentInput = document.getElementById('new-opponent');
+            opponentInput.value = fixture.opponent || '';
+            
+            document.getElementById('calendar-event-id').value = fixture.id;
+
+            const venueSelect = document.getElementById('new-venue');
+            venueSelect.value = fixture.venue || '';
+            if (fixture.venue) {
+                venueSelect.classList.add('readonly-input');
+                venueSelect.disabled = true; 
+            }
+            updateStadiumField();
+            
+            const stadiumInput = document.getElementById('new-stadium');
+            if (fixture.location) {
+                stadiumInput.value = fixture.location;
+                stadiumInput.readOnly = true;
+                stadiumInput.classList.add('readonly-input');
+            }
+        }
+
+        function clearSelectedFixture() {
+            selectedCalendarFixture = null;
+            resetNewMatchForm();
+        }
+
+        // ==========================================
+        // NEW MATCH FORM
+        // ==========================================
+        
+        function initNewMatchForm() {
+            renderCompetitionStatus();
+            populateCompetitionSelect();
+            renderPlayerStatsForm('new-match-players-stats');
+            
+            // Si no hay fixture seleccionado, mostrar prompt
+            if (!selectedCalendarFixture) {
+                document.getElementById('select-match-prompt').classList.remove('hidden');
+                document.getElementById('new-match-form-container').classList.add('hidden');
+            } else {
+                document.getElementById('select-match-prompt').classList.add('hidden');
+                document.getElementById('new-match-form-container').classList.remove('hidden');
+            }
+        }
+
+        function renderCompetitionStatus() {
+            const container = document.getElementById('competition-status');
+            const state = getCompetitionState();
+            
+            container.innerHTML = Object.entries(COMPETICIONES_ACTUALES).map(([name, comp]) => {
+                const isEliminated = state[name]?.eliminated;
+                const availableRounds = getAvailableRounds(name);
+                const nextRound = availableRounds.find(r => r.status === 'available');
+                const matches = getData('matches').filter(m => m.competition === name);
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-sm p-4 ${isEliminated ? 'opacity-60' : ''}">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="${comp.color} px-3 py-1 rounded-full text-sm font-medium ${isEliminated ? 'comp-eliminated' : ''}">${name}</span>
+                            ${isEliminated ? '<span class="text-red-500 text-sm">❌ Eliminados</span>' : ''}
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <p>📊 Partidos jugados: <strong>${matches.length}</strong></p>
+                            ${nextRound ? `<p>➡️ Disponible: <strong>${nextRound.nombre}</strong></p>` : 
+                              (isEliminated ? '<p class="text-red-600 font-bold">⛔ ELIMINADO DE LA COMPETICIÓN</p>' : '<p class="text-green-500">✅ Competición completada</p>')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function populateCompetitionSelect() {
+            const select = document.getElementById('new-competition');
+            const state = getCompetitionState();
+            
+            select.innerHTML = '<option value="">Seleccionar competición...</option>' +
+                Object.entries(COMPETICIONES_ACTUALES)
+                    .map(([name, comp]) => {
+                        const eliminated = state[name]?.eliminated;
+                        const label = eliminated ? `${name} (Eliminado)` : name;
+                        const disabled = eliminated ? 'disabled' : '';
+                        return `<option value="${name}" ${disabled} class="${eliminated ? 'text-red-500' : ''}">${label}</option>`;
+                    })
+                    .join('');
+            
+            const filterSelect = document.getElementById('filter-competition');
+            const statsFilterSelect = document.getElementById('stats-filter-competition');
+            const compOptions = '<option value="">Todas las competiciones</option>' + Object.keys(COMPETICIONES_ACTUALES).map(name => `<option value="${name}">${name}</option>`).join('');
+            
+            filterSelect.innerHTML = compOptions;
+            statsFilterSelect.innerHTML = compOptions;
+            
+             const calFilterContainer = document.getElementById('calendar-filters-container');
+             calFilterContainer.innerHTML = '<button onclick="filterCalendar(\'\')" class="cal-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todas</button>';
+             Object.values(COMPETICIONES_ACTUALES).forEach(comp => {
+                 calFilterContainer.innerHTML += `<button onclick="filterCalendar('${comp.id}')" class="cal-filter px-3 py-1 text-sm rounded-full ${comp.color}">${comp.nombre}</button>`;
+             });
+        }
+        
+        function updateRoundOptions() {
+            const compName = document.getElementById('new-competition').value;
+            const roundSelect = document.getElementById('new-round');
+            const roundInfo = document.getElementById('round-info');
+            const venueSelect = document.getElementById('new-venue');
+            
+            if (!compName) {
+                roundSelect.innerHTML = '<option value="">Primero selecciona competición...</option>';
+                roundInfo.textContent = '';
+                return;
+            }
+            
+            const comp = COMPETICIONES_ACTUALES[compName];
+            const availableRounds = getAvailableRounds(compName);
+            
+            if (availableRounds.length === 0) {
+                roundSelect.innerHTML = '<option value="">No hay rondas disponibles</option>';
+                roundInfo.textContent = 'Esta competición está completada o eliminada.';
+                return;
+            }
+            
+            roundSelect.innerHTML = '<option value="">Seleccionar ronda...</option>' +
+                availableRounds.map(r => {
+                    const statusIcon = r.status === 'completed' ? '✅' : (r.status === 'available' ? '🟢' : '🔒');
+                    const disabled = r.status !== 'available' ? 'disabled' : '';
+                    return `<option value="${r.id}" ${disabled} data-orden="${r.orden}">${statusIcon} ${r.nombre}</option>`;
+                }).join('');
+            
+            if (comp.campoNeutral) {
+                venueSelect.value = 'neutral';
+                updateStadiumField();
+                venueSelect.disabled = true;
+                roundInfo.textContent = '⚠️ Esta competición se juega en campo neutral.';
+            } else {
+                roundInfo.textContent = comp.ordenLibre || comp.tipo === 'liga' ? 
+                    '📋 Liga: puedes registrar jornadas en cualquier orden.' :
+                    '🟢 = Disponible, 🔒 = Ronda anterior pendiente, ✅ = Completada';
+            }
+        }
+        
+        function handleRoundChange() {
+            const compName = document.getElementById('new-competition').value;
+            const roundId = document.getElementById('new-round').value;
+            
+            if (!compName || !roundId) return;
+            
+            const comp = COMPETICIONES_ACTUALES[compName];
+            let roundInfo = null;
+            
+            comp.fases.forEach(fase => {
+                const found = fase.rondas.find(r => r.id === roundId);
+                if (found) roundInfo = { ...found, faseTipo: fase.tipo };
+            });
+            
+            if (!roundInfo) return;
+            
+            // Handle two-leg ties
+            if (roundInfo.idaVuelta === 'vuelta') {
+                const matches = getData('matches').filter(m => m.competition === compName);
+                const idaMatch = matches.find(m => m.roundId === roundInfo.pareja);
+                
+                if (idaMatch) {
+                    const legIndicator = document.getElementById('leg-indicator');
+                    const legInfo = document.getElementById('leg-info');
+                    legIndicator.classList.remove('hidden');
+                    legInfo.innerHTML = `<strong>📊 Partido de ida:</strong> vs ${idaMatch.opponent} - Resultado: ${idaMatch.result} (${idaMatch.venue === 'local' ? 'Local' : 'Visitante'})`;
+                    
+                    document.getElementById('new-opponent').value = idaMatch.opponent;
+                    
+                    const venueSelect = document.getElementById('new-venue');
+                    const alternateVenue = idaMatch.venue === 'local' ? 'visitante' : 'local';
+                    venueSelect.value = alternateVenue;
+                    venueSelect.disabled = true;
+                    
+                    const venueWarning = document.getElementById('venue-alternation-warning');
+                    const venueInfo = document.getElementById('venue-alternation-info');
+                    venueWarning.classList.remove('hidden');
+                    venueInfo.innerHTML = `<strong>🔄 Alternancia automática:</strong> La ida fue ${idaMatch.venue === 'local' ? 'en casa' : 'fuera'}, la vuelta debe ser ${alternateVenue === 'local' ? 'en casa' : 'fuera'}.`;
+                    
+                    updateStadiumField();
+                }
+            } else {
+                document.getElementById('leg-indicator').classList.add('hidden');
+                document.getElementById('venue-alternation-warning').classList.add('hidden');
+            }
+        }
+        
+        function updateStadiumField() {
+            const venue = document.getElementById('new-venue').value;
+            const stadiumInput = document.getElementById('new-stadium');
+            const compName = document.getElementById('new-competition').value;
+            const comp = COMPETICIONES_ACTUALES[compName];
+            
+            if (venue === 'local') {
+                stadiumInput.value = 'Santiago Bernabéu';
+                stadiumInput.readOnly = true;
+                stadiumInput.classList.add('bg-gray-100');
+            } else if (venue === 'neutral' && comp?.campoNeutral) {
+                if (!selectedCalendarFixture?.location) stadiumInput.value = '';
+                else stadiumInput.value = selectedCalendarFixture.location;
+                
+                stadiumInput.readOnly = false;
+                stadiumInput.classList.remove('bg-gray-100');
+                stadiumInput.placeholder = 'Estadio del partido (campo neutral)';
+            } else {
+                if (!selectedCalendarFixture?.location) stadiumInput.value = '';
+                else stadiumInput.value = selectedCalendarFixture.location;
+                
+                stadiumInput.readOnly = false;
+                stadiumInput.classList.remove('bg-gray-100');
+                stadiumInput.placeholder = 'Estadio del rival';
+            }
+        }
+
+        function renderPlayerStatsForm(containerId) {
+            const container = document.getElementById(containerId);
+            const players = getActivePlayers().sort((a, b) => {
+                 if (a.posicion === 'entrenador') return -1;
+                 if (b.posicion === 'entrenador') return 1;
+                 return a.dorsal - b.dorsal;
+            });
+            
+            container.innerHTML = players.map(player => `
+                <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
+                        <div class="flex-1">
+                            <span class="font-medium text-gray-800">${player.nombre} ${player.apellido}</span>
+                            <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                        </div>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" class="player-played w-4 h-4 text-amber-600" checked>
+                            <span>Jugó</span>
+                        </label>
+                    </div>
+                    <div class="player-stats-inputs grid grid-cols-3 md:grid-cols-6 gap-2">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Nota (1-10)</label>
+                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="1" max="10" step="0.5" placeholder="–">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Goles</label>
+                            <input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Asist.</label>
+                            <input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Minutos</label>
+                            <input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">🟨</label>
+                            <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="0">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">🟥</label>
+                            <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="0">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.querySelectorAll('.player-played').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const statsInputs = this.closest('[data-player-id]').querySelector('.player-stats-inputs');
+                    statsInputs.style.display = this.checked ? 'grid' : 'none';
+                });
+            });
+        }
+        
+        function resetNewMatchForm() {
+            document.getElementById('new-match-form').reset();
+            document.getElementById('new-round').innerHTML = '<option value="">Primero selecciona competición...</option>';
+            document.getElementById('round-info').textContent = '';
+            document.getElementById('leg-indicator').classList.add('hidden');
+            document.getElementById('venue-alternation-warning').classList.add('hidden');
+            document.getElementById('new-venue').disabled = false;
+            document.getElementById('new-venue').classList.remove('readonly-input');
+            document.getElementById('new-stadium').readOnly = true;
+            document.getElementById('new-stadium').classList.add('readonly-input');
+            
+            selectedCalendarFixture = null;
+            document.getElementById('selected-fixture-info').classList.add('hidden');
+            document.getElementById('new-match-form-container').classList.add('hidden');
+            document.getElementById('select-match-prompt').classList.remove('hidden');
+            
+            renderPlayerStatsForm('new-match-players-stats');
+        }
+        
+        document.getElementById('new-match-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const calendarEventId = document.getElementById('calendar-event-id').value;
+            if (!calendarEventId) {
+                alert('Error: No se ha seleccionado un partido del calendario.');
+                return;
+            }
+
+            const compName = document.getElementById('new-competition').value;
+            const roundId = document.getElementById('new-round').value;
+            const date = document.getElementById('new-date').value;
+            const opponent = document.getElementById('new-opponent').value;
+            const venue = document.getElementById('new-venue').value;
+            const stadium = document.getElementById('new-stadium').value;
+            const result = document.getElementById('new-result').value.trim();
+            
+            const comp = COMPETICIONES_ACTUALES[compName];
+            let roundInfo = null;
+            comp.fases.forEach(fase => {
+                const found = fase.rondas.find(r => r.id === roundId);
+                if (found) roundInfo = found;
+            });
+            
+            const outcome = calculateMatchOutcome(result, venue);
+            
+            const statsContainer = document.getElementById('new-match-players-stats');
+            const playerStats = [];
+            
+            statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+                const played = row.querySelector('.player-played').checked;
+                if (played) {
+                    playerStats.push({
+                        playerId: row.dataset.playerId,
+                        rating: parseFloat(row.querySelector('.stat-rating').value) || null,
+                        goals: parseInt(row.querySelector('.stat-goals').value) || 0,
+                        assists: parseInt(row.querySelector('.stat-assists').value) || 0,
+                        minutes: parseInt(row.querySelector('.stat-minutes').value) || 0,
+                        yellowCards: parseInt(row.querySelector('.stat-yellow').value) || 0,
+                        redCards: parseInt(row.querySelector('.stat-red').value) || 0
+                    });
+                }
+            });
+            
+            const mvp = calculateAutoMVP(playerStats);
+            
+            const matchData = {
+                id: generateId(),
+                calendarEventId: calendarEventId,
+                competition: compName,
+                roundId: roundId,
+                round: roundInfo.nombre,
+                date: date,
+                opponent: opponent,
+                venue: venue,
+                stadium: stadium,
+                result: result,
+                outcome: outcome,
+                mvp: mvp,
+                playerStats: playerStats
+            };
+            
+            const matches = getData('matches');
+            matches.push(matchData);
+            saveData('matches', matches);
+            
+            checkEliminationAfterMatch(matchData);
+            
+            resetNewMatchForm();
+            renderCompetitionStatus();
+            populateCompetitionSelect();
+            
+            alert('✅ Partido registrado correctamente');
+            showTab('partidos');
+        });
+        
+        // ==========================================
+        // CALENDAR
+        // ==========================================
+
+        async function loadCalendar() {
+            const container = document.getElementById('calendar-container');
+            container.innerHTML = `
+                <div class="calendar-loading text-center py-12">
+                    <div class="text-4xl mb-4">⏳</div>
+                    <p class="text-gray-600">Cargando calendario oficial...</p>
+                </div>
+            `;
+            
+            const icalUrl = TEAMS_CONFIG[currentTeam].icalUrl;
+            
+            const proxies = [
+                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+            ];
+            
+            let icalData = null;
+            
+            for (const proxyFn of proxies) {
+                try {
+                    const proxyUrl = proxyFn(icalUrl);
+                    const response = await fetch(proxyUrl, { method: 'GET' });
+                    if (response.ok) {
+                        const text = await response.text();
+                        if (text.includes('BEGIN:VCALENDAR') || text.includes('BEGIN:VEVENT')) {
+                            icalData = text;
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Proxy failed');
+                }
+            }
+            
+            if (icalData) {
+                calendarEvents = parseICalData(icalData);
+            } else {
+                calendarEvents = [];
+            }
+            
+            if (TEAMS_CONFIG[currentTeam].manualJuneMatches) {
+                const manualMatches = [
+                    { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: 'Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
+                    { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: 'Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
+                    { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: 'Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
+                ];
+                calendarEvents = [...manualMatches, ...calendarEvents];
+                calendarEvents.sort((a, b) => a.start - b.start);
+            }
+            
+            renderCalendar();
+        }
+        
+        function parseICalData(icalData) {
+            const events = [];
+            const normalizedData = icalData.replace(/\r\n /g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            const lines = normalizedData.split('\n');
+            
+            let currentEvent = null;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                while (i + 1 < lines.length && (lines[i + 1].startsWith(' ') || lines[i + 1].startsWith('\t'))) {
+                    i++;
+                    line += lines[i].substring(1);
+                }
+                line = line.trim();
+                if (!line) continue;
+                
+                if (line === 'BEGIN:VEVENT') {
+                    currentEvent = { id: generateId() };
+                } else if (line === 'END:VEVENT' && currentEvent) {
+                    if (currentEvent.summary && currentEvent.start) {
+                        // Use raw summary for opponent extraction
+                        currentEvent.opponent = extractOpponent(currentEvent.summary);
+                        currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
+                        events.push(currentEvent);
+                    }
+                    currentEvent = null;
+                } else if (currentEvent) {
+                    const colonIndex = line.indexOf(':');
+                    if (colonIndex > 0) {
+                        let key = line.substring(0, colonIndex);
+                        let value = line.substring(colonIndex + 1);
+                        if (key.includes(';')) key = key.split(';')[0];
+                        
+                        if (key === 'SUMMARY') currentEvent.summary = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
+                        else if (key === 'DTSTART') currentEvent.start = parseICalDate(value);
+                        else if (key === 'LOCATION') currentEvent.location = value.replace(/\\,/g, ',').replace(/\\;/g, ';');
+                    }
+                }
+            }
+            return events.filter(e => e.start).sort((a, b) => a.start - b.start);
+        }
+        
+        function parseICalDate(dateStr) {
+            if (!dateStr) return null;
+            dateStr = dateStr.trim();
+            try {
+                const year = parseInt(dateStr.substring(0, 4));
+                const month = parseInt(dateStr.substring(4, 6)) - 1;
+                const day = parseInt(dateStr.substring(6, 8));
+                if (dateStr.includes('T')) {
+                    const hour = parseInt(dateStr.substring(9, 11)) || 0;
+                    const minute = parseInt(dateStr.substring(11, 13)) || 0;
+                    if (dateStr.endsWith('Z')) return new Date(Date.UTC(year, month, day, hour, minute));
+                    return new Date(year, month, day, hour, minute);
+                }
+                return new Date(year, month, day, 21, 0);
+            } catch (e) { return null; }
+        }
+        
+        function extractOpponent(summary) {
+            if (!summary) return 'Rival';
+            let opponent = summary
+                .replace(/real madrid c\.?f\.?/gi, '')
+                .replace(/real madrid/gi, '')
+                .replace(/vs\.?/gi, '')
+                .replace(/\s*-\s*/g, ' ')
+                .trim();
+            const words = opponent.split(/\s+/).filter(w => w.length > 1);
+            return words.length > 4 ? words.slice(0, 3).join(' ') : words.join(' ');
+        }
+        
+        function detectVenue(summary, location) {
+            const s = ((summary || '') + ' ' + (location || '')).toLowerCase();
+            if (s.includes('bernabéu') || s.includes('di stéfano') || s.includes('valdebebas')) return 'local';
+            if (summary && summary.toLowerCase().trim().startsWith('real madrid')) return 'local';
+            return 'visitante';
+        }
+        
+        function filterCalendar(comp) {
+            currentCalendarFilter = comp;
+            document.querySelectorAll('.cal-filter').forEach(btn => btn.classList.remove('bg-slate-800', 'text-white'));
+            event.target.classList.add('bg-slate-800', 'text-white');
+            renderCalendar();
+        }
+        
+        function filterCalendarTime(time) {
+            currentTimeFilter = time;
+            document.querySelectorAll('.time-filter').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-slate-800', 'text-white');
+            renderCalendar();
+        }
+        
+        function renderCalendar() {
+            const container = document.getElementById('calendar-container');
+            const now = new Date();
+            now.setHours(23, 59, 59, 999);
+            
+            const matches = getData('matches');
+            const registeredEventIds = matches.map(m => m.calendarEventId);
+            
+            let events = [...calendarEvents];
+            
+            // Only filter by competition if it's explicitly set by user, OR if the event is registered and we know its competition
+            // HOWEVER, unregistered events do NOT have competition info in current data model reliably until manual match.
+            // The calendar filters only work if we assume we can guess competition, but instructions say HIDE info if not registered.
+            
+            if (currentCalendarFilter) {
+                // This is tricky. Unregistered events don't have competition property set reliably.
+                // We will rely on the property if set manually or try to match if registered.
+                // For now, simple filter
+                 events = events.filter(e => {
+                     const isReg = registeredEventIds.includes(e.id);
+                     if (isReg) {
+                         const m = matches.find(m => m.calendarEventId === e.id);
+                         return m.competition === currentCalendarFilter;
+                     }
+                     // If not registered, we hide it from specific filters to avoid confusion? 
+                     // Or show all? Let's show all for 'All', hide for specific if we can't tell.
+                     return false; 
+                 });
+            }
+            
+            if (currentTimeFilter === 'past') events = events.filter(e => e.start <= now);
+            else if (currentTimeFilter === 'future') events = events.filter(e => e.start > now);
+            
+            if (events.length === 0) {
+                container.innerHTML = '<div class="text-center py-12 text-gray-500">No hay partidos.</div>';
+                return;
+            }
+            
+            container.innerHTML = events.map(event => {
+                const isPast = event.start <= now;
+                const isRegistered = registeredEventIds.includes(event.id);
+                const registeredMatch = isRegistered ? matches.find(m => m.calendarEventId === event.id) : null;
+                
+                const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                
+                // If registered, show real data. If not, show generic data.
+                const compName = isRegistered ? registeredMatch.competition : '';
+                const compClass = isRegistered ? COMPETICIONES_ACTUALES[registeredMatch.competition].color : '';
+                const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
+                                               : (event.venue === 'local' ? '🏠 Local' : (event.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante'));
+                
+                return `
+                    <div class="bg-white rounded-xl shadow-sm p-4 ${isRegistered ? 'match-registered' : (isPast ? 'match-past' : 'match-future')}" 
+                         ${isPast && !isRegistered ? `onclick="selectCalendarFixture('${event.id}')"` : ''}>
+                        <div class="flex flex-col md:flex-row md:items-center gap-3">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    ${isRegistered ? `<span class="${compClass} px-2 py-0.5 rounded text-xs font-medium">${compName}</span>` : ''}
+                                    <span class="text-xs text-gray-500">${venueText}</span>
+                                    ${isRegistered ? '<span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">✅ Registrado</span>' : 
+                                      (isPast ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">📝 Clic para registrar</span>' : '')}
+                                </div>
+                                <h4 class="font-semibold text-gray-800">${event.opponent}</h4>
+                                <p class="text-sm text-gray-500">🏟️ ${event.location || 'Estadio'}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-medium text-gray-800">${dateStr}</p>
+                                <p class="text-amber-600 font-semibold">${timeStr}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // MATCH HELPERS
+        // ==========================================
+        
+        function calculateMatchOutcome(result, venue) {
+            if (!result || !result.includes('-')) return null;
+            const parts = result.split('-');
+            const homeGoals = parseInt(parts[0]);
+            const awayGoals = parseInt(parts[1]);
+            if (isNaN(homeGoals) || isNaN(awayGoals)) return null;
+            
+            if (homeGoals === awayGoals) return 'empate';
+            
+            if (venue === 'local') return homeGoals > awayGoals ? 'victoria' : 'derrota';
+            if (venue === 'visitante') return awayGoals > homeGoals ? 'victoria' : 'derrota';
+            // Neutral: assume Real Madrid is home for logic if not specified, but typically we need to know who is 'home' in the result string.
+            // Convention: Result is always Local-Visitor. If venue is neutral, we usually enter Us-Them.
+            return homeGoals > awayGoals ? 'victoria' : 'derrota';
+        }
+
+        function calculateAutoMVP(playerStats) {
+            if (!playerStats || playerStats.length === 0) return '';
+            let bestPlayer = null;
+            let highestRating = -1;
+            playerStats.forEach(ps => {
+                if (ps.rating && ps.rating > highestRating) {
+                    highestRating = ps.rating;
+                    bestPlayer = ps.playerId;
+                }
+            });
+            return bestPlayer || '';
+        }
+
+        function getResultClass(outcome) {
+            if (outcome === 'victoria') return 'result-win';
+            if (outcome === 'empate') return 'result-draw';
+            if (outcome === 'derrota') return 'result-loss';
+            return 'bg-gray-100';
+        }
+
+        function getRatingColor(rating) {
+            if (rating === '-' || rating === null) return 'text-gray-400';
+            const num = parseFloat(rating);
+            if (num >= 8) return 'text-emerald-600';
+            if (num >= 6) return 'text-blue-600';
+            if (num >= 5) return 'text-amber-600';
+            return 'text-red-600';
+        }
+
+        // ==========================================
+        // MATCH DISPLAY & ACTIONS
+        // ==========================================
+        
+        function renderMatches() {
+            let matches = getData('matches');
+            const players = getPlayers();
+            const container = document.getElementById('matches-list');
+            const noMatches = document.getElementById('no-matches');
+            
+            const competitionFilter = document.getElementById('filter-competition').value;
+            const venueFilter = document.getElementById('filter-venue').value;
+            const resultFilter = document.getElementById('filter-result').value;
+            
+            if (competitionFilter) matches = matches.filter(m => m.competition === competitionFilter);
+            if (venueFilter) matches = matches.filter(m => m.venue === venueFilter);
+            if (resultFilter) matches = matches.filter(m => m.outcome === resultFilter);
+            
+            if (matches.length === 0) {
+                container.innerHTML = '';
+                noMatches.classList.remove('hidden');
+                return;
+            }
+            
+            noMatches.classList.add('hidden');
+            matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = matches.map(match => {
+                const mvpPlayer = players.find(p => p.id === match.mvp);
+                const totalGoals = match.playerStats.reduce((sum, ps) => sum + (ps.goals || 0), 0);
+                const outcomeClass = getResultClass(match.outcome);
+                const compColor = COMPETICIONES_ACTUALES[match.competition]?.color || 'bg-gray-200';
+                
+                return `
+                    <div class="card bg-white rounded-xl shadow-sm p-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    <span class="text-gray-500 text-sm">${formatDate(match.date)}</span>
+                                    <span class="${compColor} px-2 py-0.5 rounded text-xs font-medium">${match.competition}</span>
+                                    <span class="text-xs text-gray-500">${match.venue}</span>
+                                    <span class="text-xs text-gray-500">${match.round}</span>
+                                    ${match.result ? `<span class="${outcomeClass} px-2 py-0.5 rounded text-sm font-semibold">${match.result}</span>` : ''}
+                                </div>
+                                <h3 class="text-lg font-bold text-gray-800">vs ${match.opponent}</h3>
+                                <div class="flex flex-wrap gap-3 text-sm text-gray-600 mt-2">
+                                    <span>⚽ ${totalGoals} goles</span>
+                                    ${mvpPlayer ? `<span class="text-amber-600">🏆 ${mvpPlayer.nombre}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="viewMatchDetails('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                    👁️ Ver
+                                </button>
+                                <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function viewMatchDetails(matchId) {
+            const matches = getData('matches');
+            const players = getPlayers();
+            const match = matches.find(m => m.id === matchId);
+            if (!match) return;
+            
+            const modal = document.getElementById('match-detail-modal');
+            const content = document.getElementById('match-detail-content');
+            const title = document.getElementById('match-detail-title');
+            
+            title.textContent = `vs ${match.opponent}`;
+            
+            content.innerHTML = `
+                <div class="mb-4">
+                    <p class="text-gray-600"><strong>Resultado:</strong> ${match.result} (${match.outcome})</p>
+                    <p class="text-gray-600"><strong>Estadio:</strong> ${match.stadium}</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-700 text-white">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Jugador</th>
+                                <th class="px-3 py-2">Nota</th>
+                                <th class="px-3 py-2">Goles</th>
+                                <th class="px-3 py-2">Asist</th>
+                                <th class="px-3 py-2">Min</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${match.playerStats.map(ps => {
+                                const p = players.find(pl => pl.id === ps.playerId);
+                                return `
+                                    <tr class="border-t">
+                                        <td class="px-3 py-2">${p ? p.nombre + ' ' + p.apellido : 'Unknown'}</td>
+                                        <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating || '-'}</td>
+                                        <td class="px-3 py-2 text-center">${ps.goals || 0}</td>
+                                        <td class="px-3 py-2 text-center">${ps.assists || 0}</td>
+                                        <td class="px-3 py-2 text-center">${ps.minutes || 0}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+        
+        function closeMatchDetailModal() {
+            document.getElementById('match-detail-modal').classList.remove('active');
+        }
+        
+        function deleteMatch(matchId) {
+            if (!confirm('¿Estás seguro de eliminar este partido?')) return;
+            
+            let matches = getData('matches');
+            const matchToDelete = matches.find(m => m.id === matchId);
+            if (!matchToDelete) return;
+            
+            const compName = matchToDelete.competition;
+            matches = matches.filter(m => m.id !== matchId);
+            saveData('matches', matches);
+            
+            recalculateCompetitionState(compName);
+            
+            renderMatches();
+            // Refresh calendar and new match tab in case status changed
+            renderCalendar(); 
+        }
+        
+        function closeEditMatchModal() {
+            document.getElementById('edit-match-modal').classList.remove('active');
+        }
+        
+        function closePlayerStatusModal() {
+             document.getElementById('player-status-modal').classList.remove('active');
+        }
+        
+        function closePlayerDetailsModal() {
+             document.getElementById('player-details-modal').classList.remove('active');
+        }
+        
+        function openPlayerStatusModal(playerId) {
+            const players = getPlayers();
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+            
+            const modal = document.getElementById('player-status-modal');
+            const content = document.getElementById('player-status-content');
+            
+            content.innerHTML = `
+                <div class="text-center mb-6">
+                    <img src="${player.foto}" class="player-photo mx-auto mb-3 border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-300'}">
+                    <h4 class="font-bold text-lg">${player.nombre} ${player.apellido}</h4>
+                    <p class="text-gray-500">Estado actual: <strong>${player.estado}</strong></p>
+                </div>
+                <div class="space-y-3">
+                    <button onclick="changePlayerStatus('${player.id}', 'Activo')" class="w-full py-3 rounded-lg font-medium bg-green-500 text-white">✅ Activo</button>
+                    <button onclick="changePlayerStatus('${player.id}', 'Inactivo')" class="w-full py-3 rounded-lg font-medium bg-gray-500 text-white">❌ Inactivo</button>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+        
+        function changePlayerStatus(playerId, newStatus) {
+            updatePlayerState(playerId, newStatus);
+            closePlayerStatusModal();
+            renderPlayers();
+        }
+
+        // ==========================================
+        // UTILS
+        // ==========================================
+        
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+        
+        function calculateAge(birthdate) {
+            const today = new Date();
+            const birth = new Date(birthdate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+            return age;
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('App ready');
+        });
+
+    </script>
+</body>
+</html>
