@@ -69,6 +69,27 @@
         .welcome-card:hover { transform: scale(1.02); }
         .starter-badge { background: #d1fae5; color: #065f46; border: 1px solid #34d399; font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; }
         .sub-badge { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; }
+        
+        /* Monthly Calendar Styles */
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e5e7eb; border: 1px solid #e5e7eb; }
+        .calendar-day-header { background: #f9fafb; padding: 8px; text-align: center; font-weight: 600; font-size: 0.85rem; color: #4b5563; }
+        .calendar-day { background: white; min-height: 100px; padding: 4px; position: relative; }
+        .calendar-day:hover { background: #f9fafb; }
+        .calendar-day.other-month { background: #f3f4f6; color: #9ca3af; }
+        .calendar-day.today { background: #eff6ff; }
+        .day-number { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: block; }
+        .cal-event-dot { font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; display: block; }
+        .cal-event-dot:hover { opacity: 0.8; }
+        
+        /* Standings Table */
+        .standings-table th { background-color: #1f2937; color: white; padding: 10px; font-size: 0.85rem; }
+        .standings-table td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; font-size: 0.9rem; }
+        .standings-pos { width: 40px; text-align: center; font-weight: bold; }
+        .standings-team { display: flex; align-items: center; gap: 8px; }
+        .team-logo-mini { width: 24px; height: 24px; object-fit: contain; }
+        .qual-ucl { border-left: 4px solid #10b981; }
+        .qual-uel { border-left: 4px solid #fbbf24; }
+        .qual-relegation { border-left: 4px solid #ef4444; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -136,6 +157,9 @@
                     <button onclick="showTab('stats')" id="tab-stats" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
                         📊 Estadísticas
                     </button>
+                    <button onclick="showTab('clasificacion')" id="tab-clasificacion" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        🏆 Clasificación
+                    </button>
                 </div>
             </div>
         </nav>
@@ -187,9 +211,19 @@
                         <h2 class="text-2xl font-bold text-gray-800">Calendario Oficial</h2>
                         <p class="text-gray-500 text-sm">Haz clic en partidos pasados para registrar estadísticas</p>
                     </div>
-                    <button onclick="loadCalendar()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
-                        🔄 Actualizar
-                    </button>
+                    <div class="flex gap-2">
+                        <div class="bg-white rounded-lg p-1 border flex">
+                            <button onclick="switchCalendarView('list')" id="cal-view-list" class="px-3 py-1.5 text-sm rounded-md font-medium transition bg-slate-800 text-white">
+                                📃 Lista
+                            </button>
+                            <button onclick="switchCalendarView('month')" id="cal-view-month" class="px-3 py-1.5 text-sm rounded-md font-medium transition text-gray-600 hover:bg-gray-100">
+                                🗓️ Mes
+                            </button>
+                        </div>
+                        <button onclick="loadCalendar()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                            🔄 Actualizar
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Calendar Select Hint -->
@@ -206,8 +240,8 @@
                     </div>
                 </div>
 
-                <!-- Time Filter -->
-                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                <!-- Time Filter (Only for list view) -->
+                <div id="cal-time-filters" class="bg-white rounded-xl shadow-sm p-4 mb-4">
                     <div class="flex flex-wrap gap-2">
                         <button onclick="filterCalendarTime('all')" class="time-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todos</button>
                         <button onclick="filterCalendarTime('past')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Pasados (registrables)</button>
@@ -215,10 +249,35 @@
                     </div>
                 </div>
                 
+                <!-- Month Navigation (Only for month view) -->
+                <div id="cal-month-nav" class="hidden bg-white rounded-xl shadow-sm p-4 mb-4 flex justify-between items-center">
+                    <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full">⬅️ Anterior</button>
+                    <h3 id="current-month-display" class="text-lg font-bold text-slate-800"></h3>
+                    <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-gray-100 rounded-full">Siguiente ➡️</button>
+                </div>
+                
                 <div id="calendar-container" class="space-y-3">
                     <div class="calendar-loading text-center py-12">
                         <div class="text-4xl mb-4">⏳</div>
                         <p class="text-gray-600">Cargando calendario...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CLASIFICACION SECTION -->
+            <section id="section-clasificacion" class="hidden fade-in">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Clasificación</h2>
+                        <p class="text-gray-500 text-sm">Tabla de posiciones actualizada</p>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div id="standings-container" class="table-container p-4">
+                        <!-- Populated by JS -->
+                        <div class="text-center py-12 text-gray-500">
+                             Cargando clasificación...
+                        </div>
                     </div>
                 </div>
             </section>
@@ -326,6 +385,7 @@
                             <!-- Player Stats -->
                             <div>
                                 <h4 class="font-semibold text-gray-800 mb-3">Estadísticas de Jugadores (solo activos)</h4>
+                                <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Deben seleccionarse exactamente 11 titulares (sin contar al entrenador).</div>
                                 <div id="new-match-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
                             </div>
 
@@ -801,6 +861,50 @@
             }
         };
 
+        // MOCK STANDINGS DATA
+        const MOCK_STANDINGS = {
+            masculino: [
+                { rank: 1, team: "Real Madrid", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 14, goalsAgainst: 2, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" },
+                { rank: 2, team: "FC Barcelona", played: 5, win: 4, draw: 1, loss: 0, goalsFor: 12, goalsAgainst: 3, points: 13, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png" },
+                { rank: 3, team: "Atlético Madrid", played: 5, win: 3, draw: 2, loss: 0, goalsFor: 9, goalsAgainst: 3, points: 11, logo: "https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg" },
+                { rank: 4, team: "Villarreal CF", played: 5, win: 3, draw: 1, loss: 1, goalsFor: 8, goalsAgainst: 5, points: 10, logo: "https://upload.wikimedia.org/wikipedia/en/7/70/Villarreal_CF_logo.svg" },
+                { rank: 5, team: "Athletic Club", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 7, goalsAgainst: 6, points: 9, logo: "https://upload.wikimedia.org/wikipedia/en/9/98/Club_Athletic_Bilbao_logo.svg" },
+                { rank: 6, team: "Girona FC", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 6, goalsAgainst: 5, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/9/90/For_Girona_FC.svg" },
+                { rank: 7, team: "Real Betis", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 5, goalsAgainst: 4, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/1/13/Real_betis_logo.svg" },
+                { rank: 8, team: "Real Sociedad", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 6, goalsAgainst: 7, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg" },
+                { rank: 9, team: "RCD Mallorca", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 4, goalsAgainst: 5, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/e/e0/RCD_Mallorca_logo.svg" },
+                { rank: 10, team: "Celta Vigo", played: 5, win: 2, draw: 0, loss: 3, goalsFor: 7, goalsAgainst: 9, points: 6, logo: "https://upload.wikimedia.org/wikipedia/en/1/12/RC_Celta_de_Vigo_logo.svg" },
+                { rank: 11, team: "Rayo Vallecano", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 5, goalsAgainst: 6, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/1/17/Rayo_Vallecano_logo.svg" },
+                { rank: 12, team: "Sevilla FC", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 4, goalsAgainst: 6, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/Sevilla_FC_logo.svg" },
+                { rank: 13, team: "Osasuna", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 3, goalsAgainst: 5, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/d/db/Osasuna_logo.svg" },
+                { rank: 14, team: "Alavés", played: 5, win: 1, draw: 1, loss: 3, goalsFor: 3, goalsAgainst: 7, points: 4, logo: "https://upload.wikimedia.org/wikipedia/en/2/2e/Deportivo_Alaves_logo.svg" },
+                { rank: 15, team: "Las Palmas", played: 5, win: 0, draw: 3, loss: 2, goalsFor: 4, goalsAgainst: 8, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/7/77/UD_Las_Palmas_logo.svg" },
+                { rank: 16, team: "Getafe CF", played: 5, win: 0, draw: 3, loss: 2, goalsFor: 2, goalsAgainst: 6, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/4/4c/Getafe_CF_logo.svg" },
+                { rank: 17, team: "Espanyol", played: 5, win: 0, draw: 2, loss: 3, goalsFor: 3, goalsAgainst: 8, points: 2, logo: "https://upload.wikimedia.org/wikipedia/en/d/d6/Rcd_espanyol_logo.svg" },
+                { rank: 18, team: "Real Valladolid", played: 5, win: 0, draw: 2, loss: 3, goalsFor: 2, goalsAgainst: 9, points: 2, logo: "https://upload.wikimedia.org/wikipedia/en/6/6e/Real_Valladolid_Logo.svg" },
+                { rank: 19, team: "Leganés", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 1, goalsAgainst: 7, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/b/b8/Club_Deportivo_Legan%C3%A9s_logo.svg" },
+                { rank: 20, team: "Valencia CF", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 2, goalsAgainst: 9, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/c/ce/Valenciacf.svg" }
+            ],
+            femenino: [
+                { rank: 1, team: "FC Barcelona", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 25, goalsAgainst: 1, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/1200px-FC_Barcelona_%28crest%29.svg.png" },
+                { rank: 2, team: "Real Madrid", played: 5, win: 5, draw: 0, loss: 0, goalsFor: 18, goalsAgainst: 2, points: 15, logo: "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" },
+                { rank: 3, team: "Atlético Madrid", played: 5, win: 4, draw: 1, loss: 0, goalsFor: 12, goalsAgainst: 3, points: 13, logo: "https://upload.wikimedia.org/wikipedia/en/f/f4/Atletico_Madrid_2017_logo.svg" },
+                { rank: 4, team: "Levante UD", played: 5, win: 3, draw: 1, loss: 1, goalsFor: 10, goalsAgainst: 6, points: 10, logo: "https://upload.wikimedia.org/wikipedia/en/7/7b/Levante_Uni%C3%B3n_Deportiva_logo.svg" },
+                { rank: 5, team: "Madrid CFF", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 9, goalsAgainst: 8, points: 9, logo: "https://via.placeholder.com/24x24?text=M" },
+                { rank: 6, team: "Athletic Club", played: 5, win: 3, draw: 0, loss: 2, goalsFor: 7, goalsAgainst: 7, points: 9, logo: "https://upload.wikimedia.org/wikipedia/en/9/98/Club_Athletic_Bilbao_logo.svg" },
+                { rank: 7, team: "Real Sociedad", played: 5, win: 2, draw: 2, loss: 1, goalsFor: 8, goalsAgainst: 6, points: 8, logo: "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg" },
+                { rank: 8, team: "Sevilla FC", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 9, goalsAgainst: 10, points: 7, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/Sevilla_FC_logo.svg" },
+                { rank: 9, team: "UDG Tenerife", played: 5, win: 2, draw: 1, loss: 2, goalsFor: 5, goalsAgainst: 7, points: 7, logo: "https://via.placeholder.com/24x24?text=T" },
+                { rank: 10, team: "Valencia CF", played: 5, win: 2, draw: 0, loss: 3, goalsFor: 6, goalsAgainst: 12, points: 6, logo: "https://upload.wikimedia.org/wikipedia/en/c/ce/Valenciacf.svg" },
+                { rank: 11, team: "Real Betis", played: 5, win: 1, draw: 2, loss: 2, goalsFor: 4, goalsAgainst: 8, points: 5, logo: "https://upload.wikimedia.org/wikipedia/en/1/13/Real_betis_logo.svg" },
+                { rank: 12, team: "Levante Las Planas", played: 5, win: 1, draw: 1, loss: 3, goalsFor: 3, goalsAgainst: 9, points: 4, logo: "https://via.placeholder.com/24x24?text=L" },
+                { rank: 13, team: "Villarreal CF", played: 5, win: 1, draw: 0, loss: 4, goalsFor: 4, goalsAgainst: 11, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/7/70/Villarreal_CF_logo.svg" },
+                { rank: 14, team: "SD Eibar", played: 5, win: 1, draw: 0, loss: 4, goalsFor: 3, goalsAgainst: 10, points: 3, logo: "https://upload.wikimedia.org/wikipedia/en/3/3b/SD_Eibar_logo_2016.svg" },
+                { rank: 15, team: "Granada CF", played: 5, win: 0, draw: 1, loss: 4, goalsFor: 2, goalsAgainst: 13, points: 1, logo: "https://upload.wikimedia.org/wikipedia/en/d/d5/Logo_of_Granada_Club_de_F%C3%BAtbol.svg" },
+                { rank: 16, team: "Sporting Huelva", played: 5, win: 0, draw: 0, loss: 5, goalsFor: 2, goalsAgainst: 15, points: 0, logo: "https://via.placeholder.com/24x24?text=S" }
+            ]
+        };
+
         const TEAMS_CONFIG = {
             masculino: {
                 icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.3kq9cckrnlogidldtdie2fkbl.es-es.ics',
@@ -826,6 +930,8 @@
         let currentTimeFilter = 'all';
         let selectedCalendarFixture = null;
         let currentStatsOrder = 'desc';
+        let calendarViewMode = 'list'; // 'list' or 'month'
+        let currentCalendarDate = new Date(); // Tracks the month shown in calendar view
 
         // ==========================================
         // TEAM SELECTION & INIT
@@ -847,6 +953,8 @@
             // RESET FILTERS TO ENSURE CALENDAR SHOWS DATA IMMEDIATELY
             currentTimeFilter = 'all';
             currentCalendarFilter = '';
+            calendarViewMode = 'list';
+            currentCalendarDate = new Date();
             
             renderPlayers();
             // Force load calendar immediately
@@ -1146,7 +1254,8 @@
                         stats.yellowCards += (ps.yellowCards || 0);
                         stats.redCards += (ps.redCards || 0);
                         
-                        if (ps.rating) {
+                        // FIX: Ensure 0 is counted
+                        if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
                             stats.totalRating += parseFloat(ps.rating);
                             stats.ratingCount++;
                         }
@@ -1246,7 +1355,7 @@
                         stats.assists += ps.assists || 0;
                         stats.yellow += ps.yellowCards || 0;
                         stats.red += ps.redCards || 0;
-                        if (ps.rating) { stats.totalRating += ps.rating; stats.ratingCount++; }
+                        if (ps.rating !== null && ps.rating !== "") { stats.totalRating += ps.rating; stats.ratingCount++; }
                         if (m.outcome === 'victoria') stats.wins++;
                         else if (m.outcome === 'empate') stats.draws++;
                         else if (m.outcome === 'derrota') stats.losses++;
@@ -1285,6 +1394,7 @@
             if (tabName === 'nuevo') initNewMatchForm();
             if (tabName === 'partidos') renderMatches();
             if (tabName === 'stats') renderStats();
+            if (tabName === 'clasificacion') renderStandings();
         }
 
         // ==========================================
@@ -1392,7 +1502,11 @@
                     stats.minutes += ps.minutes || 0;
                     stats.yellowCards += ps.yellowCards || 0;
                     stats.redCards += ps.redCards || 0;
-                    if (ps.rating) { stats.totalRating += ps.rating; stats.ratingCount++; }
+                    // FIX: Ensure 0 is counted
+                    if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                        stats.totalRating += ps.rating;
+                        stats.ratingCount++;
+                    }
                     if (m.outcome === 'victoria') stats.wins++;
                 }
             });
@@ -1488,7 +1602,7 @@
                                           '<span class="starter-badge">Titular</span>' : 
                                           '<span class="sub-badge">Suplente</span>'}
                                     </td>
-                                    <td class="px-3 py-2 text-center font-bold ${getRatingColor(m.rating)}">${m.rating || '-'}</td>
+                                    <td class="px-3 py-2 text-center font-bold ${getRatingColor(m.rating)}">${m.rating !== null && m.rating !== undefined ? m.rating : '-'}</td>
                                     <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.goals || 0)}</td>
                                     <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.assists || 0)}</td>
                                     <td class="px-3 py-2 text-center text-gray-600">${isCoach ? '-' : (m.minutes || 0)}'</td>
@@ -1502,7 +1616,68 @@
         }
 
         // ==========================================
-        // CALENDAR FIXTURE SELECTION
+        // STANDINGS MOCK IMPLEMENTATION
+        // ==========================================
+        function renderStandings() {
+            const container = document.getElementById('standings-container');
+            const data = MOCK_STANDINGS[currentTeam];
+            
+            if (!data) {
+                container.innerHTML = '<div class="text-center py-12 text-gray-500">No hay datos de clasificación disponibles.</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="w-full text-left standings-table">
+                    <thead>
+                        <tr>
+                            <th class="standings-pos">#</th>
+                            <th>Equipo</th>
+                            <th class="text-center">PJ</th>
+                            <th class="text-center">V</th>
+                            <th class="text-center">E</th>
+                            <th class="text-center">D</th>
+                            <th class="text-center">GF</th>
+                            <th class="text-center">GC</th>
+                            <th class="text-center font-bold">PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map((row, index) => {
+                            let qualClass = "";
+                            if (index < 4) qualClass = "qual-ucl";
+                            else if (index < 6) qualClass = "qual-uel";
+                            else if (index >= data.length - 3) qualClass = "qual-relegation";
+
+                            return `
+                            <tr class="${qualClass} hover:bg-gray-50 ${row.team.includes('Real Madrid') ? 'bg-amber-50 font-medium' : ''}">
+                                <td class="standings-pos">${row.rank}</td>
+                                <td class="standings-team">
+                                    <img src="${row.logo}" class="team-logo-mini" onerror="this.src='https://via.placeholder.com/24x24?text=T'">
+                                    <span>${row.team}</span>
+                                </td>
+                                <td class="text-center">${row.played}</td>
+                                <td class="text-center text-green-600">${row.win}</td>
+                                <td class="text-center text-amber-600">${row.draw}</td>
+                                <td class="text-center text-red-600">${row.loss}</td>
+                                <td class="text-center">${row.goalsFor}</td>
+                                <td class="text-center">${row.goalsAgainst}</td>
+                                <td class="text-center font-bold text-slate-800">${row.points}</td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <div class="mt-4 text-xs text-gray-500 flex gap-4">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 inline-block"></span> Champions League / UWCL</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-400 inline-block"></span> Europa League</span>
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-500 inline-block"></span> Descenso</span>
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // CALENDAR FIXTURE SELECTION & DISPLAY
         // ==========================================
         
         function selectCalendarFixture(fixtureId) {
@@ -1798,10 +1973,14 @@
                     <div class="player-stats-inputs grid grid-cols-2 md:grid-cols-7 gap-2">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Rol</label>
+                            ${!isCoach ? `
                             <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
                                 <option value="true">Titular</option>
                                 <option value="false">Suplente</option>
                             </select>
+                            ` : `
+                            <span class="block text-xs text-gray-500 mt-1 font-semibold text-center">Staff</span>
+                            `}
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
@@ -1886,16 +2065,22 @@
             
             const statsContainer = document.getElementById('new-match-players-stats');
             const playerStats = [];
+            let starterCount = 0;
             
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
                 const played = row.querySelector('.player-played').checked;
                 if (played) {
                     const isCoach = row.querySelector('.stat-goals') === null;
                     const starterSelect = row.querySelector('.stat-starter');
+                    const isStarter = starterSelect ? (starterSelect.value === 'true') : false;
+
+                    if (!isCoach && isStarter) {
+                        starterCount++;
+                    }
                     
                     playerStats.push({
                         playerId: row.dataset.playerId,
-                        isStarter: starterSelect ? (starterSelect.value === 'true') : true,
+                        isStarter: isStarter,
                         rating: parseFloat(row.querySelector('.stat-rating').value) || null,
                         goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
                         assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
@@ -1905,6 +2090,12 @@
                     });
                 }
             });
+            
+            // Validate 11 Starters
+            if (starterCount !== 11) {
+                alert(`⚠️ Error de validación: Se han seleccionado ${starterCount} titulares. Deben ser exactamente 11 (sin contar al entrenador).`);
+                return;
+            }
             
             const mvp = calculateAutoMVP(playerStats);
             
@@ -2074,6 +2265,34 @@
             return 'visitante';
         }
         
+        function switchCalendarView(mode) {
+            calendarViewMode = mode;
+            document.getElementById('cal-view-list').className = mode === 'list' ? 
+                'px-3 py-1.5 text-sm rounded-md font-medium transition bg-slate-800 text-white' : 
+                'px-3 py-1.5 text-sm rounded-md font-medium transition text-gray-600 hover:bg-gray-100';
+            document.getElementById('cal-view-month').className = mode === 'month' ? 
+                'px-3 py-1.5 text-sm rounded-md font-medium transition bg-slate-800 text-white' : 
+                'px-3 py-1.5 text-sm rounded-md font-medium transition text-gray-600 hover:bg-gray-100';
+            
+            const timeFilters = document.getElementById('cal-time-filters');
+            const monthNav = document.getElementById('cal-month-nav');
+            
+            if (mode === 'list') {
+                timeFilters.classList.remove('hidden');
+                monthNav.classList.add('hidden');
+            } else {
+                timeFilters.classList.add('hidden');
+                monthNav.classList.remove('hidden');
+            }
+            
+            renderCalendar();
+        }
+        
+        function changeCalendarMonth(delta) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+            renderCalendar();
+        }
+
         function filterCalendar(comp) {
             currentCalendarFilter = comp;
             document.querySelectorAll('.cal-filter').forEach(btn => btn.classList.remove('bg-slate-800', 'text-white'));
@@ -2093,6 +2312,14 @@
         }
         
         function renderCalendar() {
+            if (calendarViewMode === 'list') {
+                renderCalendarList();
+            } else {
+                renderCalendarMonth();
+            }
+        }
+        
+        function renderCalendarList() {
             const container = document.getElementById('calendar-container');
             const now = new Date();
             now.setHours(23, 59, 59, 999);
@@ -2156,6 +2383,84 @@
                     </div>
                 `;
             }).join('');
+        }
+        
+        function renderCalendarMonth() {
+            const container = document.getElementById('calendar-container');
+            const matches = getData('matches');
+            const registeredEventIds = matches.map(m => m.calendarEventId);
+            
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            
+            document.getElementById('current-month-display').textContent = new Date(year, month).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            
+            // Start on Monday (adjust so Sunday is 6, Monday is 0)
+            let startDayOfWeek = firstDay.getDay() - 1;
+            if (startDayOfWeek < 0) startDayOfWeek = 6;
+            
+            const totalDays = lastDay.getDate();
+            
+            let gridHtml = `
+                <div class="calendar-grid bg-white rounded-xl overflow-hidden shadow-sm">
+                    <div class="calendar-day-header">LUN</div>
+                    <div class="calendar-day-header">MAR</div>
+                    <div class="calendar-day-header">MIE</div>
+                    <div class="calendar-day-header">JUE</div>
+                    <div class="calendar-day-header">VIE</div>
+                    <div class="calendar-day-header">SAB</div>
+                    <div class="calendar-day-header">DOM</div>
+            `;
+            
+            // Empty cells for days before start
+            for (let i = 0; i < startDayOfWeek; i++) {
+                gridHtml += `<div class="calendar-day other-month"></div>`;
+            }
+            
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            for (let day = 1; day <= totalDays; day++) {
+                const currentDate = new Date(year, month, day);
+                currentDate.setHours(0, 0, 0, 0);
+                
+                const isToday = currentDate.getTime() === now.getTime();
+                
+                // Find events for this day
+                const daysEvents = calendarEvents.filter(e => {
+                    const eDate = new Date(e.start);
+                    return eDate.getDate() === day && eDate.getMonth() === month && eDate.getFullYear() === year;
+                });
+                
+                let eventsHtml = '';
+                daysEvents.forEach(e => {
+                    const isRegistered = registeredEventIds.includes(e.id);
+                    const isPast = e.start <= new Date();
+                    
+                    let bgColor = 'bg-blue-100 text-blue-800';
+                    if (isRegistered) bgColor = 'bg-gray-200 text-gray-600 line-through';
+                    else if (isPast) bgColor = 'bg-green-100 text-green-800';
+                    
+                    const action = (isPast && !isRegistered) ? `onclick="selectCalendarFixture('${e.id}')"` : '';
+                    
+                    eventsHtml += `<div class="cal-event-dot ${bgColor}" ${action} title="${e.opponent}">
+                        ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
+                    </div>`;
+                });
+                
+                gridHtml += `
+                    <div class="calendar-day ${isToday ? 'today' : ''}">
+                        <span class="day-number">${day}</span>
+                        ${eventsHtml}
+                    </div>
+                `;
+            }
+            
+            gridHtml += '</div>';
+            container.innerHTML = gridHtml;
         }
 
         // ==========================================
@@ -2312,7 +2617,7 @@
                                         <td class="px-3 py-2 text-center">
                                             ${ps.isStarter === true || ps.isStarter === 'true' ? '<span class="starter-badge">T</span>' : '<span class="sub-badge">S</span>'}
                                         </td>
-                                        <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating || '-'}</td>
+                                        <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating !== null && ps.rating !== undefined ? ps.rating : '-'}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.goals || 0)}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.assists || 0)}</td>
                                         <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.minutes || 0)}</td>
@@ -2406,6 +2711,7 @@
                     </div>
                     <div>
                         <h4 class="font-semibold text-gray-800 mb-3">Estadísticas de Jugadores</h4>
+                        <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Deben seleccionarse exactamente 11 titulares (sin contar al entrenador).</div>
                         <div id="edit-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
                     </div>
                 </div>
@@ -2416,7 +2722,7 @@
                 const ps = match.playerStats.find(s => s.playerId === player.id);
                 const played = !!ps;
                 const isCoach = player.posicion === 'entrenador';
-                const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : true;
+                const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : false;
                 
                 return `
                     <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
@@ -2434,10 +2740,14 @@
                         <div class="player-stats-inputs grid grid-cols-2 md:grid-cols-7 gap-2" style="display: ${played ? 'grid' : 'none'}">
                              <div>
                                 <label class="block text-xs text-gray-500 mb-1">Rol</label>
+                                ${!isCoach ? `
                                 <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
                                     <option value="true" ${isStarter ? 'selected' : ''}>Titular</option>
                                     <option value="false" ${!isStarter ? 'selected' : ''}>Suplente</option>
                                 </select>
+                                ` : `
+                                <span class="block text-xs text-gray-500 mt-1 font-semibold text-center">Staff</span>
+                                `}
                             </div>
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1">Nota</label>
@@ -2491,15 +2801,22 @@
             const statsContainer = document.getElementById('edit-players-stats');
             
             const playerStats = [];
+            let starterCount = 0;
+
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
                 const played = row.querySelector('.player-played').checked;
                 if (played) {
                     const isCoach = row.querySelector('.stat-goals') === null;
                     const starterSelect = row.querySelector('.stat-starter');
+                    const isStarter = starterSelect ? (starterSelect.value === 'true') : false;
+
+                    if (!isCoach && isStarter) {
+                        starterCount++;
+                    }
 
                     playerStats.push({
                         playerId: row.dataset.playerId,
-                        isStarter: starterSelect ? (starterSelect.value === 'true') : true,
+                        isStarter: isStarter,
                         rating: parseFloat(row.querySelector('.stat-rating').value) || null,
                         goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
                         assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
@@ -2509,6 +2826,12 @@
                     });
                 }
             });
+            
+             // Validate 11 Starters
+             if (starterCount !== 11) {
+                alert(`⚠️ Error de validación: Se han seleccionado ${starterCount} titulares. Deben ser exactamente 11 (sin contar al entrenador).`);
+                return;
+            }
             
             const result = document.getElementById('edit-result').value.trim();
             
