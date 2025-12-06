@@ -67,6 +67,8 @@
         .readonly-input { background-color: #f3f4f6; color: #6b7280; cursor: not-allowed; }
         .welcome-card { transition: all 0.3s; cursor: pointer; }
         .welcome-card:hover { transform: scale(1.02); }
+        .starter-badge { background: #d1fae5; color: #065f46; border: 1px solid #34d399; font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; }
+        .sub-badge { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -77,7 +79,7 @@
             <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/1200px-Real_Madrid_CF.svg.png" 
                  alt="Real Madrid" class="w-24 h-24 object-contain mx-auto mb-4">
             <h1 class="text-3xl md:text-5xl font-bold mb-2">Notas Real Madrid</h1>
-            <p class="text-blue-200">Selecciona tu equipo para comenzar</p>
+            <p class="text-blue-200">Temporada 2025/2026</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
@@ -397,7 +399,7 @@
                 </div>
                 
                 <!-- Summary Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
                     <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 text-white">
                         <p class="text-slate-300 text-sm">Partidos</p>
                         <p id="stat-total-matches" class="text-3xl font-bold">0</p>
@@ -415,8 +417,12 @@
                         <p id="stat-losses" class="text-3xl font-bold">0</p>
                     </div>
                     <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white">
-                        <p class="text-emerald-100 text-sm">Goles</p>
+                        <p class="text-emerald-100 text-sm">Goles Favor</p>
                         <p id="stat-total-goals" class="text-3xl font-bold">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl p-4 text-white">
+                        <p class="text-rose-100 text-sm">Goles Contra</p>
+                        <p id="stat-total-goals-against" class="text-3xl font-bold">0</p>
                     </div>
                     <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
                         <p class="text-purple-100 text-sm">Asistencias</p>
@@ -504,7 +510,7 @@
 
     <!-- PLAYER DETAILS & STATS MODAL -->
     <div id="player-details-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl z-10">
                 <div class="flex justify-between items-center">
                     <h3 class="text-xl font-bold">Ficha de Jugador</h3>
@@ -593,6 +599,13 @@
         let PLANTILLA_ACTUAL = [];
         let COMPETICIONES_ACTUALES = {};
         
+        // Custom order for registration as requested
+        const CUSTOM_ORDER_MASCULINO = [
+            'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
+            'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
+            'p10b', 'p17', 'p44', 'p31'
+        ];
+
         const PLANTILLA_MASCULINO = [
             { id: "dt1", nombre: "Xabi", apellido: "Alonso", posicion: "entrenador", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "p1", nombre: "Thibaut", apellido: "Courtois", posicion: "portero", dorsal: 1, nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
@@ -622,7 +635,7 @@
             { id: "p23", nombre: "Ferland", apellido: "Mendy", posicion: "defensa", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "1995-06-08", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MENDY_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
             { id: "p24", nombre: "Dean", apellido: "Huijsen", posicion: "defensa", dorsal: 24, nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
             { id: "p30", nombre: "Franco", apellido: "Mastantuono", posicion: "extremo", dorsal: 30, nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p31", nombre: "Jacobo", apellido: "Ramón", posicion: "defensa", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
+            { id: "p31", nombre: "Jacobo", apellido: "Ramón", posicion: "defensa", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
             { id: "p44", nombre: "Víctor", apellido: "Muñoz", posicion: "extremo", dorsal: 44, nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
         ];
 
@@ -1060,18 +1073,38 @@
             }
 
             let totalWins = 0, totalDraws = 0, totalLosses = 0;
-            let totalGoals = 0, totalAssists = 0;
+            let totalGoalsFor = 0, totalGoalsAgainst = 0;
+            let totalAssists = 0;
             
             filteredMatches.forEach(m => {
                 if (m.outcome === 'victoria') totalWins++;
                 else if (m.outcome === 'empate') totalDraws++;
                 else if (m.outcome === 'derrota') totalLosses++;
+
+                if (m.result && m.result.includes('-')) {
+                    const parts = m.result.split('-').map(Number);
+                    if (m.venue === 'local') {
+                        totalGoalsFor += parts[0];
+                        totalGoalsAgainst += parts[1];
+                    } else if (m.venue === 'visitante') {
+                        totalGoalsFor += parts[1];
+                        totalGoalsAgainst += parts[0];
+                    } else { // Neutral
+                         // Default logic: Usually Us-Them is entered.
+                         // But input says 'local-visitante'. If neutral, we check the result input convention.
+                         // For now, assuming first number is Real Madrid.
+                         totalGoalsFor += parts[0]; 
+                         totalGoalsAgainst += parts[1];
+                    }
+                }
             });
             
             document.getElementById('stat-total-matches').textContent = filteredMatches.length;
             document.getElementById('stat-wins').textContent = totalWins;
             document.getElementById('stat-draws').textContent = totalDraws;
             document.getElementById('stat-losses').textContent = totalLosses;
+            document.getElementById('stat-total-goals').textContent = totalGoalsFor;
+            document.getElementById('stat-total-goals-against').textContent = totalGoalsAgainst;
 
             let filteredPlayers = [...players];
             if (statusFilter) {
@@ -1130,13 +1163,11 @@
                 stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
                 stats.ga = stats.goals + stats.assists;
 
-                totalGoals += stats.goals;
                 totalAssists += stats.assists;
                 
                 return stats;
             });
             
-            document.getElementById('stat-total-goals').textContent = totalGoals;
             document.getElementById('stat-total-assists').textContent = totalAssists;
 
             playerStats.sort((a, b) => {
@@ -1339,11 +1370,22 @@
             const content = document.getElementById('player-details-content');
             
             const matches = getData('matches');
+            const playerMatches = [];
             const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, yellowCards: 0, redCards: 0, totalRating: 0, ratingCount: 0, wins: 0 };
 
             matches.forEach(m => {
                 const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
                 if (ps) {
+                    playerMatches.push({
+                        date: m.date,
+                        opponent: m.opponent,
+                        competition: m.competition,
+                        venue: m.venue,
+                        result: m.result,
+                        outcome: m.outcome,
+                        ...ps
+                    });
+
                     stats.matchesPlayed++;
                     stats.goals += ps.goals || 0;
                     stats.assists += ps.assists || 0;
@@ -1355,7 +1397,10 @@
                 }
             });
 
-            const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(1) : '-';
+            // Sort matches newest first
+            playerMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
             const isCoach = player.posicion === 'entrenador';
 
             content.innerHTML = `
@@ -1375,7 +1420,7 @@
                     </div>
                 </div>
 
-                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Estadísticas de Temporada</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Estadísticas Generales</h3>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-gray-50 p-4 rounded-xl text-center">
@@ -1400,7 +1445,7 @@
                 </div>
 
                 ${!isCoach ? `
-                <div class="grid grid-cols-3 gap-4">
+                <div class="grid grid-cols-3 gap-4 mb-8">
                     <div class="bg-slate-800 text-white p-4 rounded-xl text-center">
                         <p class="text-slate-300 text-sm">Goles</p>
                         <p class="text-2xl font-bold">${stats.goals}</p>
@@ -1415,6 +1460,43 @@
                     </div>
                 </div>
                 ` : ''}
+
+                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Historial de Partidos</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-700 text-white">
+                            <tr>
+                                <th class="px-3 py-2 text-left">Fecha</th>
+                                <th class="px-3 py-2 text-left">Rival</th>
+                                <th class="px-3 py-2 text-left">Rol</th>
+                                <th class="px-3 py-2 text-center">Nota</th>
+                                <th class="px-3 py-2 text-center">G</th>
+                                <th class="px-3 py-2 text-center">A</th>
+                                <th class="px-3 py-2 text-center">Min</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${playerMatches.length > 0 ? playerMatches.map(m => `
+                                <tr class="border-t hover:bg-gray-50">
+                                    <td class="px-3 py-2 text-gray-600">${formatDate(m.date)}</td>
+                                    <td class="px-3 py-2">
+                                        <div class="font-medium">${m.opponent}</div>
+                                        <div class="text-xs text-gray-500">${m.competition}</div>
+                                    </td>
+                                    <td class="px-3 py-2">
+                                        ${m.isStarter === true || m.isStarter === 'true' ? 
+                                          '<span class="starter-badge">Titular</span>' : 
+                                          '<span class="sub-badge">Suplente</span>'}
+                                    </td>
+                                    <td class="px-3 py-2 text-center font-bold ${getRatingColor(m.rating)}">${m.rating || '-'}</td>
+                                    <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.goals || 0)}</td>
+                                    <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.assists || 0)}</td>
+                                    <td class="px-3 py-2 text-center text-gray-600">${isCoach ? '-' : (m.minutes || 0)}'</td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="7" class="px-3 py-4 text-center text-gray-500">No hay partidos registrados.</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
             `;
             modal.classList.add('active');
         }
@@ -1675,13 +1757,32 @@
 
         function renderPlayerStatsForm(containerId) {
             const container = document.getElementById(containerId);
-            const players = getActivePlayers().sort((a, b) => {
-                 if (a.posicion === 'entrenador') return -1;
-                 if (b.posicion === 'entrenador') return 1;
-                 return a.dorsal - b.dorsal;
-            });
+            let players = getActivePlayers();
             
-            container.innerHTML = players.map(player => `
+            // Use custom order for Men's team match registration
+            if (currentTeam === 'masculino') {
+                players.sort((a, b) => {
+                    const idxA = CUSTOM_ORDER_MASCULINO.indexOf(a.id);
+                    const idxB = CUSTOM_ORDER_MASCULINO.indexOf(b.id);
+                    // Handle players not in custom order list (append at end)
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            } else {
+                // Default sort for women
+                players.sort((a, b) => {
+                    if (a.posicion === 'entrenador') return -1;
+                    if (b.posicion === 'entrenador') return 1;
+                    return a.dorsal - b.dorsal;
+                });
+            }
+            
+            container.innerHTML = players.map(player => {
+                const isCoach = player.posicion === 'entrenador';
+                
+                return `
                 <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
                     <div class="flex items-center gap-3 mb-3">
                         <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
@@ -1691,25 +1792,32 @@
                         </div>
                         <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" class="player-played w-4 h-4 text-amber-600" checked>
-                            <span>Jugó</span>
+                            <span>Acta</span>
                         </label>
                     </div>
-                    <div class="player-stats-inputs grid grid-cols-3 md:grid-cols-6 gap-2">
+                    <div class="player-stats-inputs grid grid-cols-2 md:grid-cols-7 gap-2">
                         <div>
-                            <label class="block text-xs text-gray-500 mb-1">Nota (1-10)</label>
-                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="1" max="10" step="0.5" placeholder="–">
+                            <label class="block text-xs text-gray-500 mb-1">Rol</label>
+                            <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
+                                <option value="true">Titular</option>
+                                <option value="false">Suplente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
+                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" placeholder="–">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Goles</label>
-                            <input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">
+                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Asist.</label>
-                            <input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">
+                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Minutos</label>
-                            <input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">
+                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
                         </div>
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">🟨</label>
@@ -1721,7 +1829,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             
             container.querySelectorAll('.player-played').forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
@@ -1782,12 +1890,16 @@
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
                 const played = row.querySelector('.player-played').checked;
                 if (played) {
+                    const isCoach = row.querySelector('.stat-goals') === null;
+                    const starterSelect = row.querySelector('.stat-starter');
+                    
                     playerStats.push({
                         playerId: row.dataset.playerId,
+                        isStarter: starterSelect ? (starterSelect.value === 'true') : true,
                         rating: parseFloat(row.querySelector('.stat-rating').value) || null,
-                        goals: parseInt(row.querySelector('.stat-goals').value) || 0,
-                        assists: parseInt(row.querySelector('.stat-assists').value) || 0,
-                        minutes: parseInt(row.querySelector('.stat-minutes').value) || 0,
+                        goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
+                        assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
+                        minutes: isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0),
                         yellowCards: parseInt(row.querySelector('.stat-yellow').value) || 0,
                         redCards: parseInt(row.querySelector('.stat-red').value) || 0
                     });
@@ -1990,22 +2102,13 @@
             
             let events = [...calendarEvents];
             
-            // Only filter by competition if it's explicitly set by user, OR if the event is registered and we know its competition
-            // HOWEVER, unregistered events do NOT have competition info in current data model reliably until manual match.
-            // The calendar filters only work if we assume we can guess competition, but instructions say HIDE info if not registered.
-            
             if (currentCalendarFilter) {
-                // This is tricky. Unregistered events don't have competition property set reliably.
-                // We will rely on the property if set manually or try to match if registered.
-                // For now, simple filter
                  events = events.filter(e => {
                      const isReg = registeredEventIds.includes(e.id);
                      if (isReg) {
                          const m = matches.find(m => m.calendarEventId === e.id);
                          return m.competition === currentCalendarFilter;
                      }
-                     // If not registered, we hide it from specific filters to avoid confusion? 
-                     // Or show all? Let's show all for 'All', hide for specific if we can't tell.
                      return false; 
                  });
             }
@@ -2026,7 +2129,6 @@
                 const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
                 const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                 
-                // If registered, show real data. If not, show generic data.
                 const compName = isRegistered ? registeredMatch.competition : '';
                 const compClass = isRegistered ? COMPETICIONES_ACTUALES[registeredMatch.competition].color : '';
                 const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
@@ -2071,8 +2173,7 @@
             
             if (venue === 'local') return homeGoals > awayGoals ? 'victoria' : 'derrota';
             if (venue === 'visitante') return awayGoals > homeGoals ? 'victoria' : 'derrota';
-            // Neutral: assume Real Madrid is home for logic if not specified, but typically we need to know who is 'home' in the result string.
-            // Convention: Result is always Local-Visitor. If venue is neutral, we usually enter Us-Them.
+            
             return homeGoals > awayGoals ? 'victoria' : 'derrota';
         }
 
@@ -2159,6 +2260,9 @@
                                 <button onclick="viewMatchDetails('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                                     👁️ Ver
                                 </button>
+                                <button onclick="editMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
+                                    ✏️ Editar
+                                </button>
                                 <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
                                     🗑️
                                 </button>
@@ -2191,22 +2295,27 @@
                         <thead class="bg-slate-700 text-white">
                             <tr>
                                 <th class="px-3 py-2 text-left">Jugador</th>
-                                <th class="px-3 py-2">Nota</th>
-                                <th class="px-3 py-2">Goles</th>
-                                <th class="px-3 py-2">Asist</th>
-                                <th class="px-3 py-2">Min</th>
+                                <th class="px-3 py-2 text-center">Rol</th>
+                                <th class="px-3 py-2 text-center">Nota</th>
+                                <th class="px-3 py-2 text-center">Goles</th>
+                                <th class="px-3 py-2 text-center">Asist</th>
+                                <th class="px-3 py-2 text-center">Min</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${match.playerStats.map(ps => {
                                 const p = players.find(pl => pl.id === ps.playerId);
+                                const isCoach = p && p.posicion === 'entrenador';
                                 return `
                                     <tr class="border-t">
                                         <td class="px-3 py-2">${p ? p.nombre + ' ' + p.apellido : 'Unknown'}</td>
+                                        <td class="px-3 py-2 text-center">
+                                            ${ps.isStarter === true || ps.isStarter === 'true' ? '<span class="starter-badge">T</span>' : '<span class="sub-badge">S</span>'}
+                                        </td>
                                         <td class="px-3 py-2 text-center font-bold ${getRatingColor(ps.rating)}">${ps.rating || '-'}</td>
-                                        <td class="px-3 py-2 text-center">${ps.goals || 0}</td>
-                                        <td class="px-3 py-2 text-center">${ps.assists || 0}</td>
-                                        <td class="px-3 py-2 text-center">${ps.minutes || 0}</td>
+                                        <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.goals || 0)}</td>
+                                        <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.assists || 0)}</td>
+                                        <td class="px-3 py-2 text-center">${isCoach ? '-' : (ps.minutes || 0)}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -2215,10 +2324,6 @@
                 </div>
             `;
             modal.classList.add('active');
-        }
-        
-        function closeMatchDetailModal() {
-            document.getElementById('match-detail-modal').classList.remove('active');
         }
         
         function deleteMatch(matchId) {
@@ -2235,9 +2340,195 @@
             recalculateCompetitionState(compName);
             
             renderMatches();
-            // Refresh calendar and new match tab in case status changed
             renderCalendar(); 
         }
+
+        function editMatch(matchId) {
+            const matches = getData('matches');
+            const match = matches.find(m => m.id === matchId);
+            if (!match) return;
+            
+            const players = getActivePlayers();
+            // Sort by custom order if men's team
+             if (currentTeam === 'masculino') {
+                players.sort((a, b) => {
+                    const idxA = CUSTOM_ORDER_MASCULINO.indexOf(a.id);
+                    const idxB = CUSTOM_ORDER_MASCULINO.indexOf(b.id);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+            } else {
+                 players.sort((a, b) => {
+                    if (a.posicion === 'entrenador') return -1;
+                    if (b.posicion === 'entrenador') return 1;
+                    return a.dorsal - b.dorsal;
+                });
+            }
+
+            const modal = document.getElementById('edit-match-modal');
+            const subtitle = document.getElementById('edit-match-subtitle');
+            const content = document.getElementById('edit-match-content');
+            
+            document.getElementById('edit-match-id').value = match.id;
+            subtitle.textContent = `vs ${match.opponent} - ${match.round}`;
+            
+            content.innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Competición</label>
+                            <input type="text" value="${match.competition}" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Ronda</label>
+                            <input type="text" value="${match.round}" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                            <input type="date" id="edit-date" value="${match.date}" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Rival</label>
+                            <input type="text" id="edit-opponent" value="${match.opponent}" class="w-full px-3 py-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Resultado</label>
+                            <input type="text" id="edit-result" value="${match.result}" class="w-full px-3 py-2 border rounded-lg" pattern="^\\d+-\\d+$">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estadio</label>
+                        <input type="text" id="edit-stadium" value="${match.stadium}" class="w-full px-3 py-2 border rounded-lg">
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">Estadísticas de Jugadores</h4>
+                        <div id="edit-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                    </div>
+                </div>
+            `;
+            
+            const statsContainer = document.getElementById('edit-players-stats');
+            statsContainer.innerHTML = players.map(player => {
+                const ps = match.playerStats.find(s => s.playerId === player.id);
+                const played = !!ps;
+                const isCoach = player.posicion === 'entrenador';
+                const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : true;
+                
+                return `
+                    <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
+                            <div class="flex-1">
+                                <span class="font-medium text-gray-800">${player.nombre} ${player.apellido}</span>
+                                <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                            </div>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="checkbox" class="player-played w-4 h-4 text-amber-600" ${played ? 'checked' : ''}>
+                                <span>Jugó</span>
+                            </label>
+                        </div>
+                        <div class="player-stats-inputs grid grid-cols-2 md:grid-cols-7 gap-2" style="display: ${played ? 'grid' : 'none'}">
+                             <div>
+                                <label class="block text-xs text-gray-500 mb-1">Rol</label>
+                                <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
+                                    <option value="true" ${isStarter ? 'selected' : ''}>Titular</option>
+                                    <option value="false" ${!isStarter ? 'selected' : ''}>Suplente</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Nota</label>
+                                <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating || ''}" placeholder="–">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Goles</label>
+                                ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.goals || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Asist.</label>
+                                ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.assists || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Minutos</label>
+                                ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="${ps?.minutes || 90}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">🟨</label>
+                                <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="${ps?.yellowCards || 0}">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">🟥</label>
+                                <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="${ps?.redCards || 0}">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            statsContainer.querySelectorAll('.player-played').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const statsInputs = this.closest('[data-player-id]').querySelector('.player-stats-inputs');
+                    statsInputs.style.display = this.checked ? 'grid' : 'none';
+                });
+            });
+            
+            modal.classList.add('active');
+        }
+
+        document.getElementById('edit-match-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const matchId = document.getElementById('edit-match-id').value;
+            const matches = getData('matches');
+            const matchIndex = matches.findIndex(m => m.id === matchId);
+            
+            if (matchIndex === -1) return;
+            
+            const match = matches[matchIndex];
+            const statsContainer = document.getElementById('edit-players-stats');
+            
+            const playerStats = [];
+            statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+                const played = row.querySelector('.player-played').checked;
+                if (played) {
+                    const isCoach = row.querySelector('.stat-goals') === null;
+                    const starterSelect = row.querySelector('.stat-starter');
+
+                    playerStats.push({
+                        playerId: row.dataset.playerId,
+                        isStarter: starterSelect ? (starterSelect.value === 'true') : true,
+                        rating: parseFloat(row.querySelector('.stat-rating').value) || null,
+                        goals: isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0),
+                        assists: isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0),
+                        minutes: isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0),
+                        yellowCards: parseInt(row.querySelector('.stat-yellow').value) || 0,
+                        redCards: parseInt(row.querySelector('.stat-red').value) || 0
+                    });
+                }
+            });
+            
+            const result = document.getElementById('edit-result').value.trim();
+            
+            matches[matchIndex] = {
+                ...match,
+                date: document.getElementById('edit-date').value,
+                opponent: document.getElementById('edit-opponent').value,
+                stadium: document.getElementById('edit-stadium').value,
+                result: result,
+                outcome: calculateMatchOutcome(result, match.venue),
+                mvp: calculateAutoMVP(playerStats),
+                playerStats: playerStats
+            };
+            
+            saveData('matches', matches);
+            closeEditMatchModal();
+            renderMatches();
+            renderStats(); // Refresh stats
+        });
+
         
         function closeEditMatchModal() {
             document.getElementById('edit-match-modal').classList.remove('active');
