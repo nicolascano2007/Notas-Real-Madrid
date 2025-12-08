@@ -42,6 +42,7 @@
         table { min-width: 1000px; }
         .sortable { cursor: pointer; user-select: none; }
         .sortable:hover { background: #374151; }
+        .th-active { background-color: #4b5563 !important; color: #fbbf24 !important; }
         
         .result-win { background: #d1fae5; color: #065f46; }
         .result-draw { background: #fef3c7; color: #92400e; }
@@ -128,6 +129,38 @@
         .streak-w { background-color: #22c55e; }
         .streak-d { background-color: #9ca3af; }
         .streak-l { background-color: #ef4444; }
+
+        /* Heatmap Styles */
+        .heatmap-pitch {
+            background-color: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            position: relative;
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+        }
+        .heatmap-zone {
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            flex: 1;
+            margin: 2px;
+        }
+        .heatmap-val { font-size: 1.5rem; font-weight: bold; }
+        .heatmap-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* Stats Sub-tabs */
+        .stats-subtab { @apply px-4 py-2 text-sm font-medium rounded-lg transition-colors; }
+        .stats-subtab.active { @apply bg-slate-800 text-white; }
+        .stats-subtab.inactive { @apply bg-gray-100 text-gray-600 hover:bg-gray-200; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -424,7 +457,7 @@
                                     <button type="button" onclick="goToStep1()" class="text-sm text-blue-600 hover:underline">⬅️ Volver a Datos</button>
                                 </div>
 
-                                <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Deben seleccionarse exactamente 11 titulares (sin contar al entrenador).</div>
+                                <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Selecciona "Titular" o "Suplente" para habilitar las estadísticas.</div>
                                 <div id="new-match-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
                                 
                                 <div class="flex gap-3 pt-4 border-t mt-4">
@@ -510,11 +543,13 @@
 
             <!-- STATS SECTION -->
             <section id="section-stats" class="hidden fade-in">
-                <div class="flex justify-between items-center mb-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">Estadísticas</h2>
-                    <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
-                        📥 Exportar CSV
-                    </button>
+                    <div class="flex gap-2">
+                         <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab active">General</button>
+                         <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab inactive">Avanzado</button>
+                         <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">H2H (Rival)</button>
+                    </div>
                 </div>
                 
                 <!-- NEW: Team Streak & Top Form -->
@@ -533,112 +568,157 @@
                     </div>
                 </div>
                 
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
-                    <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 text-white">
-                        <p class="text-slate-300 text-sm">Partidos</p>
-                        <p id="stat-total-matches" class="text-3xl font-bold">0</p>
+                <!-- SUB-SECTION: GENERAL -->
+                <div id="stats-general" class="fade-in">
+                    <div class="flex justify-end mb-4">
+                        <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                            📥 Exportar CSV
+                        </button>
                     </div>
-                    <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
-                        <p class="text-green-100 text-sm">Victorias</p>
-                        <p id="stat-wins" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
-                        <p class="text-amber-100 text-sm">Empates</p>
-                        <p id="stat-draws" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white">
-                        <p class="text-red-100 text-sm">Derrotas</p>
-                        <p id="stat-losses" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white">
-                        <p class="text-emerald-100 text-sm">Goles Favor</p>
-                        <p id="stat-total-goals" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl p-4 text-white">
-                        <p class="text-rose-100 text-sm">Goles Contra</p>
-                        <p id="stat-total-goals-against" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
-                        <p class="text-purple-100 text-sm">Asistencias</p>
-                        <p id="stat-total-assists" class="text-3xl font-bold">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-4 text-white">
-                        <p class="text-indigo-100 text-sm">Jugadores</p>
-                        <p id="stat-total-players" class="text-3xl font-bold">0</p>
-                    </div>
-                </div>
 
-                <!-- Stats Filters -->
-                <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Competición</label>
-                            <select id="stats-filter-competition" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Todas las competiciones</option>
-                            </select>
+                    <!-- Summary Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
+                        <div class="bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-4 text-white">
+                            <p class="text-slate-300 text-sm">Partidos</p>
+                            <p id="stat-total-matches" class="text-3xl font-bold">0</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Jugador</label>
-                            <select id="stats-filter-status" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
-                                <option value="">Todos</option>
-                                <option value="Activo">Solo Activos</option>
-                                <option value="Inactivo">Solo Inactivos</option>
-                            </select>
+                        <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-4 text-white">
+                            <p class="text-green-100 text-sm">Victorias</p>
+                            <p id="stat-wins" class="text-3xl font-bold">0</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
-                            <div class="flex gap-2">
-                                <select id="stats-sort" onchange="renderStats()" class="flex-1 px-3 py-2 border rounded-lg">
-                                    <option value="matchesPlayed">Partidos Jugados</option>
-                                    <option value="avgRating">Nota Media</option>
-                                    <option value="goals">Goles</option>
-                                    <option value="assists">Asistencias</option>
-                                    <option value="ga">Goles + Asist (G/A)</option>
-                                    <option value="minutes">Minutos</option>
-                                    <option value="mvpCount">MVP</option>
-                                    <option value="wins">Victorias</option>
-                                    <option value="number">Dorsal</option>
+                        <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-4 text-white">
+                            <p class="text-amber-100 text-sm">Empates</p>
+                            <p id="stat-draws" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-4 text-white">
+                            <p class="text-red-100 text-sm">Derrotas</p>
+                            <p id="stat-losses" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-4 text-white">
+                            <p class="text-emerald-100 text-sm">Goles Favor</p>
+                            <p id="stat-total-goals" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl p-4 text-white">
+                            <p class="text-rose-100 text-sm">Goles Contra</p>
+                            <p id="stat-total-goals-against" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4 text-white">
+                            <p class="text-purple-100 text-sm">Asistencias</p>
+                            <p id="stat-total-assists" class="text-3xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl p-4 text-white">
+                            <p class="text-indigo-100 text-sm">Jugadores</p>
+                            <p id="stat-total-players" class="text-3xl font-bold">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats Filters -->
+                    <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Competición</label>
+                                <select id="stats-filter-competition" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Todas las competiciones</option>
                                 </select>
-                                <button id="stats-order-toggle" onclick="toggleStatsOrder()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-bold w-12" title="Cambiar orden (Ascendente/Descendente)">
-                                    ⬇️
-                                </button>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Jugador</label>
+                                <select id="stats-filter-status" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                    <option value="">Todos</option>
+                                    <option value="Activo">Solo Activos</option>
+                                    <option value="Inactivo">Solo Inactivos</option>
+                                </select>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Stats Table -->
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-4 border-b bg-slate-800 text-white">
+                            <h3 class="font-semibold">Rendimiento Individual</h3>
+                            <p class="text-xs text-slate-300 mt-1">Haz clic en los encabezados para ordenar.</p>
+                        </div>
+                        <div class="table-container">
+                            <table class="w-full">
+                                <thead class="bg-slate-700 text-white">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Jugador</th>
+                                        <th id="th-matchesPlayed" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('matchesPlayed')">PJ</th>
+                                        <th id="th-avgRating" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('avgRating')">Nota</th>
+                                        <th id="th-goals" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('goals')">Gol</th>
+                                        <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')">Asist</th>
+                                        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-600 sortable" onclick="handleSort('ga')">G/A</th>
+                                        <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('minutes')">Min</th>
+                                        <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')">MVP</th>
+                                        <th id="th-wins" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('wins')">V</th>
+                                        <th id="th-draws" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('draws')">E</th>
+                                        <th id="th-losses" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('losses')">D</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟨</th>
+                                        <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟥</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stats-table-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="no-stats" class="hidden text-center py-8 text-gray-500">
+                            No hay estadísticas disponibles.
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Stats Table -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="p-4 border-b bg-slate-800 text-white">
-                        <h3 class="font-semibold">Rendimiento Individual</h3>
+                <!-- SUB-SECTION: ADVANCED -->
+                <div id="stats-advanced" class="hidden fade-in space-y-6">
+                    <!-- Home vs Away Comparison -->
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Rendimiento: Casa vs Fuera</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="home-away-stats-container">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
-                    <div class="table-container">
-                        <table class="w-full">
-                            <thead class="bg-slate-700 text-white">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Jugador</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('matchesPlayed')">PJ</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('avgRating')">Nota</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('goals')">Gol</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('assists')">Asist</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-600 cursor-pointer" onclick="setSort('ga')">G/A</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('minutes')">Min</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('mvpCount')">MVP</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('wins')">V</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('draws')">E</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase cursor-pointer" onclick="setSort('losses')">D</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟨</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase">🟥</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stats-table-body"></tbody>
-                        </table>
+
+                    <!-- Heatmap by Position -->
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Mapa de Rendimiento (Nota Media)</h3>
+                        <div class="heatmap-pitch" id="heatmap-container">
+                             <!-- Populated by JS -->
+                        </div>
                     </div>
-                    <div id="no-stats" class="hidden text-center py-8 text-gray-500">
-                        No hay estadísticas disponibles.
+
+                    <!-- Monthly Report -->
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Reporte Mensual</h3>
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                             <table class="w-full text-sm">
+                                <thead class="bg-slate-700 text-white">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Mes</th>
+                                        <th class="px-4 py-2 text-center">Partidos</th>
+                                        <th class="px-4 py-2 text-center">V-E-D</th>
+                                        <th class="px-4 py-2 text-center">GF / GC</th>
+                                        <th class="px-4 py-2 text-center">Nota Media Equipo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monthly-report-body">
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+
+                <!-- SUB-SECTION: H2H -->
+                <div id="stats-h2h" class="hidden fade-in">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Historial contra Rival (Head to Head)</h3>
+                    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un rival histórico</label>
+                        <select id="h2h-opponent-select" onchange="renderH2H()" class="w-full px-3 py-2 border rounded-lg">
+                            <option value="">Selecciona rival...</option>
+                        </select>
+                    </div>
+                    <div id="h2h-content" class="hidden space-y-6">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
@@ -971,9 +1051,12 @@
         let currentTimeFilter = 'all';
         let hideRegisteredMatches = false;
         let selectedCalendarFixture = null;
-        let currentStatsOrder = 'desc';
         let calendarViewMode = 'list'; // 'list' or 'month'
         let currentCalendarDate = new Date(); // Tracks the month shown in calendar view
+        
+        // Sorting State
+        let currentSortColumn = 'matchesPlayed';
+        let currentSortOrder = 'desc'; // 'asc' or 'desc'
 
         // ==========================================
         // TEAM SELECTION & INIT
@@ -1006,6 +1089,7 @@
             renderPlayers();
             populateComparatorSelects();
             populateCompetitionSelect();
+            populateH2HOpponents(); // NEW H2H
             showTab('plantilla');
 
             // Force load calendar immediately after setup
@@ -1205,14 +1289,34 @@
         // STATISTICS
         // ==========================================
 
-        function toggleStatsOrder() {
-            currentStatsOrder = currentStatsOrder === 'desc' ? 'asc' : 'desc';
-            document.getElementById('stats-order-toggle').innerText = currentStatsOrder === 'desc' ? '⬇️' : '⬆️';
-            renderStats();
+        function switchStatsTab(tab) {
+            document.querySelectorAll('.stats-subtab').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('inactive');
+            });
+            document.getElementById(`btn-stats-${tab}`).classList.add('active');
+            document.getElementById(`btn-stats-${tab}`).classList.remove('inactive');
+
+            document.getElementById('stats-general').classList.add('hidden');
+            document.getElementById('stats-advanced').classList.add('hidden');
+            document.getElementById('stats-h2h').classList.add('hidden');
+
+            document.getElementById(`stats-${tab}`).classList.remove('hidden');
+
+            if (tab === 'advanced') {
+                renderAdvancedStats();
+            } else if (tab === 'h2h') {
+                populateH2HOpponents();
+            }
         }
 
-        function setSort(field) {
-            document.getElementById('stats-sort').value = field;
+        function handleSort(column) {
+            if (currentSortColumn === column) {
+                currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+            } else {
+                currentSortColumn = column;
+                currentSortOrder = 'desc'; // Default to desc for new columns (usually higher is better)
+            }
             renderStats();
         }
 
@@ -1222,8 +1326,18 @@
             
             const competitionFilter = document.getElementById('stats-filter-competition').value;
             const statusFilter = document.getElementById('stats-filter-status').value;
-            const sortField = document.getElementById('stats-sort').value;
             
+            // Update Headers Visuals
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('th-active');
+                th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
+            });
+            const activeTh = document.getElementById(`th-${currentSortColumn}`);
+            if (activeTh) {
+                activeTh.classList.add('th-active');
+                activeTh.innerHTML += currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+            }
+
             let filteredMatches = matches;
             if (competitionFilter) {
                 filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
@@ -1245,7 +1359,7 @@
                 streakContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin partidos jugados</span>';
             }
 
-            // Global Stats
+            // Global Stats Calculation
             let totalWins = 0, totalDraws = 0, totalLosses = 0;
             let totalGoalsFor = 0, totalGoalsAgainst = 0;
             let totalAssists = 0;
@@ -1281,7 +1395,10 @@
             if (statusFilter) {
                 filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
             }
-            document.getElementById('stat-total-players').textContent = filteredPlayers.length;
+            
+            // EXCLUDE COACH FROM COUNT
+            const playerOnlyCount = filteredPlayers.filter(p => p.posicion !== 'entrenador').length;
+            document.getElementById('stat-total-players').textContent = playerOnlyCount;
 
             const playerStats = filteredPlayers.map(player => {
                 const stats = {
@@ -1307,7 +1424,6 @@
                     last5Ratings: [] // For top form calc
                 };
                 
-                // Matches sorted by date desc for 'last 5' logic
                 const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
 
                 playerMatchesSorted.forEach(match => {
@@ -1341,7 +1457,6 @@
                 stats.ga = stats.goals + stats.assists;
 
                 totalAssists += stats.assists;
-                
                 return stats;
             });
             
@@ -1380,18 +1495,18 @@
                 if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
                 if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
 
-                let valA = a[sortField];
-                let valB = b[sortField];
+                let valA = a[currentSortColumn];
+                let valB = b[currentSortColumn];
                 
-                if (sortField === 'avgRating') {
+                if (currentSortColumn === 'avgRating') {
                     valA = valA === '-' ? -1 : parseFloat(valA);
                     valB = valB === '-' ? -1 : parseFloat(valB);
                 }
                 
-                if(sortField === 'number' && valA === 'DT') valA = -1;
-                if(sortField === 'number' && valB === 'DT') valB = -1;
+                if(currentSortColumn === 'number' && valA === 'DT') valA = -1;
+                if(currentSortColumn === 'number' && valB === 'DT') valB = -1;
 
-                return currentStatsOrder === 'asc' ? valA - valB : valB - valA;
+                return currentSortOrder === 'asc' ? valA - valB : valB - valA;
             });
 
             const tableBody = document.getElementById('stats-table-body');
@@ -1405,7 +1520,6 @@
             
             noStats.classList.add('hidden');
             tableBody.innerHTML = playerStats.map(stats => {
-                // Check if the player is a Coach
                 const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
                 
                 return `
@@ -1436,6 +1550,231 @@
                     <td class="px-4 py-3 text-center">${stats.redCards > 0 ? `<span class="text-red-600 font-medium">${stats.redCards}</span>` : '-'}</td>
                 </tr>
             `}).join('');
+        }
+
+        // ==========================================
+        // ADVANCED STATISTICS
+        // ==========================================
+
+        function renderAdvancedStats() {
+            const matches = getData('matches');
+            const players = getPlayers();
+
+            // 1. Home vs Away
+            let homeStats = { wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, count: 0 };
+            let awayStats = { wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, count: 0 };
+
+            matches.forEach(m => {
+                const parts = m.result.split('-').map(Number);
+                const isHome = m.venue === 'local';
+                const stats = isHome ? homeStats : awayStats;
+                
+                // Treat neutral as away for simplicity or ignore? Let's treat as away for now or ignore.
+                // Requirement says Home vs Away. Neutral fits neither perfectly but Away is closer logically (travel).
+                if (m.venue === 'neutral') return;
+
+                stats.count++;
+                if (m.outcome === 'victoria') stats.wins++;
+                else if (m.outcome === 'empate') stats.draws++;
+                else stats.losses++;
+
+                if (isHome) { stats.gf += parts[0]; stats.ga += parts[1]; }
+                else { stats.gf += parts[1]; stats.ga += parts[0]; }
+            });
+
+            document.getElementById('home-away-stats-container').innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <h4 class="font-bold text-blue-800 mb-2">🏠 En Casa</h4>
+                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                        <div><p class="text-gray-500">PJ</p><p class="font-bold">${homeStats.count}</p></div>
+                        <div><p class="text-gray-500">V-E-D</p><p class="font-bold">${homeStats.wins}-${homeStats.draws}-${homeStats.losses}</p></div>
+                        <div><p class="text-gray-500">GF/GC</p><p class="font-bold">${homeStats.gf}/${homeStats.ga}</p></div>
+                    </div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                    <h4 class="font-bold text-purple-800 mb-2">✈️ Fuera de Casa</h4>
+                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                        <div><p class="text-gray-500">PJ</p><p class="font-bold">${awayStats.count}</p></div>
+                        <div><p class="text-gray-500">V-E-D</p><p class="font-bold">${awayStats.wins}-${awayStats.draws}-${awayStats.losses}</p></div>
+                        <div><p class="text-gray-500">GF/GC</p><p class="font-bold">${awayStats.gf}/${awayStats.ga}</p></div>
+                    </div>
+                </div>
+            `;
+
+            // 2. Heatmap
+            const zones = {
+                'delantero': { total: 0, count: 0, label: 'Delantera', color: 'red' },
+                'centrocampista': { total: 0, count: 0, label: 'Medio', color: 'green' },
+                'defensa': { total: 0, count: 0, label: 'Defensa', color: 'blue' }
+            };
+
+            matches.forEach(m => {
+                m.playerStats.forEach(ps => {
+                    const p = players.find(pl => pl.id === ps.playerId);
+                    if (p && zones[p.posicion] && ps.rating) {
+                        zones[p.posicion].total += parseFloat(ps.rating);
+                        zones[p.posicion].count++;
+                    }
+                });
+            });
+
+            const getHeatColor = (avg) => {
+                if (avg >= 8) return 'bg-emerald-600';
+                if (avg >= 7) return 'bg-emerald-500';
+                if (avg >= 6) return 'bg-yellow-500';
+                return 'bg-red-500';
+            };
+
+            let heatmapHtml = '';
+            ['delantero', 'centrocampista', 'defensa'].forEach(pos => {
+                const z = zones[pos];
+                const avg = z.count > 0 ? (z.total / z.count).toFixed(2) : '-';
+                const colorClass = z.count > 0 ? getHeatColor(parseFloat(avg)) : 'bg-gray-400';
+                heatmapHtml += `
+                    <div class="heatmap-zone ${colorClass}">
+                        <span class="heatmap-val">${avg}</span>
+                        <span class="heatmap-label">${z.label}</span>
+                    </div>
+                `;
+            });
+            document.getElementById('heatmap-container').innerHTML = heatmapHtml;
+
+            // 3. Monthly Report
+            const monthlyData = {};
+            matches.forEach(m => {
+                const date = new Date(m.date);
+                const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyData[key]) monthlyData[key] = { matches: [], wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, totalRating: 0, ratingCount: 0 };
+                
+                const md = monthlyData[key];
+                md.matches.push(m);
+                if (m.outcome === 'victoria') md.wins++;
+                else if (m.outcome === 'empate') md.draws++;
+                else md.losses++;
+
+                const parts = m.result.split('-').map(Number);
+                if(m.venue === 'local') { md.gf += parts[0]; md.ga += parts[1]; }
+                else if(m.venue === 'visitante') { md.gf += parts[1]; md.ga += parts[0]; }
+                else { md.gf += parts[0]; md.ga += parts[1]; }
+
+                m.playerStats.forEach(ps => {
+                    if (ps.rating) { md.totalRating += parseFloat(ps.rating); md.ratingCount++; }
+                });
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort().reverse();
+            document.getElementById('monthly-report-body').innerHTML = sortedMonths.map(key => {
+                const d = monthlyData[key];
+                const monthName = new Date(key + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                const avg = d.ratingCount > 0 ? (d.totalRating / d.ratingCount).toFixed(2) : '-';
+                return `
+                    <tr class="border-t">
+                        <td class="px-4 py-2 capitalize font-medium">${monthName}</td>
+                        <td class="px-4 py-2 text-center">${d.matches.length}</td>
+                        <td class="px-4 py-2 text-center">${d.wins}-${d.draws}-${d.losses}</td>
+                        <td class="px-4 py-2 text-center">${d.gf} / ${d.ga}</td>
+                        <td class="px-4 py-2 text-center font-bold ${getRatingColor(avg)}">${avg}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // H2H STATISTICS
+        // ==========================================
+
+        function populateH2HOpponents() {
+            const matches = getData('matches');
+            const opponents = [...new Set(matches.map(m => m.opponent))].sort();
+            const select = document.getElementById('h2h-opponent-select');
+            select.innerHTML = '<option value="">Selecciona rival...</option>' + 
+                opponents.map(op => `<option value="${op}">${op}</option>`).join('');
+        }
+
+        function renderH2H() {
+            const opponent = document.getElementById('h2h-opponent-select').value;
+            const container = document.getElementById('h2h-content');
+            
+            if (!opponent) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const matches = getData('matches').filter(m => m.opponent === opponent);
+            const players = getPlayers();
+
+            let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+            const playerPerfs = {};
+
+            matches.forEach(m => {
+                if (m.outcome === 'victoria') wins++;
+                else if (m.outcome === 'empate') draws++;
+                else losses++;
+
+                const parts = m.result.split('-').map(Number);
+                if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
+                else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
+                else { gf += parts[0]; ga += parts[1]; }
+
+                m.playerStats.forEach(ps => {
+                    if (!playerPerfs[ps.playerId]) playerPerfs[ps.playerId] = { goals: 0, rating: 0, count: 0, name: '' };
+                    const pp = playerPerfs[ps.playerId];
+                    pp.goals += ps.goals || 0;
+                    if (ps.rating) { pp.rating += parseFloat(ps.rating); pp.count++; }
+                });
+            });
+
+            // Find top scorer & best rating against this opponent
+            let topScorer = { id: null, val: -1 };
+            let bestRated = { id: null, val: -1 };
+
+            Object.entries(playerPerfs).forEach(([pid, data]) => {
+                if (data.goals > topScorer.val) topScorer = { id: pid, val: data.goals };
+                const avg = data.count > 0 ? data.rating / data.count : 0;
+                if (avg > bestRated.val && data.count > 0) bestRated = { id: pid, val: avg };
+            });
+
+            const scorerP = topScorer.id ? players.find(p => p.id === topScorer.id) : null;
+            const ratedP = bestRated.id ? players.find(p => p.id === bestRated.id) : null;
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-800 text-white p-4 rounded-xl text-center">
+                        <p class="text-slate-400 text-sm">Balance</p>
+                        <p class="text-2xl font-bold">${wins}V - ${draws}E - ${losses}D</p>
+                        <p class="text-xs text-slate-400 mt-1">${gf} Goles Favor - ${ga} Contra</p>
+                    </div>
+                    ${scorerP ? `
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3">
+                        <img src="${scorerP.foto}" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-bold">Goleador</p>
+                            <p class="font-bold text-gray-800">${scorerP.nombre}</p>
+                            <p class="text-sm text-green-600 font-bold">${topScorer.val} Goles</p>
+                        </div>
+                    </div>` : ''}
+                    ${ratedP ? `
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3">
+                        <img src="${ratedP.foto}" class="w-12 h-12 rounded-full object-cover">
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase font-bold">Mejor Valoración</p>
+                            <p class="font-bold text-gray-800">${ratedP.nombre}</p>
+                            <p class="text-sm text-blue-600 font-bold">${bestRated.val.toFixed(2)} Nota Media</p>
+                        </div>
+                    </div>` : ''}
+                </div>
+                
+                <h4 class="font-bold text-gray-800 mt-4">Partidos jugados</h4>
+                <div class="space-y-2">
+                    ${matches.map(m => `
+                        <div class="bg-gray-50 p-3 rounded-lg flex justify-between items-center text-sm">
+                            <span>${formatDate(m.date)} (${m.competition})</span>
+                            <span class="font-bold ${getResultClass(m.outcome).replace('bg-', 'text-')}">${m.venue === 'local' ? 'Local' : 'Visitante'}: ${m.result}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            container.classList.remove('hidden');
         }
         
         function exportStats() {
@@ -2182,25 +2521,25 @@
                             <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
                             ${isSuspended ? '<span class="text-xs text-red-600 font-bold ml-2">⛔ SUSPENDIDO (Roja directa)</span>' : ''}
                         </div>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="checkbox" class="player-played w-4 h-4 text-amber-600" ${isSuspended ? 'disabled' : ''}>
-                            <span>Jugó</span>
-                        </label>
+                        
+                         <!-- NEW CHECKBOXES: STARTER / SUB (Mutually Exclusive) -->
+                         ${!isCoach ? `
+                         <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${isSuspended ? 'disabled' : ''}>
+                            <span>Titular</span>
+                         </label>
+                         <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${isSuspended ? 'disabled' : ''}>
+                            <span>Suplente</span>
+                         </label>
+                         ` : `
+                         <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
+                         `}
+
                     </div>
                     
-                    <!-- Stats Section (Hidden/Shown based on Played) -->
-                    <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-5 gap-2" style="display: none;">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Rol</label>
-                            ${!isCoach ? `
-                            <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
-                                <option value="true">Titular</option>
-                                <option value="false" selected>Suplente</option>
-                            </select>
-                            ` : `
-                            <span class="block text-xs text-gray-500 mt-1 font-semibold text-center">Staff</span>
-                            `}
-                        </div>
+                    <!-- Stats Section (Hidden/Shown based on participation) -->
+                    <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="${isCoach ? 'display:grid' : 'display:none'}">
                         <div>
                             <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
                             <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" placeholder="–">
@@ -2232,15 +2571,25 @@
                     </div>
                 </div>
             `}).join('');
-            
-            container.querySelectorAll('.player-played').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const statsInputs = this.closest('[data-player-id]').querySelector('.player-performance-inputs');
-                    statsInputs.style.display = this.checked ? 'grid' : 'none';
-                });
-            });
         }
         
+        // Handles mutual exclusion for Starter/Sub checkboxes
+        function handleRoleCheck(checkbox, role) {
+            const container = checkbox.closest('[data-player-id]');
+            const starterChk = container.querySelector('.chk-starter');
+            const subChk = container.querySelector('.chk-sub');
+            const inputs = container.querySelector('.player-performance-inputs');
+            
+            if (role === 'starter' && checkbox.checked) {
+                subChk.checked = false;
+            } else if (role === 'sub' && checkbox.checked) {
+                starterChk.checked = false;
+            }
+            
+            // Show inputs if either is checked
+            inputs.style.display = (starterChk.checked || subChk.checked) ? 'grid' : 'none';
+        }
+
         function resetNewMatchForm() {
             document.getElementById('new-match-form').reset();
             document.getElementById('new-round').innerHTML = '<option value="">Primero selecciona competición...</option>';
@@ -2294,8 +2643,21 @@
             let starterCount = 0;
             
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
-                // Determine if played based on checkbox
-                const played = row.querySelector('.player-played').checked;
+                const isCoach = row.querySelector('.stat-goals') === null;
+                const starterChk = row.querySelector('.chk-starter');
+                const subChk = row.querySelector('.chk-sub');
+                
+                // Determine Played Status
+                let played = false;
+                let isStarter = false;
+
+                if (isCoach) {
+                    played = true; // Coach always plays
+                    isStarter = false; // Coach is staff
+                } else {
+                    played = (starterChk && starterChk.checked) || (subChk && subChk.checked);
+                    isStarter = (starterChk && starterChk.checked);
+                }
                 
                 // Card inputs are always available
                 let yellow = parseInt(row.querySelector('.stat-yellow').value) || 0;
@@ -2304,12 +2666,9 @@
                 // Auto Red if 2 Yellows
                 if (yellow >= 2) {
                     red = 1;
-                    // Keep yellows as 2 for historical record or reset to 0? Usually keep record.
                 }
 
                 if (played || yellow > 0 || red > 0) {
-                    const isCoach = row.querySelector('.stat-goals') === null;
-                    let isStarter = false;
                     let rating = null;
                     let goals = 0;
                     let assists = 0;
@@ -2317,8 +2676,6 @@
 
                     // Only capture performance stats if they actually played
                     if (played) {
-                        const starterSelect = row.querySelector('.stat-starter');
-                        isStarter = starterSelect ? (starterSelect.value === 'true') : false;
                         if (!isCoach && isStarter) starterCount++;
                         
                         const ratingInput = row.querySelector('.stat-rating').value;
@@ -3066,68 +3423,64 @@
                 const isCoach = player.posicion === 'entrenador';
                 const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : false;
                 
+                // For existing records, if they played but isStarter is not set, default to sub if not coach.
+                // Or if we want to be safe, default to false.
+                
                 return `
-                    <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
-                        <div class="flex items-center gap-3 mb-3">
-                            <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
-                            <div class="flex-1">
-                                <span class="font-medium text-gray-800">${player.nombre} ${player.apellido}</span>
-                                <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
-                            </div>
-                            <label class="flex items-center gap-2 text-sm">
-                                <input type="checkbox" class="player-played w-4 h-4 text-amber-600" ${played ? 'checked' : ''}>
-                                <span>Jugó</span>
-                            </label>
+                <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
+                    <div class="flex items-center gap-3 mb-3">
+                        <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
+                        <div class="flex-1">
+                            <span class="font-medium text-gray-800">${player.nombre} ${player.apellido}</span>
+                            <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
                         </div>
-                        <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-5 gap-2" style="display: ${played ? 'grid' : 'none'}">
-                             <div>
-                                <label class="block text-xs text-gray-500 mb-1">Rol</label>
-                                ${!isCoach ? `
-                                <select class="stat-starter w-full px-2 py-1 border rounded text-xs bg-white">
-                                    <option value="true" ${isStarter ? 'selected' : ''}>Titular</option>
-                                    <option value="false" ${!isStarter ? 'selected' : ''}>Suplente</option>
-                                </select>
-                                ` : `
-                                <span class="block text-xs text-gray-500 mt-1 font-semibold text-center">Staff</span>
-                                `}
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Nota</label>
-                                <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating !== null && ps?.rating !== undefined ? ps.rating : ''}" placeholder="–">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Goles</label>
-                                ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.goals || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Asist.</label>
-                                ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.assists || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">Minutos</label>
-                                ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="${ps?.minutes || 90}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                            </div>
+                        
+                         ${!isCoach ? `
+                         <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${played && isStarter ? 'checked' : ''}>
+                            <span>Titular</span>
+                         </label>
+                         <label class="flex items-center gap-1 text-sm cursor-pointer">
+                            <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${played && !isStarter ? 'checked' : ''}>
+                            <span>Suplente</span>
+                         </label>
+                         ` : `
+                         <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
+                         `}
+                    </div>
+                    
+                    <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="display: ${played || isCoach ? 'grid' : 'none'}">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Nota</label>
+                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating !== null && ps?.rating !== undefined ? ps.rating : ''}" placeholder="–">
                         </div>
-                         <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
-                                <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="${ps?.yellowCards || 0}">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
-                                <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="${ps?.redCards || 0}">
-                            </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Goles</label>
+                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.goals || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Asist.</label>
+                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.assists || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">Minutos</label>
+                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="${ps?.minutes || 90}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
                         </div>
                     </div>
-                `;
+                    
+                     <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
+                            <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="${ps?.yellowCards || 0}">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
+                            <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="${ps?.redCards || 0}">
+                        </div>
+                    </div>
+                </div>
+            `;
             }).join('');
-            
-            statsContainer.querySelectorAll('.player-played').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const statsInputs = this.closest('[data-player-id]').querySelector('.player-performance-inputs');
-                    statsInputs.style.display = this.checked ? 'grid' : 'none';
-                });
-            });
             
             modal.classList.add('active');
         }
@@ -3148,23 +3501,31 @@
             let starterCount = 0;
 
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
-                const played = row.querySelector('.player-played').checked;
+                const isCoach = row.querySelector('.stat-goals') === null;
+                const starterChk = row.querySelector('.chk-starter');
+                const subChk = row.querySelector('.chk-sub');
+                
+                let played = false;
+                let isStarter = false;
+
+                if (isCoach) {
+                    played = true;
+                } else {
+                    played = (starterChk && starterChk.checked) || (subChk && subChk.checked);
+                    isStarter = (starterChk && starterChk.checked);
+                }
                 
                 let yellow = parseInt(row.querySelector('.stat-yellow').value) || 0;
                 let red = parseInt(row.querySelector('.stat-red').value) || 0;
                 if (yellow >= 2) red = 1;
 
                 if (played || yellow > 0 || red > 0) {
-                    const isCoach = row.querySelector('.stat-goals') === null;
-                    let isStarter = false;
                     let rating = null;
                     let goals = 0;
                     let assists = 0;
                     let minutes = 0;
 
                     if (played) {
-                        const starterSelect = row.querySelector('.stat-starter');
-                        isStarter = starterSelect ? (starterSelect.value === 'true') : false;
                         if (!isCoach && isStarter) starterCount++;
                         
                         const ratingInput = row.querySelector('.stat-rating').value;
