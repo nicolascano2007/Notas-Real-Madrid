@@ -136,7 +136,7 @@
             border: 2px solid #10b981;
             border-radius: 8px;
             position: relative;
-            height: 300px;
+            height: 400px; /* Increased height for 4 zones */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -159,8 +159,36 @@
 
         /* Stats Sub-tabs */
         .stats-subtab { @apply px-4 py-2 text-sm font-medium rounded-lg transition-colors; }
-        .stats-subtab.active { @apply bg-slate-800 text-white; }
-        .stats-subtab.inactive { @apply bg-gray-100 text-gray-600 hover:bg-gray-200; }
+        .stats-subtab.active { @apply bg-slate-800 text-white shadow-md; }
+        .stats-subtab.inactive { @apply bg-white text-gray-600 hover:bg-gray-50 border border-gray-200; }
+
+        /* Chart Styles */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 150px;
+            gap: 4px;
+            padding-top: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .chart-bar {
+            flex: 1;
+            background-color: #3b82f6;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            min-width: 8px;
+            transition: height 0.3s ease;
+        }
+        .chart-bar:hover { opacity: 0.8; }
+        .chart-label {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: #374151;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -284,10 +312,10 @@
                     </div>
                     <div class="flex gap-2">
                         <div class="bg-white rounded-lg p-1 border flex">
-                            <button onclick="switchCalendarView('list')" id="cal-view-list" class="px-3 py-1.5 text-sm rounded-md font-medium transition bg-slate-800 text-white">
+                            <button onclick="switchCalendarView('list')" id="cal-view-list" class="px-3 py-1.5 text-sm rounded-md font-medium transition text-gray-600 hover:bg-gray-100">
                                 📃 Lista
                             </button>
-                            <button onclick="switchCalendarView('month')" id="cal-view-month" class="px-3 py-1.5 text-sm rounded-md font-medium transition text-gray-600 hover:bg-gray-100">
+                            <button onclick="switchCalendarView('month')" id="cal-view-month" class="px-3 py-1.5 text-sm rounded-md font-medium transition bg-slate-800 text-white">
                                 🗓️ Mes
                             </button>
                         </div>
@@ -316,7 +344,7 @@
                 </div>
 
                 <!-- Time Filter (Only for list view) -->
-                <div id="cal-time-filters" class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                <div id="cal-time-filters" class="hidden bg-white rounded-xl shadow-sm p-4 mb-4">
                     <div class="flex flex-wrap gap-2">
                         <button onclick="filterCalendarTime('all')" class="time-filter px-3 py-1 text-sm rounded-full bg-slate-800 text-white">Todos</button>
                         <button onclick="filterCalendarTime('past')" class="time-filter px-3 py-1 text-sm rounded-full bg-gray-200 text-gray-700">Pasados</button>
@@ -325,7 +353,7 @@
                 </div>
                 
                 <!-- Month Navigation (Only for month view) -->
-                <div id="cal-month-nav" class="hidden bg-white rounded-xl shadow-sm p-4 mb-4 flex justify-between items-center">
+                <div id="cal-month-nav" class="bg-white rounded-xl shadow-sm p-4 mb-4 flex justify-between items-center">
                     <button onclick="changeCalendarMonth(-1)" class="p-2 hover:bg-gray-100 rounded-full">⬅️ Anterior</button>
                     <h3 id="current-month-display" class="text-lg font-bold text-slate-800"></h3>
                     <button onclick="changeCalendarMonth(1)" class="p-2 hover:bg-gray-100 rounded-full">Siguiente ➡️</button>
@@ -428,13 +456,43 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Resultado *</label>
-                                        <input type="text" id="new-result" required placeholder="ej: 2-1 (local-visitante)" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500" pattern="^\d+-\d+$">
+                                        <input type="text" id="new-result" required oninput="updateOvertimeOptions()" placeholder="ej: 2-1 (local-visitante)" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500" pattern="^\d+-\d+$">
                                         <p class="text-xs text-gray-500 mt-1">Formato: goles_local-goles_visitante</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- EXTRA TIME / PENALTIES CONTROLS -->
+                                <div id="overtime-controls" class="hidden mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <h4 class="font-bold text-orange-800 mb-2">Desenlace Eliminatoria</h4>
+                                    <div id="extra-time-option" class="hidden mb-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="chk-extra-time" class="w-4 h-4 text-orange-600">
+                                            <span class="text-sm font-medium text-gray-700">Prórroga jugada</span>
+                                        </label>
+                                    </div>
+                                    <div id="penalties-option" class="hidden">
+                                        <label class="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input type="checkbox" id="chk-penalties" class="w-4 h-4 text-orange-600" onchange="togglePenaltyWinner()">
+                                            <span class="text-sm font-medium text-gray-700">Tanda de Penaltis</span>
+                                        </label>
+                                        <div id="penalty-winner-select" class="hidden ml-6">
+                                            <p class="text-xs text-gray-500 mb-1">Resultado de la tanda:</p>
+                                            <div class="flex gap-4">
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="penalties-outcome" value="win" class="text-green-600">
+                                                    <span class="text-sm text-green-700 font-bold">Victoria</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="penalties-outcome" value="loss" class="text-red-600">
+                                                    <span class="text-sm text-red-700 font-bold">Derrota</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
                                 <!-- Ida/Vuelta indicator for two-leg ties -->
-                                <div id="leg-indicator" class="hidden p-4 global-result rounded-lg mb-4">
+                                <div id="leg-indicator" class="hidden p-4 global-result rounded-lg mb-4 mt-4">
                                     <p id="leg-info" class="text-sm text-blue-800"></p>
                                 </div>
 
@@ -545,7 +603,7 @@
             <section id="section-stats" class="hidden fade-in">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">Estadísticas</h2>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 bg-white rounded-lg p-1 border shadow-sm">
                          <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab active">General</button>
                          <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab inactive">Avanzado</button>
                          <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">H2H (Rival)</button>
@@ -554,14 +612,14 @@
                 
                 <!-- NEW: Team Streak & Top Form -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white rounded-xl shadow-sm p-4">
-                        <h3 class="font-bold text-gray-800 mb-3">Racha del Equipo</h3>
+                    <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-amber-400">
+                        <h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">Racha del Equipo</h3>
                         <div id="team-streak" class="flex items-center gap-3">
                             <span class="text-gray-500 text-sm">Sin datos</span>
                         </div>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm p-4">
-                        <h3 class="font-bold text-gray-800 mb-3">🔥 En mejor forma (Últimos 5 PJ)</h3>
+                    <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
+                        <h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">🔥 En mejor forma (Últimos 5 PJ)</h3>
                         <div id="top-form-players" class="space-y-2">
                             <span class="text-gray-500 text-sm">Sin datos suficientes</span>
                         </div>
@@ -569,9 +627,10 @@
                 </div>
                 
                 <!-- SUB-SECTION: GENERAL -->
-                <div id="stats-general" class="fade-in">
-                    <div class="flex justify-end mb-4">
-                        <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2">
+                <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
+                    <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                         <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
+                         <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-sm">
                             📥 Exportar CSV
                         </button>
                     </div>
@@ -613,17 +672,17 @@
                     </div>
 
                     <!-- Stats Filters -->
-                    <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+                    <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Competición</label>
-                                <select id="stats-filter-competition" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                <select id="stats-filter-competition" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg bg-white">
                                     <option value="">Todas las competiciones</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Estado del Jugador</label>
-                                <select id="stats-filter-status" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg">
+                                <select id="stats-filter-status" onchange="renderStats()" class="w-full px-3 py-2 border rounded-lg bg-white">
                                     <option value="">Todos</option>
                                     <option value="Activo">Solo Activos</option>
                                     <option value="Inactivo">Solo Inactivos</option>
@@ -633,21 +692,21 @@
                     </div>
 
                     <!-- Stats Table -->
-                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b bg-slate-800 text-white">
-                            <h3 class="font-semibold">Rendimiento Individual</h3>
-                            <p class="text-xs text-slate-300 mt-1">Haz clic en los encabezados para ordenar.</p>
+                    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                        <div class="p-4 border-b bg-gray-50">
+                            <h3 class="font-semibold text-gray-800">Rendimiento Individual</h3>
+                            <p class="text-xs text-gray-500 mt-1">Haz clic en los encabezados para ordenar.</p>
                         </div>
                         <div class="table-container">
                             <table class="w-full">
-                                <thead class="bg-slate-700 text-white">
+                                <thead class="bg-slate-800 text-white">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase">Jugador</th>
                                         <th id="th-matchesPlayed" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('matchesPlayed')">PJ</th>
                                         <th id="th-avgRating" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('avgRating')">Nota</th>
                                         <th id="th-goals" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('goals')">Gol</th>
                                         <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')">Asist</th>
-                                        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-600 sortable" onclick="handleSort('ga')">G/A</th>
+                                        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-700 sortable" onclick="handleSort('ga')">G/A</th>
                                         <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('minutes')">Min</th>
                                         <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')">MVP</th>
                                         <th id="th-wins" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('wins')">V</th>
@@ -667,10 +726,12 @@
                 </div>
 
                 <!-- SUB-SECTION: ADVANCED -->
-                <div id="stats-advanced" class="hidden fade-in space-y-6">
+                <div id="stats-advanced" class="hidden fade-in space-y-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500 p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">Estadísticas Avanzadas</h3>
+                    
                     <!-- Home vs Away Comparison -->
                     <div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Rendimiento: Casa vs Fuera</h3>
+                        <h4 class="font-bold text-gray-700 mb-4">Rendimiento: Casa vs Fuera</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="home-away-stats-container">
                             <!-- Populated by JS -->
                         </div>
@@ -678,7 +739,7 @@
 
                     <!-- Heatmap by Position -->
                     <div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Mapa de Rendimiento (Nota Media)</h3>
+                        <h4 class="font-bold text-gray-700 mb-4">Mapa de Rendimiento (Nota Media por Posición)</h4>
                         <div class="heatmap-pitch" id="heatmap-container">
                              <!-- Populated by JS -->
                         </div>
@@ -686,10 +747,10 @@
 
                     <!-- Monthly Report -->
                     <div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Reporte Mensual</h3>
-                        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <h4 class="font-bold text-gray-700 mb-4">Reporte Mensual</h4>
+                        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
                              <table class="w-full text-sm">
-                                <thead class="bg-slate-700 text-white">
+                                <thead class="bg-slate-800 text-white">
                                     <tr>
                                         <th class="px-4 py-2 text-left">Mes</th>
                                         <th class="px-4 py-2 text-center">Partidos</th>
@@ -706,11 +767,11 @@
                 </div>
 
                 <!-- SUB-SECTION: H2H -->
-                <div id="stats-h2h" class="hidden fade-in">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Historial contra Rival (Head to Head)</h3>
-                    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                <div id="stats-h2h" class="hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-pink-500 p-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">Historial contra Rival (Head to Head)</h3>
+                    <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un rival histórico</label>
-                        <select id="h2h-opponent-select" onchange="renderH2H()" class="w-full px-3 py-2 border rounded-lg">
+                        <select id="h2h-opponent-select" onchange="renderH2H()" class="w-full px-3 py-2 border rounded-lg bg-white">
                             <option value="">Selecciona rival...</option>
                         </select>
                     </div>
@@ -882,7 +943,7 @@
             { id: "pf27", nombre: "Noemí", apellido: "Bejarano", posicion: "defensa", dorsal: 27, nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
             { id: "pf28", nombre: "Irune", apellido: "Dorado", posicion: "centrocampista", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf29", nombre: "Silvia", apellido: "Cristobal", posicion: "defensa", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf33", nombre: "Adriana", apellido: "Folgado", posicion: "centrocampista", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf33", nombre: "Adriana", apellido: "Folgado", posicion: "centrocampista", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf43", nombre: "Iris", apellido: "Ashley", posicion: "delantero", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=288&hei=384" }
         ];
 
@@ -1051,7 +1112,7 @@
         let currentTimeFilter = 'all';
         let hideRegisteredMatches = false;
         let selectedCalendarFixture = null;
-        let calendarViewMode = 'list'; // 'list' or 'month'
+        let calendarViewMode = 'month'; // 'list' or 'month' - Default to month
         let currentCalendarDate = new Date(); // Tracks the month shown in calendar view
         
         // Sorting State
@@ -1083,13 +1144,13 @@
             currentCalendarFilter = '';
             hideRegisteredMatches = false;
             document.getElementById('hide-registered-matches').checked = false;
-            calendarViewMode = 'list';
+            calendarViewMode = 'month'; // Ensure default is month
             currentCalendarDate = new Date();
             
             renderPlayers();
             populateComparatorSelects();
             populateCompetitionSelect();
-            populateH2HOpponents(); // NEW H2H
+            populateH2HOpponents();
             showTab('plantilla');
 
             // Force load calendar immediately after setup
@@ -1244,7 +1305,7 @@
 
         function calculateGlobalResult(idaMatch, vueltaMatch) {
             const getGoals = (m) => {
-                const parts = m.result.split('-').map(Number);
+                const parts = m.result.replace('*','').split('-').map(Number);
                 if (m.venue === 'local') return { us: parts[0], them: parts[1] };
                 if (m.venue === 'visitante') return { us: parts[1], them: parts[0] };
                 return { us: parts[0], them: parts[1] }; 
@@ -1370,7 +1431,7 @@
                 else if (m.outcome === 'derrota') totalLosses++;
 
                 if (m.result && m.result.includes('-')) {
-                    const parts = m.result.split('-').map(Number);
+                    const parts = m.result.replace('*','').split('-').map(Number);
                     if (m.venue === 'local') {
                         totalGoalsFor += parts[0];
                         totalGoalsAgainst += parts[1];
@@ -1565,12 +1626,11 @@
             let awayStats = { wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, count: 0 };
 
             matches.forEach(m => {
-                const parts = m.result.split('-').map(Number);
+                const parts = m.result.replace('*','').split('-').map(Number);
                 const isHome = m.venue === 'local';
                 const stats = isHome ? homeStats : awayStats;
                 
                 // Treat neutral as away for simplicity or ignore? Let's treat as away for now or ignore.
-                // Requirement says Home vs Away. Neutral fits neither perfectly but Away is closer logically (travel).
                 if (m.venue === 'neutral') return;
 
                 stats.count++;
@@ -1583,7 +1643,7 @@
             });
 
             document.getElementById('home-away-stats-container').innerHTML = `
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
                     <h4 class="font-bold text-blue-800 mb-2">🏠 En Casa</h4>
                     <div class="grid grid-cols-3 gap-2 text-center text-sm">
                         <div><p class="text-gray-500">PJ</p><p class="font-bold">${homeStats.count}</p></div>
@@ -1591,7 +1651,7 @@
                         <div><p class="text-gray-500">GF/GC</p><p class="font-bold">${homeStats.gf}/${homeStats.ga}</p></div>
                     </div>
                 </div>
-                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
                     <h4 class="font-bold text-purple-800 mb-2">✈️ Fuera de Casa</h4>
                     <div class="grid grid-cols-3 gap-2 text-center text-sm">
                         <div><p class="text-gray-500">PJ</p><p class="font-bold">${awayStats.count}</p></div>
@@ -1603,9 +1663,10 @@
 
             // 2. Heatmap
             const zones = {
-                'delantero': { total: 0, count: 0, label: 'Delantera', color: 'red' },
-                'centrocampista': { total: 0, count: 0, label: 'Medio', color: 'green' },
-                'defensa': { total: 0, count: 0, label: 'Defensa', color: 'blue' }
+                'delantero': { total: 0, count: 0, label: 'Delantera', color: 'bg-red-500' },
+                'centrocampista': { total: 0, count: 0, label: 'Medio', color: 'bg-green-500' },
+                'defensa': { total: 0, count: 0, label: 'Defensa', color: 'bg-blue-500' },
+                'portero': { total: 0, count: 0, label: 'Portería', color: 'bg-amber-400' }
             };
 
             matches.forEach(m => {
@@ -1626,10 +1687,11 @@
             };
 
             let heatmapHtml = '';
-            ['delantero', 'centrocampista', 'defensa'].forEach(pos => {
+            // Order: Portero at bottom? No, typically pitch: Forward -> Mid -> Def -> GK
+            ['delantero', 'centrocampista', 'defensa', 'portero'].forEach(pos => {
                 const z = zones[pos];
                 const avg = z.count > 0 ? (z.total / z.count).toFixed(2) : '-';
-                const colorClass = z.count > 0 ? getHeatColor(parseFloat(avg)) : 'bg-gray-400';
+                const colorClass = z.count > 0 ? getHeatColor(parseFloat(avg)) : 'bg-gray-300';
                 heatmapHtml += `
                     <div class="heatmap-zone ${colorClass}">
                         <span class="heatmap-val">${avg}</span>
@@ -1652,7 +1714,7 @@
                 else if (m.outcome === 'empate') md.draws++;
                 else md.losses++;
 
-                const parts = m.result.split('-').map(Number);
+                const parts = m.result.replace('*','').split('-').map(Number);
                 if(m.venue === 'local') { md.gf += parts[0]; md.ga += parts[1]; }
                 else if(m.venue === 'visitante') { md.gf += parts[1]; md.ga += parts[0]; }
                 else { md.gf += parts[0]; md.ga += parts[1]; }
@@ -1668,11 +1730,11 @@
                 const monthName = new Date(key + '-01').toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
                 const avg = d.ratingCount > 0 ? (d.totalRating / d.ratingCount).toFixed(2) : '-';
                 return `
-                    <tr class="border-t">
-                        <td class="px-4 py-2 capitalize font-medium">${monthName}</td>
-                        <td class="px-4 py-2 text-center">${d.matches.length}</td>
-                        <td class="px-4 py-2 text-center">${d.wins}-${d.draws}-${d.losses}</td>
-                        <td class="px-4 py-2 text-center">${d.gf} / ${d.ga}</td>
+                    <tr class="border-t hover:bg-slate-50">
+                        <td class="px-4 py-2 capitalize font-medium text-gray-700">${monthName}</td>
+                        <td class="px-4 py-2 text-center text-gray-600">${d.matches.length}</td>
+                        <td class="px-4 py-2 text-center text-gray-600 font-mono">${d.wins}-${d.draws}-${d.losses}</td>
+                        <td class="px-4 py-2 text-center text-gray-600 font-mono">${d.gf} / ${d.ga}</td>
                         <td class="px-4 py-2 text-center font-bold ${getRatingColor(avg)}">${avg}</td>
                     </tr>
                 `;
@@ -1711,7 +1773,7 @@
                 else if (m.outcome === 'empate') draws++;
                 else losses++;
 
-                const parts = m.result.split('-').map(Number);
+                const parts = m.result.replace('*','').split('-').map(Number);
                 if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
                 else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
                 else { gf += parts[0]; ga += parts[1]; }
@@ -1739,13 +1801,13 @@
 
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-slate-800 text-white p-4 rounded-xl text-center">
+                    <div class="bg-slate-800 text-white p-4 rounded-xl text-center shadow-md">
                         <p class="text-slate-400 text-sm">Balance</p>
                         <p class="text-2xl font-bold">${wins}V - ${draws}E - ${losses}D</p>
                         <p class="text-xs text-slate-400 mt-1">${gf} Goles Favor - ${ga} Contra</p>
                     </div>
                     ${scorerP ? `
-                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3">
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 shadow-sm">
                         <img src="${scorerP.foto}" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <p class="text-xs text-gray-500 uppercase font-bold">Goleador</p>
@@ -1754,7 +1816,7 @@
                         </div>
                     </div>` : ''}
                     ${ratedP ? `
-                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3">
+                    <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 shadow-sm">
                         <img src="${ratedP.foto}" class="w-12 h-12 rounded-full object-cover">
                         <div>
                             <p class="text-xs text-gray-500 uppercase font-bold">Mejor Valoración</p>
@@ -1767,7 +1829,7 @@
                 <h4 class="font-bold text-gray-800 mt-4">Partidos jugados</h4>
                 <div class="space-y-2">
                     ${matches.map(m => `
-                        <div class="bg-gray-50 p-3 rounded-lg flex justify-between items-center text-sm">
+                        <div class="bg-gray-50 p-3 rounded-lg flex justify-between items-center text-sm border border-gray-100">
                             <span>${formatDate(m.date)} (${m.competition})</span>
                             <span class="font-bold ${getResultClass(m.outcome).replace('bg-', 'text-')}">${m.venue === 'local' ? 'Local' : 'Visitante'}: ${m.result}</span>
                         </div>
@@ -2052,6 +2114,9 @@
             const matches = getData('matches');
             const playerMatches = [];
             const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, yellowCards: 0, redCards: 0, totalRating: 0, ratingCount: 0, wins: 0 };
+            
+            // For Chart
+            const ratingsHistory = [];
 
             matches.forEach(m => {
                 const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
@@ -2072,20 +2137,42 @@
                     stats.minutes += ps.minutes || 0;
                     stats.yellowCards += ps.yellowCards || 0;
                     stats.redCards += ps.redCards || 0;
-                    // FIX: Ensure 0 is counted
                     if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
                         stats.totalRating += parseFloat(ps.rating);
                         stats.ratingCount++;
+                        ratingsHistory.push({ rating: parseFloat(ps.rating), opponent: m.opponent });
                     }
                     if (m.outcome === 'victoria') stats.wins++;
                 }
             });
 
-            // Sort matches newest first
+            // Sort matches newest first for list, oldest first for chart
             playerMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const chartData = [...ratingsHistory].reverse().slice(-10); // Last 10 matches for chart
 
             const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
             const isCoach = player.posicion === 'entrenador';
+
+            // Generate Chart HTML
+            let chartHtml = '';
+            if (chartData.length > 0) {
+                 chartHtml = `
+                    <div class="mb-8">
+                        <h4 class="text-sm font-bold text-gray-500 uppercase mb-2">Evolución Rendimiento (Últimos 10 PJ)</h4>
+                        <div class="chart-container">
+                            ${chartData.map(d => {
+                                const height = (d.rating / 10) * 100;
+                                const color = d.rating >= 8 ? '#10b981' : (d.rating >= 6 ? '#3b82f6' : '#ef4444');
+                                return `
+                                    <div class="chart-bar" style="height: ${height}%; background-color: ${color};" title="${d.opponent}: ${d.rating}">
+                                        <span class="chart-label">${d.rating}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                 `;
+            }
 
             content.innerHTML = `
                 <div class="flex flex-col md:flex-row gap-6 mb-8 items-center md:items-start">
@@ -2144,6 +2231,8 @@
                     </div>
                 </div>
                 ` : ''}
+
+                ${chartHtml}
 
                 <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Historial de Partidos</h3>
                 <div class="overflow-x-auto">
@@ -2394,6 +2483,85 @@
                     '📋 Liga: puedes registrar jornadas en cualquier orden.' :
                     '🟢 = Disponible, 🔒 = Ronda anterior pendiente, ✅ = Completada';
             }
+            updateOvertimeOptions();
+        }
+
+        // Logic for Extra Time and Penalties Controls
+        function updateOvertimeOptions() {
+            const compName = document.getElementById('new-competition').value;
+            const roundId = document.getElementById('new-round').value;
+            const result = document.getElementById('new-result').value;
+            const container = document.getElementById('overtime-controls');
+            const etOption = document.getElementById('extra-time-option');
+            const penOption = document.getElementById('penalties-option');
+            
+            if (!compName || !roundId || !result || !/^\d+-\d+$/.test(result)) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const comp = COMPETICIONES_ACTUALES[compName];
+            let roundInfo = null;
+            comp.fases.forEach(fase => {
+                const found = fase.rondas.find(r => r.id === roundId);
+                if (found) roundInfo = { ...found, faseTipo: fase.tipo };
+            });
+
+            if (!roundInfo || !roundInfo.eliminatoria || roundInfo.faseTipo === 'liga') {
+                container.classList.add('hidden');
+                return;
+            }
+
+            let showET = false;
+            let showPen = false;
+            const currentResultParts = result.split('-').map(Number);
+            const currentUs = currentResultParts[0]; // Assuming local input perspective roughly
+            const currentThem = currentResultParts[1];
+
+            // 1. Return Leg Logic
+            if (roundInfo.idaVuelta === 'vuelta') {
+                const matches = getData('matches').filter(m => m.competition === compName);
+                const idaMatch = matches.find(m => m.roundId === roundInfo.pareja);
+
+                if (idaMatch) {
+                    // Calculate Global
+                    // This is complex because we don't know venue yet perfectly from inputs, 
+                    // but we can infer from `new-venue` which is likely disabled/set by `handleRoundChange`.
+                    // Assume inputs are set correctly.
+                    const venue = document.getElementById('new-venue').value;
+                    const mockMatch = { result: result, venue: venue };
+                    const globalRes = calculateGlobalResult(idaMatch, mockMatch);
+                    
+                    if (globalRes.outcome === 'empate') {
+                         showET = true;
+                         showPen = true;
+                    }
+                }
+            }
+            // 2. Single Leg Logic
+            else if (roundInfo.partidoUnico) {
+                if (currentUs === currentThem) {
+                    showPen = true;
+                }
+            }
+
+            if (showET || showPen) {
+                container.classList.remove('hidden');
+                if (showET) etOption.classList.remove('hidden');
+                else etOption.classList.add('hidden');
+                
+                if (showPen) penOption.classList.remove('hidden');
+                else penOption.classList.add('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+        
+        function togglePenaltyWinner() {
+            const chk = document.getElementById('chk-penalties');
+            const winnerSelect = document.getElementById('penalty-winner-select');
+            if (chk.checked) winnerSelect.classList.remove('hidden');
+            else winnerSelect.classList.add('hidden');
         }
         
         function handleRoundChange() {
@@ -2441,6 +2609,7 @@
                 document.getElementById('leg-indicator').classList.add('hidden');
                 document.getElementById('venue-alternation-warning').classList.add('hidden');
             }
+            updateOvertimeOptions();
         }
         
         function updateStadiumField() {
@@ -2600,6 +2769,7 @@
             document.getElementById('new-venue').classList.remove('readonly-input');
             document.getElementById('new-stadium').readOnly = true;
             document.getElementById('new-stadium').classList.add('readonly-input');
+            document.getElementById('overtime-controls').classList.add('hidden');
             
             selectedCalendarFixture = null;
             document.getElementById('selected-fixture-info').classList.add('hidden');
@@ -2627,8 +2797,36 @@
             const opponent = document.getElementById('new-opponent').value;
             const venue = document.getElementById('new-venue').value;
             const stadium = document.getElementById('new-stadium').value;
-            const result = document.getElementById('new-result').value.trim();
+            let result = document.getElementById('new-result').value.trim();
             
+            // Handle Penalties and Result Modification
+            const chkPenalties = document.getElementById('chk-penalties');
+            if (chkPenalties.checked) {
+                 const outcomeRadio = document.querySelector('input[name="penalties-outcome"]:checked');
+                 if (outcomeRadio) {
+                     const isWin = outcomeRadio.value === 'win';
+                     const parts = result.split('-').map(Number);
+                     // Determine index for 'us' based on venue
+                     // Local input format: Us - Them (if venue=local) or Them - Us (if venue=visitor)?
+                     // Standard placeholder 'goles_local-goles_visitante'.
+                     // If venue is Local: we are index 0. If win, index 0++.
+                     // If venue is Visitor: we are index 1. If win, index 1++.
+                     // Neutral: Assuming we treat input as Local-Visitor, and if we say "Win penalties", we add to OUR score.
+                     // But which is our score in Neutral? Assuming index 0 (Left) is 'Real Madrid' typically in manual entry if we act as Home.
+                     // Let's assume venue dictates score side.
+                     
+                     let usIndex = 0;
+                     if (venue === 'visitante') usIndex = 1;
+                     
+                     if (isWin) {
+                         parts[usIndex]++;
+                     } else {
+                         parts[usIndex === 0 ? 1 : 0]++;
+                     }
+                     result = `${parts[0]}-${parts[1]}*`;
+                 }
+            }
+
             const comp = COMPETICIONES_ACTUALES[compName];
             let roundInfo = null;
             comp.fases.forEach(fase => {
@@ -3133,7 +3331,7 @@
         
         function calculateMatchOutcome(result, venue) {
             if (!result || !result.includes('-')) return null;
-            const parts = result.split('-');
+            const parts = result.replace('*','').split('-');
             const homeGoals = parseInt(parts[0]);
             const awayGoals = parseInt(parts[1]);
             if (isNaN(homeGoals) || isNaN(awayGoals)) return null;
@@ -3399,7 +3597,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Resultado</label>
-                            <input type="text" id="edit-result" value="${match.result}" class="w-full px-3 py-2 border rounded-lg" pattern="^\\d+-\\d+$">
+                            <input type="text" id="edit-result" value="${match.result}" class="w-full px-3 py-2 border rounded-lg">
                         </div>
                     </div>
                     <div>
@@ -3422,9 +3620,6 @@
                 
                 const isCoach = player.posicion === 'entrenador';
                 const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : false;
-                
-                // For existing records, if they played but isStarter is not set, default to sub if not coach.
-                // Or if we want to be safe, default to false.
                 
                 return `
                 <div class="bg-gray-50 rounded-lg p-3" data-player-id="${player.id}">
