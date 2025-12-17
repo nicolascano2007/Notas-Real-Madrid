@@ -952,7 +952,7 @@
             'p10b', 'p17', 'p44', 'p31'
         ];
         const CUSTOM_ORDER_FEMENINO = [
-            'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' 'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
+            'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' ,'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
             'pf17', 'pf10', 'pf8', 'pf18', 'pf7', 'pf19', 'pf5', 'pf20', 'pf9', 'pf11', 'pf24', 'pf28', 'pf29', 
             'pf33', 'pf43', 'pf27'
         ];
@@ -3594,7 +3594,6 @@
                 
                 let eventsHtml = '';
                 daysEvents.forEach(e => {
-daysEvents.forEach(e => {
                     const isRegistered = registeredEventIds.includes(e.id);
                     if (hideRegisteredMatches && isRegistered) return;
 
@@ -3639,7 +3638,6 @@ daysEvents.forEach(e => {
                     eventsHtml += `<div class="cal-event-dot" style="${style}" ${action} title="${title}">
                         ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
                     </div>`;
-                });
                 });
                 
                 gridHtml += `
