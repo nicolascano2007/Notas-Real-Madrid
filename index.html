@@ -935,6 +935,31 @@
             <div id="player-status-content" class="p-6"></div>
         </div>
     </div>
+    <div id="extra-round-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md">
+            <div class="p-6 border-b bg-slate-800 text-white rounded-t-2xl">
+                <h3 class="text-xl font-bold">Ronda Adicional</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-gray-700 mb-4">Se ha terminado la fase regular. Según tu posición en la tabla:</p>
+                <p class="font-bold text-lg text-slate-800 mb-6">¿Debe jugarse la ronda extra (Play-offs / Eliminatoria previa)?</p>
+                
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-start gap-3">
+                    <input type="checkbox" id="chk-play-extra" class="w-5 h-5 text-amber-600 mt-0.5">
+                    <div>
+                        <label for="chk-play-extra" class="font-bold text-amber-800 cursor-pointer">Sí, jugar ronda extra</label>
+                        <p class="text-xs text-amber-700">Marca esto si has quedado entre la posición 9 y 24 (Masculino) o necesitas jugar ronda previa (Femenino).</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="confirmExtraRound()" class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium">
+                        Confirmar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ==========================================
@@ -949,12 +974,12 @@
         const CUSTOM_ORDER_MASCULINO = [
             'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
             'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
-            'p10b', 'p17', 'p44', 'p31'
+            'p10b', 'p17', 'p44', 'p31','p40','p35','p28'
         ];
         const CUSTOM_ORDER_FEMENINO = [
             'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' ,'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
             'pf17', 'pf10', 'pf8', 'pf18', 'pf7', 'pf19', 'pf5', 'pf20', 'pf9', 'pf11', 'pf24', 'pf28', 'pf29', 
-            'pf33', 'pf43', 'pf27'
+            'pf33', 'pf43', 'pf27','pf38'
         ];
         const PLANTILLA_MASCULINO = [
             { id: "dt1", nombre: "Xabi", apellido: "Alonso", posicion: "entrenador", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
@@ -986,7 +1011,11 @@
             { id: "p24", nombre: "Dean", apellido: "Huijsen", posicion: "defensa", dorsal: 24, nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
             { id: "p30", nombre: "Franco", apellido: "Mastantuono", posicion: "extremo", dorsal: 30, nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p31", nombre: "Jacobo", apellido: "Ramón", posicion: "defensa", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
-            { id: "p44", nombre: "Víctor", apellido: "Muñoz", posicion: "extremo", dorsal: 44, nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
+            { id: "p44", nombre: "Víctor", apellido: "Muñoz", posicion: "extremo", dorsal: 44, nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" },
+            { id: "p40", nombre: "Victor", apellido: "Valdepeñas", posicion: "defensa", dorsal: 40, nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p35", nombre: "David", apellido: "Jiménez", posicion: "defensa", dorsal: 35, nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p28", nombre: "Jorge", apellido: "Cestero", posicion: "centrocampista", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2006-03-24", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JORGE_CESTERO_550x650?$Desktop$&fit=wrap&wid=420" }
+
         ];
 
         const PLANTILLA_FEMENINO = [
@@ -1018,7 +1047,9 @@
             { id: "pf28", nombre: "Irune", apellido: "Dorado", posicion: "centrocampista", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf29", nombre: "Silvia", apellido: "Cristobal", posicion: "defensa", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf33", nombre: "Adriana", apellido: "Folgado", posicion: "centrocampista", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf43", nombre: "Iris", apellido: "Ashley", posicion: "delantero", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=288&hei=384" }
+            { id: "pf43", nombre: "Iris", apellido: "Ashley", posicion: "delantero", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },               
+            { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", posicion: "delantero", dorsal: 38, nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" }
+
         ];
 
         const COMPETICIONES_MASCULINO = {
@@ -1061,6 +1092,8 @@
                 fases: [
                     { tipo: 'liga', nombre: 'Fase de Liga', ordenLibre: true, rondas: Array.from({length: 8}, (_, i) => ({ id: `fase-liga-${i+1}`, nombre: `Fase de Liga - Jornada ${i+1}`, orden: i+1 })) },
                     { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        { id: 'dieciseisavos-ida', nombre: 'Play-offs - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'dieciseisavos-vuelta', rondaExtra: true },
+                        { id: 'dieciseisavos-vuelta', nombre: 'Play-offs - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'dieciseisavos-ida', rondaExtra: true }
                         { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta' },
                         { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida' },
                         { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
@@ -1126,6 +1159,8 @@
         ]},
         { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+3 })) },
         { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+            { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta', rondaExtra: true },
+            { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida', rondaExtra: true },
             { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
             { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
             { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
@@ -1307,33 +1342,54 @@
             
             const matches = getData('matches').filter(m => m.competition === compName);
             const state = getCompetitionState();
+            const extraRoundState = state[compName]?.playsExtra; // true, false o undefined
             
-            const allRounds = [];
+            // 1. Aplanar todas las rondas
+            let allRounds = [];
             comp.fases.forEach(fase => {
                 fase.rondas.forEach(ronda => {
                     allRounds.push({ ...ronda, faseTipo: fase.tipo, faseNombre: fase.nombre, faseOrdenLibre: fase.ordenLibre });
                 });
             });
+
+            // 2. Filtrar rondas según la decisión del usuario
+            // Si playsExtra es FALSE, quitamos las rondas extra.
+            // Si es TRUE o undefined (aún no decidido), las dejamos para que la lógica las maneje.
+            if (extraRoundState === false) {
+                allRounds = allRounds.filter(r => !r.rondaExtra);
+            }
+
+            // 3. Ordenar correctamente (necesario por los decimales)
+            allRounds.sort((a, b) => a.orden - b.orden);
             
             const completedRoundIds = matches.map(m => m.roundId);
             const result = [];
             const isLeagueFormat = comp.ordenLibre || comp.tipo === 'liga';
             
-            for (let ronda of allRounds) {
+            for (let i = 0; i < allRounds.length; i++) {
+                const ronda = allRounds[i];
                 const isCompleted = completedRoundIds.includes(ronda.id);
                 let isAvailable = false;
                 
                 if (ronda.faseTipo === 'liga' || ronda.faseOrdenLibre || isLeagueFormat) {
                     isAvailable = !isCompleted;
                 } else {
-                    const prevRound = allRounds.find(r => r.orden === ronda.orden - 1);
-                    const isPrevCompleted = !prevRound || completedRoundIds.includes(prevRound.id) || prevRound.faseTipo === 'liga' || prevRound.faseOrdenLibre;
-                    isAvailable = !isCompleted && isPrevCompleted;
+                    // Lógica dinámica: Miramos la ronda ANTERIOR en la lista filtrada
+                    // Esto conecta automáticamente la Liga con Octavos si quitamos los Dieciseisavos
+                    if (i === 0) {
+                        isAvailable = !isCompleted; // Si es la primera, está disponible
+                    } else {
+                        const prevRound = allRounds[i - 1];
+                        const isPrevCompleted = completedRoundIds.includes(prevRound.id) || prevRound.faseTipo === 'liga' || prevRound.faseOrdenLibre;
+                        isAvailable = !isCompleted && isPrevCompleted;
+                    }
                 }
                 
+                // Bloqueo por eliminación
                 if (state[compName]?.eliminatedAt) {
                     const eliminatedRound = allRounds.find(r => r.id === state[compName].eliminatedAt);
-                    if (eliminatedRound && ronda.orden > eliminatedRound.orden) {
+                    // Usamos el índice para comparar orden relativo en la lista filtrada
+                    if (eliminatedRound && allRounds.indexOf(eliminatedRound) < i) {
                         isAvailable = false;
                     }
                 }
@@ -3219,13 +3275,22 @@
             saveData('matches', matches);
             
             checkEliminationAfterMatch(matchData);
+
+            // --- NUEVO: Lógica de Ronda Extra (Champions/UWCL) ---
+            // Comprobamos si este partido activa el pop-up
+            const triggered = checkExtraRoundTrigger(matchData);
             
-            resetNewMatchForm();
-            renderCompetitionStatus();
-            populateCompetitionSelect();
-            
-            alert('✅ Partido registrado correctamente');
-            showTab('partidos');
+            if (!triggered) {
+                // Si NO salta el pop-up, limpiamos y terminamos normal
+                resetNewMatchForm();
+                renderCompetitionStatus();
+                populateCompetitionSelect();
+                
+                alert('✅ Partido registrado correctamente');
+                showTab('partidos');
+            }
+            // Si triggered es TRUE, no hacemos nada más aquí.
+            // El modal se abre y la función 'confirmExtraRound' se encargará de limpiar y redirigir al confirmar.
         });
         
         // ==========================================
@@ -4178,6 +4243,48 @@
             updatePlayerState(playerId, newStatus);
             closePlayerStatusModal();
             renderPlayers();
+        }
+        // ==========================================
+        // EXTRA ROUND LOGIC (CHAMPIONS/UWCL)
+        // ==========================================
+
+        let pendingExtraRoundComp = null;
+
+        function checkExtraRoundTrigger(match) {
+            // Identificadores del "Último partido de liga"
+            const MEN_LAST_LEAGUE = 'fase-liga-8'; // Masculino
+            const WOMEN_LAST_LEAGUE = 'grupos-6';  // Femenino
+            
+            if (match.roundId === MEN_LAST_LEAGUE || match.roundId === WOMEN_LAST_LEAGUE) {
+                pendingExtraRoundComp = match.competition;
+                
+                // Mostrar Modal
+                document.getElementById('extra-round-modal').classList.add('active');
+                return true; // Indica que se ha disparado el trigger (pausando el cierre)
+            }
+            return false;
+        }
+
+        function confirmExtraRound() {
+            const playExtra = document.getElementById('chk-play-extra').checked;
+            
+            if (pendingExtraRoundComp) {
+                const state = getCompetitionState();
+                if (!state[pendingExtraRoundComp]) state[pendingExtraRoundComp] = {};
+                
+                // Guardamos la decisión: TRUE (juega) o FALSE (salta directo a octavos/cuartos)
+                state[pendingExtraRoundComp].playsExtra = playExtra;
+                saveCompetitionState(state);
+            }
+            
+            document.getElementById('extra-round-modal').classList.remove('active');
+            
+            // Refrescar y salir como si hubiera terminado el registro normal
+            resetNewMatchForm();
+            renderCompetitionStatus();
+            populateCompetitionSelect();
+            alert('✅ Partido registrado y configuración de fase final actualizada.');
+            showTab('partidos');
         }
 
         // ==========================================
