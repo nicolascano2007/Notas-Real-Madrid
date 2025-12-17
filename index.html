@@ -240,6 +240,9 @@
         <nav class="bg-slate-800 shadow-sm sticky top-0 z-40">
             <div class="container mx-auto px-4">
                 <div class="flex gap-1 overflow-x-auto">
+                    <button onclick="showTab('principal')" id="tab-principal" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
+                        🏠 Principal
+                    </button>
                     <button onclick="showTab('plantilla')" id="tab-plantilla" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap tab-active">
                         👥 Plantilla
                     </button>
@@ -264,6 +267,81 @@
 
         <!-- Main Content -->
         <main class="container mx-auto px-4 py-6">
+            <!--Menú principal-->
+            <section id="section-principal" class="hidden fade-in">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Panel General</h2>
+                    <p class="text-gray-500 text-sm">Resumen de la temporada actual</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    
+                    <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-slate-800 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 text-slate-800 text-6xl">📅</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Próximo Partido</h3>
+                        <div id="dashboard-next-match">
+                            <p class="text-gray-500 text-sm">Cargando...</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-amber-400 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 text-amber-500 text-6xl">🔥</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Estado de Forma (Últimos 5)</h3>
+                        <div id="dashboard-form" class="flex items-center gap-2 mt-2">
+                            <span class="text-gray-500 text-sm">Sin datos</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-600 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10 text-blue-600 text-6xl">📊</div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resumen Temporada</h3>
+                        <div id="dashboard-summary" class="flex justify-between items-end mt-2">
+                             <div class="text-center">
+                                <span class="block text-2xl font-bold text-green-600" id="dash-wins">0</span>
+                                <span class="text-xs text-gray-500">Vic</span>
+                             </div>
+                             <div class="text-center">
+                                <span class="block text-2xl font-bold text-amber-600" id="dash-draws">0</span>
+                                <span class="text-xs text-gray-500">Emp</span>
+                             </div>
+                             <div class="text-center">
+                                <span class="block text-2xl font-bold text-red-600" id="dash-losses">0</span>
+                                <span class="text-xs text-gray-500">Der</span>
+                             </div>
+                             <div class="w-px h-8 bg-gray-200 mx-1"></div>
+                             <div class="text-center">
+                                <span class="block text-xl font-bold text-slate-700" id="dash-gf">0</span>
+                                <span class="text-xs text-gray-500">GF</span>
+                             </div>
+                             <div class="text-center">
+                                <span class="block text-xl font-bold text-slate-700" id="dash-ga">0</span>
+                                <span class="text-xs text-gray-500">GC</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                             <h3 class="font-bold text-gray-700">Últimos Resultados</h3>
+                             <button onclick="showTab('partidos')" class="text-xs text-blue-600 hover:underline">Ver todos</button>
+                        </div>
+                        <div id="dashboard-last-results" class="divide-y divide-gray-100">
+                             </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50">
+                             <h3 class="font-bold text-gray-700">Líderes</h3>
+                        </div>
+                        <div id="dashboard-leaders" class="p-4 space-y-4">
+                             </div>
+                    </div>
+
+                </div>
+            </section>
             
             <!-- PLANTILLA SECTION -->
             <section id="section-plantilla" class="fade-in">
@@ -617,7 +695,6 @@
                 </div>
                 
                 <!-- NEW: Team Streak & Top Form -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-amber-400">
                         <h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">Racha del Equipo</h3>
                         <div id="team-streak" class="flex items-center gap-3">
@@ -1161,7 +1238,7 @@
             populateComparatorSelects();
             populateCompetitionSelect();
             populateH2HOpponents();
-            showTab('plantilla');
+            showTab('principal');
 
             // Force load calendar immediately after setup
             loadCalendar();
@@ -2019,6 +2096,180 @@
             `;
             resultContainer.classList.remove('hidden');
         }
+        // ==========================================
+        // PRINCIPAL / DASHBOARD LOGIC
+        // ==========================================
+
+        function renderPrincipal() {
+            const matches = getData('matches');
+            const players = getPlayers();
+            const now = new Date();
+
+            // 1. PRÓXIMO RIVAL (Desde Calendario)
+            // Filtramos eventos futuros y ordenamos por fecha
+            const futureEvents = calendarEvents
+                .filter(e => e.start > now)
+                .sort((a, b) => a.start - b.start);
+            
+            const nextMatchContainer = document.getElementById('dashboard-next-match');
+            
+            if (futureEvents.length > 0) {
+                const next = futureEvents[0];
+                const dateStr = next.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                const timeStr = next.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                
+                // Intentar detectar competición si está disponible en el evento o mostrar genérico
+                const compName = next.possibleCompetition || 'Partido Oficial';
+                
+                nextMatchContainer.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-bold text-slate-800 truncate" title="${next.opponent}">${next.opponent}</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">${compName}</span>
+                            <span class="text-xs text-gray-500">${next.venue === 'local' ? '🏠 Casa' : '✈️ Fuera'}</span>
+                        </div>
+                        <div class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
+                            <span>🕒 ${dateStr} - ${timeStr}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1 truncate">🏟️ ${next.location || 'Estadio'}</p>
+                    </div>
+                `;
+            } else {
+                nextMatchContainer.innerHTML = `
+                    <div class="py-2">
+                        <p class="text-slate-600 font-medium">No hay partidos próximos.</p>
+                        <p class="text-xs text-gray-400">Actualiza el calendario si es necesario.</p>
+                    </div>`;
+            }
+
+            // 2. FORMA DEL EQUIPO (Lógica copiada y adaptada)
+            const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).reverse(); // Orden cronológico para la racha
+            const formContainer = document.getElementById('dashboard-form');
+            
+            if (last5Matches.length > 0) {
+                formContainer.innerHTML = last5Matches.map(m => {
+                    let color = 'bg-gray-400';
+                    let letter = 'E';
+                    if (m.outcome === 'victoria') { color = 'bg-green-500'; letter = 'V'; }
+                    else if (m.outcome === 'derrota') { color = 'bg-red-500'; letter = 'D'; }
+                    
+                    return `<div class="${color} text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm" title="${m.opponent} (${m.result})">${letter}</div>`;
+                }).join('');
+            } else {
+                formContainer.innerHTML = '<span class="text-gray-400 text-sm italic">Sin partidos jugados</span>';
+            }
+
+            // 3. RESUMEN TEMPORADA
+            let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+            matches.forEach(m => {
+                if (m.outcome === 'victoria') wins++;
+                else if (m.outcome === 'empate') draws++;
+                else losses++;
+                
+                if (m.result && m.result.includes('-')) {
+                    const parts = m.result.replace('*','').split('-').map(Number);
+                    if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
+                    else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
+                    else { gf += parts[0]; ga += parts[1]; }
+                }
+            });
+            document.getElementById('dash-wins').textContent = wins;
+            document.getElementById('dash-draws').textContent = draws;
+            document.getElementById('dash-losses').textContent = losses;
+            document.getElementById('dash-gf').textContent = gf;
+            document.getElementById('dash-ga').textContent = ga;
+
+            // 4. ÚLTIMOS 3 RESULTADOS
+            const last3 = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+            const resultsContainer = document.getElementById('dashboard-last-results');
+            
+            if (last3.length > 0) {
+                resultsContainer.innerHTML = last3.map(m => {
+                    const outcomeColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'derrota' ? 'text-red-600' : 'text-amber-600');
+                    return `
+                    <div class="px-5 py-3 hover:bg-gray-50 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1 h-8 rounded-full ${m.outcome === 'victoria' ? 'bg-green-500' : (m.outcome === 'derrota' ? 'bg-red-500' : 'bg-amber-500')}"></div>
+                            <div>
+                                <p class="font-bold text-gray-800 text-sm">${m.opponent}</p>
+                                <p class="text-xs text-gray-500">${m.competition}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-lg ${outcomeColor}">${m.result}</span>
+                            <p class="text-xs text-gray-400">${formatDate(m.date)}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                resultsContainer.innerHTML = '<div class="p-5 text-gray-500 text-sm text-center">No hay partidos registrados aún.</div>';
+            }
+
+            // 5. LÍDERES (Calculados al vuelo)
+            // Estructura para contadores
+            const stats = {};
+            players.forEach(p => stats[p.id] = { 
+                name: p.apellido, // Usamos apellido para que sea corto
+                img: p.foto,
+                goals: 0, 
+                assists: 0, 
+                mvps: 0,
+                totalRating: 0,
+                ratingCount: 0
+            });
+
+            matches.forEach(m => {
+                if (stats[m.mvp]) stats[m.mvp].mvps++;
+                m.playerStats.forEach(ps => {
+                    if (stats[ps.playerId]) {
+                        stats[ps.playerId].goals += (ps.goals || 0);
+                        stats[ps.playerId].assists += (ps.assists || 0);
+                        if (ps.rating) {
+                            stats[ps.playerId].totalRating += parseFloat(ps.rating);
+                            stats[ps.playerId].ratingCount++;
+                        }
+                    }
+                });
+            });
+
+            // Encontrar máximos
+            let topG = { id: null, val: -1 }, topA = { id: null, val: -1 }, topM = { id: null, val: -1 }, topR = { id: null, val: -1 };
+
+            Object.entries(stats).forEach(([id, s]) => {
+                const avg = s.ratingCount > 0 ? (s.totalRating / s.ratingCount) : 0;
+                
+                if (s.goals > topG.val) topG = { id, val: s.goals, ...s };
+                if (s.assists > topA.val) topA = { id, val: s.assists, ...s };
+                if (s.mvps > topM.val) topM = { id, val: s.mvps, ...s };
+                if (avg > topR.val && s.ratingCount >= 2) topR = { id, val: avg, ...s }; // Mínimo 2 partidos para nota media
+            });
+
+            // Renderizar Líderes
+            const renderLeaderRow = (label, icon, data, isRating = false) => {
+                if (!data.id || data.val <= 0) return '';
+                const valDisplay = isRating ? data.val.toFixed(2) : data.val;
+                return `
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-gray-100">${icon}</div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase">${label}</p>
+                            <p class="text-sm font-bold text-slate-800">${data.name}</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-bold text-amber-600">${valDisplay}</span>
+                </div>`;
+            };
+
+            const leadersHtml = `
+                ${renderLeaderRow('Goleador', '⚽', topG)}
+                ${renderLeaderRow('Asistente', '👟', topA)}
+                ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
+                ${renderLeaderRow('Más MVPs', '🏆', topM)}
+            `;
+
+            document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
+        }
 
         // ==========================================
         // TAB NAVIGATION
@@ -2030,7 +2281,7 @@
             
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('tab-active');
-            
+            if (tabName === 'principal') renderPrincipal();
             if (tabName === 'plantilla') renderPlayers();
             if (tabName === 'calendario') renderCalendar();
             if (tabName === 'nuevo') initNewMatchForm();
