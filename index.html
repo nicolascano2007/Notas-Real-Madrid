@@ -2665,12 +2665,23 @@
             document.getElementById('wizard-step-1').classList.remove('hidden');
         }
 
-        function renderCompetitionStatus() {
+       function renderCompetitionStatus() {
             const container = document.getElementById('competition-status');
             const state = getCompetitionState();
             
             container.innerHTML = Object.entries(COMPETICIONES_ACTUALES).map(([name, comp]) => {
                 const isEliminated = state[name]?.eliminated;
+                const eliminatedAtId = state[name]?.eliminatedAt;
+                
+                // Lógica para encontrar el nombre exacto de la ronda de eliminación
+                let eliminatedText = 'ELIMINADO DE LA COMPETICIÓN';
+                if (isEliminated && eliminatedAtId) {
+                    comp.fases.forEach(fase => {
+                        const r = fase.rondas.find(round => round.id === eliminatedAtId);
+                        if (r) eliminatedText = `Eliminado en ${r.nombre}`;
+                    });
+                }
+
                 const availableRounds = getAvailableRounds(name);
                 const nextRound = availableRounds.find(r => r.status === 'available');
                 const matches = getData('matches').filter(m => m.competition === name);
@@ -2684,7 +2695,7 @@
                         <div class="text-sm text-gray-600">
                             <p>📊 Partidos jugados: <strong>${matches.length}</strong></p>
                             ${nextRound ? `<p>➡️ Disponible: <strong>${nextRound.nombre}</strong></p>` : 
-                              (isEliminated ? '<p class="text-red-600 font-bold">⛔ ELIMINADO DE LA COMPETICIÓN</p>' : '<p class="text-green-500">✅ Competición completada</p>')}
+                              (isEliminated ? `<p class="text-red-600 font-bold">⛔ ${eliminatedText}</p>` : '<p class="text-green-500">✅ Competición completada</p>')}
                         </div>
                     </div>
                 `;
@@ -4119,6 +4130,7 @@
             
             saveData('matches', matches);
             closeEditMatchModal();
+            recalculateCompetitionState(match.competition);
             renderMatches();
             renderStats(); // Refresh stats
         });
