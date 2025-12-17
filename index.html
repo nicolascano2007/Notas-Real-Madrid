@@ -157,11 +157,10 @@
         .heatmap-val { font-size: 1.5rem; font-weight: bold; }
         .heatmap-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
-        /* Stats Sub-tabs */
-        .stats-subtab { @apply px-4 py-2 text-sm font-medium rounded-lg transition-colors; }
-        .stats-subtab.active { @apply bg-slate-800 text-white shadow-md; }
-        .stats-subtab.inactive { @apply bg-white text-gray-600 hover:bg-gray-50 border border-gray-200; }
-
+       /* Stats Sub-tabs - Estilo Limpio y Legible */
+        .stats-subtab { @apply px-5 py-2 text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-2; }
+        .stats-subtab.active { @apply bg-amber-500 text-white shadow-md transform scale-105; }
+        .stats-subtab.inactive { @apply text-gray-600 bg-transparent hover:bg-gray-100 hover:text-gray-900; }
         /* Chart Styles */
         .chart-container {
             display: flex;
@@ -601,13 +600,22 @@
 
             <!-- STATS SECTION -->
             <section id="section-stats" class="hidden fade-in">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h2 class="text-2xl font-bold text-gray-800">Estadísticas</h2>
-                    <div class="flex gap-2 bg-white rounded-lg p-1 border shadow-sm">
-                         <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab active">General</button>
-                         <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab inactive">Avanzado</button>
-                         <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">H2H (Rival)</button>
+                    
+                    <div class="flex p-1.5 bg-white border border-gray-200 rounded-xl shadow-sm">
+                         <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab active">
+                            📊 General
+                         </button>
+                         <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab inactive">
+                            📈 Avanzado
+                         </button>
+                         <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">
+                            ⚔️ H2H (Rival)
+                         </button>
                     </div>
+                </div>
+</div>
                 </div>
                 
                 <!-- NEW: Team Streak & Top Form -->
