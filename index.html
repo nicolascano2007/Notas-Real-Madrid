@@ -1147,28 +1147,36 @@
                 fases: [{ tipo: 'liga', rondas: Array.from({length: 30}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
             },
             'UWCL': {
-    id: 'uwcl',
-    nombre: 'UWCL',
-    color: 'comp-champions',
-    borderColor: 'border-comp-champions',
-    tipo: 'copa',
-    fases: [
-        { tipo: 'eliminatoria', nombre: 'Fase Previa', rondas: [
-            { id: 'fase-previa-ida', nombre: 'Fase Previa - Ida', orden: 1, eliminatoria: true, idaVuelta: 'ida', pareja: 'fase-previa-vuelta' },
-            { id: 'fase-previa-vuelta', nombre: 'Fase Previa - Vuelta', orden: 2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'fase-previa-ida' }
-        ]},
-        { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+3 })) },
-        { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-            { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta', rondaExtra: true },
-            { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida', rondaExtra: true },
-            { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
-            { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
-            { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
-            { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
-            { id: 'final', nombre: 'Final', orden: 13, eliminatoria: true, partidoUnico: true }
-        ]}
-    ]
-},
+                id: 'uwcl',
+                nombre: 'UWCL',
+                color: 'comp-champions',
+                borderColor: 'border-comp-champions',
+                tipo: 'copa',
+                fases: [
+                    // 1. Fase Previa (2 partidos) - Orden 1 y 2
+                    { tipo: 'eliminatoria', nombre: 'Fase Previa', rondas: [
+                        { id: 'fase-previa-ida', nombre: 'Fase Previa - Ida', orden: 1, eliminatoria: true, idaVuelta: 'ida', pareja: 'fase-previa-vuelta' },
+                        { id: 'fase-previa-vuelta', nombre: 'Fase Previa - Vuelta', orden: 2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'fase-previa-ida' }
+                    ]},
+                    // 2. Fase de Grupos (6 partidos) - Orden del 3 al 8
+                    // AQUÍ ESTÁ EL CAMBIO CLAVE: length: 6
+                    { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+3 })) },
+                    
+                    // 3. Eliminatorias
+                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                        // Ronda Extra (Play-offs) - Orden 8.1 y 8.2 (Justo después de la jornada 6 que tiene orden 8)
+                        { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta', rondaExtra: true },
+                        { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida', rondaExtra: true },
+                        
+                        // Resto de fases
+                        { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
+                        { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
+                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                        { id: 'final', nombre: 'Final', orden: 13, eliminatoria: true, partidoUnico: true }
+                    ]}
+                ]
+            },
              'Copa de la Reina': {
                 id: 'copa-reina',
                 nombre: 'Copa de la Reina',
