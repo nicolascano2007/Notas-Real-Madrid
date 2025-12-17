@@ -694,20 +694,7 @@
                     </div>
                 </div>
                 
-                <!-- NEW: Team Streak & Top Form -->
-                    <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-amber-400">
-                        <h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">Racha del Equipo</h3>
-                        <div id="team-streak" class="flex items-center gap-3">
-                            <span class="text-gray-500 text-sm">Sin datos</span>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm p-4 border-l-4 border-green-500">
-                        <h3 class="font-bold text-gray-800 mb-3 uppercase text-xs tracking-wider">🔥 En mejor forma (Últimos 5 PJ)</h3>
-                        <div id="top-form-players" class="space-y-2">
-                            <span class="text-gray-500 text-sm">Sin datos suficientes</span>
-                        </div>
-                    </div>
-                </div>
+                
                 
                 <!-- SUB-SECTION: GENERAL -->
                 <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
@@ -964,7 +951,11 @@
             'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
             'p10b', 'p17', 'p44', 'p31'
         ];
-
+        const CUSTOM_ORDER_FEMENINO = [
+            'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' 'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
+            'pf17', 'pf10', 'pf8', 'pf18', 'pf7', 'pf19', 'pf5', 'pf20', 'pf9', 'pf11', 'pf24', 'pf28', 'pf29', 
+            'pf33', 'pf43', 'pf27'
+        ];
         const PLANTILLA_MASCULINO = [
             { id: "dt1", nombre: "Xabi", apellido: "Alonso", posicion: "entrenador", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "p1", nombre: "Thibaut", apellido: "Courtois", posicion: "portero", dorsal: 1, nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
@@ -2571,10 +2562,13 @@
             populateFormFromFixture(fixture);
         }
 
-        function populateFormFromFixture(fixture) {
+       function populateFormFromFixture(fixture) {
             document.getElementById('selected-fixture-info').classList.remove('hidden');
+            
+            // Mostrar info visualmente
+            const compLabel = fixture.competition ? ` - ${fixture.competition}` : '';
             document.getElementById('selected-fixture-details').textContent = 
-                `${fixture.opponent} - ${fixture.start.toLocaleDateString('es-ES')} - ${fixture.location || 'Estadio'}`;
+                `${fixture.opponent}${compLabel} - ${fixture.start.toLocaleDateString('es-ES')} - ${fixture.location || 'Estadio'}`;
             
             const dateInput = document.getElementById('new-date');
             dateInput.value = fixture.start.toISOString().split('T')[0];
@@ -2583,6 +2577,25 @@
             opponentInput.value = fixture.opponent || '';
             
             document.getElementById('calendar-event-id').value = fixture.id;
+
+            // --- LÓGICA DE COMPETICIÓN AUTOMÁTICA ---
+            const compSelect = document.getElementById('new-competition');
+            
+            if (fixture.competition && COMPETICIONES_ACTUALES[fixture.competition]) {
+                // Si detectamos la competición y existe en nuestra configuración:
+                compSelect.value = fixture.competition;
+                compSelect.disabled = true; // Bloqueamos el select
+                compSelect.classList.add('readonly-input', 'bg-gray-100', 'text-gray-600'); // Estilo gris visual
+                
+                // Forzamos la actualización de rondas automáticamente
+                updateRoundOptions();
+            } else {
+                // Si no se detecta (o es Amistoso no configurado), dejamos elegir
+                compSelect.value = "";
+                compSelect.disabled = false;
+                compSelect.classList.remove('readonly-input', 'bg-gray-100', 'text-gray-600');
+            }
+            // ----------------------------------------
 
             const venueSelect = document.getElementById('new-venue');
             venueSelect.value = fixture.venue || '';
@@ -2920,24 +2933,26 @@
                 });
             }
 
-            // Use custom order for Men's team match registration
-            if (currentTeam === 'masculino') {
+            // Use custom order for both teams
+            if (currentTeam === 'masculino' || currentTeam === 'femenino') {
+                const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
+                
                 players.sort((a, b) => {
-                    const idxA = CUSTOM_ORDER_MASCULINO.indexOf(a.id);
-                    const idxB = CUSTOM_ORDER_MASCULINO.indexOf(b.id);
+                    const idxA = orderList.indexOf(a.id);
+                    const idxB = orderList.indexOf(b.id);
                     if (idxA === -1 && idxB === -1) return 0;
-                    if (idxA === -1) return 1;
+                    if (idxA === -1) return 1; // Los que no estén en la lista van al final
                     if (idxB === -1) return -1;
                     return idxA - idxB;
                 });
             } else {
+                // Fallback por si acaso
                 players.sort((a, b) => {
                     if (a.posicion === 'entrenador') return -1;
                     if (b.posicion === 'entrenador') return 1;
                     return a.dorsal - b.dorsal;
                 });
             }
-            
             container.innerHTML = players.map(player => {
                 const isCoach = player.posicion === 'entrenador';
                 const isSuspended = suspendedPlayers.includes(player.id) && !isCoach;
@@ -3026,6 +3041,12 @@
             document.getElementById('round-info').textContent = '';
             document.getElementById('leg-indicator').classList.add('hidden');
             document.getElementById('venue-alternation-warning').classList.add('hidden');
+            
+            // Resetear select de competición
+            const compSelect = document.getElementById('new-competition');
+            compSelect.disabled = false;
+            compSelect.classList.remove('readonly-input', 'bg-gray-100', 'text-gray-600');
+            
             document.getElementById('new-venue').disabled = false;
             document.getElementById('new-venue').classList.remove('readonly-input');
             document.getElementById('new-stadium').readOnly = true;
@@ -3256,8 +3277,31 @@
             
             renderCalendar();
         }
-        
-        function parseICalData(icalData) {
+        // Mapa de traducción: Nombre en Calendario (.ics) -> Nombre en tu Web
+        function mapIcsCompetition(icsDescription) {
+            if (!icsDescription) return null;
+            const desc = icsDescription.trim(); // Mantiene mayúsculas/minúsculas originales del ics por si acaso, pero buscamos flexiblemente
+
+            // Masculino
+            if (desc.includes('La Liga')) return 'Liga EA Sports';
+            if (desc.includes('Champions League')) return 'Champions League';
+            if (desc.includes('FIFA Club World Cup') || desc.includes('Mundial de Clubes')) return 'Mundial de Clubes';
+            if (desc.includes('Supercopa de España')) return 'Supercopa de España';
+            if (desc.includes('Copa del Rey')) return 'Copa del Rey';
+            
+            // Femenino
+            if (desc.includes('Primera división femenina') || desc.includes('Liga F')) return 'Liga F';
+            if (desc.includes('Women') && desc.includes('Champions')) return 'UWCL';
+            if (desc.includes('UWCL')) return 'UWCL';
+            if (desc.includes('Copa de la Reina') || desc.includes('Copa de la reina')) return 'Copa de la Reina';
+            if (desc.includes('Supercopa Femenina') || desc.includes('Supercopa femenina')) return 'Supercopa Femenina';
+
+            // Otros
+            if (desc.includes('Amistoso')) return 'Amistoso';
+
+            return null;
+        }
+       function parseICalData(icalData) {
             const events = [];
             const normalizedData = icalData.replace(/\r\n /g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const lines = normalizedData.split('\n');
@@ -3280,24 +3324,22 @@
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
                         
-                        // NOTE: We do not guess competition here anymore for display purposes 
-                        // as per requirements. Competition is assigned only when registered.
-                        // We store the detected one internally but it won't be shown in calendar
-                        // unless registered.
+                        // 1. Extraer Competición REAL usando la descripción
+                        const realComp = mapIcsCompetition(currentEvent.description);
                         
-                        const summaryLower = currentEvent.summary.toLowerCase();
-                        let detectedComp = null;
-                        Object.values(COMPETICIONES_ACTUALES).forEach(c => {
-                            if (summaryLower.includes(c.nombre.toLowerCase())) detectedComp = c.nombre;
-                        });
-                        if (!detectedComp) {
-                             if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Champions') || c.nombre.includes('UWCL'))?.nombre;
-                             else if (summaryLower.includes('copa')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Copa'))?.nombre;
-                             else if (summaryLower.includes('supercopa')) detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre.includes('Supercopa'))?.nombre;
-                             else if (summaryLower.includes('mundial')) detectedComp = 'Mundial de Clubes';
-                             else detectedComp = Object.values(COMPETICIONES_ACTUALES).find(c => c.tipo === 'liga')?.nombre; 
+                        if (realComp) {
+                            currentEvent.competition = realComp; // Competición confirmada
+                            currentEvent.possibleCompetition = realComp;
+                        } else {
+                            // Fallback a la detección antigua si no hay descripción útil
+                            const summaryLower = currentEvent.summary.toLowerCase();
+                            let detectedComp = null;
+                             if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) detectedComp = 'Champions League'; // Simplificado
+                             else if (summaryLower.includes('copa')) detectedComp = 'Copa del Rey';
+                             else if (summaryLower.includes('liga')) detectedComp = 'Liga EA Sports';
+                             currentEvent.possibleCompetition = detectedComp || 'Partido Oficial';
                         }
-                        currentEvent.possibleCompetition = detectedComp; // Stored but not forced
+                        
                         events.push(currentEvent);
                     }
                     currentEvent = null;
@@ -3311,6 +3353,7 @@
                         if (key === 'SUMMARY') currentEvent.summary = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
                         else if (key === 'DTSTART') currentEvent.start = parseICalDate(value);
                         else if (key === 'LOCATION') currentEvent.location = value.replace(/\\,/g, ',').replace(/\\;/g, ';');
+                        else if (key === 'DESCRIPTION') currentEvent.description = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' '); // NUEVO: Leer descripción
                     }
                 }
             }
@@ -3451,17 +3494,24 @@
                 const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                 
                 // Logic: Only show real competition name and color if registered. Otherwise default/grey.
-                let compName = 'Pendiente de registro';
+               // Lógica NUEVA: Mostrar competición si está registrada O si la hemos detectado en el calendario
+                let compName = event.competition || 'Pendiente de registro'; // Aquí está la clave: usa la del evento si existe
                 let compColorClass = 'bg-gray-200 text-gray-600';
                 let borderColorClass = 'border-gray-300';
 
+                // Si ya lo registraste, priorizamos lo que tú guardaste
                 if (isRegistered) {
                     compName = registeredMatch.competition;
-                    const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
-                    if (compObj) {
-                        compColorClass = compObj.color;
-                        borderColorClass = compObj.borderColor;
-                    }
+                }
+
+                // Buscamos los colores para esa competición (sea detectada o registrada)
+                const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
+                if (compObj) {
+                    compColorClass = compObj.color;
+                    borderColorClass = compObj.borderColor;
+                } else if (compName === 'Amistoso') {
+                    // Un colorcito especial para amistosos
+                    compColorClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
                 }
 
                 const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
@@ -3544,27 +3594,44 @@
                 
                 let eventsHtml = '';
                 daysEvents.forEach(e => {
+daysEvents.forEach(e => {
                     const isRegistered = registeredEventIds.includes(e.id);
                     if (hideRegisteredMatches && isRegistered) return;
 
                     const isPast = e.start <= new Date();
                     
-                    // Default Neutral Style
+                    // 1. Estilo Base (Neutro)
                     let style = 'background-color: #e5e7eb; color: #374151;'; 
                     let title = e.opponent;
 
+                    // 2. Determinar Competición (Registrada > Detectada > Nada)
+                    let compName = e.competition; 
                     if (isRegistered) {
-                         const m = matches.find(m => m.calendarEventId === e.id);
-                         const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === m.competition);
+                        const m = matches.find(m => m.calendarEventId === e.id);
+                        compName = m.competition;
+                    }
+
+                    // 3. Aplicar Colores (Mismos HEX que en CSS)
+                    if (compName) {
+                         const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
                          
                          if (compObj) {
-                             // Apply Competition Color
-                             if (compObj.id.includes('liga') || compObj.id.includes('f')) style = 'background-color: #dbeafe; color: #1e40af;';
-                             else if (compObj.id.includes('champions') || compObj.id.includes('uwcl')) style = 'background-color: #ede9fe; color: #5b21b6;';
-                             else if (compObj.id.includes('copa')) style = 'background-color: #d1fae5; color: #065f46;';
-                             else if (compObj.id.includes('mundial')) style = 'background-color: #fef3c7; color: #92400e;';
+                             // Lógica para asignar colores según el tipo de competición
+                             const id = compObj.id;
+                             if (id.includes('liga') || id === 'liga-f') style = 'background-color: #dbeafe; color: #1e40af;';
+                             else if (id.includes('champions') || id === 'uwcl') style = 'background-color: #ede9fe; color: #5b21b6;';
+                             else if (id.includes('copa')) style = 'background-color: #d1fae5; color: #065f46;';
+                             else if (id.includes('mundial')) style = 'background-color: #fef3c7; color: #92400e;';
+                             else if (id.includes('supercopa')) style = 'background-color: #fee2e2; color: #991b1b;';
+                         } 
+                         else if (compName === 'Amistoso') {
+                             style = 'background-color: #fef9c3; color: #854d0e;'; // Amarillo suave para amistosos
                          }
-                         style += ' text-decoration: line-through; opacity: 0.7;';
+                    }
+
+                    // 4. Si está registrado, añadir tachado y opacidad (pero manteniendo el color de fondo)
+                    if (isRegistered) {
+                         style += ' text-decoration: line-through; opacity: 0.7; border: 1px solid rgba(0,0,0,0.1);';
                     }
 
                     const action = (isPast && !isRegistered) ? `onclick="selectCalendarFixture('${e.id}')"` : '';
@@ -3572,6 +3639,7 @@
                     eventsHtml += `<div class="cal-event-dot" style="${style}" ${action} title="${title}">
                         ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
                     </div>`;
+                });
                 });
                 
                 gridHtml += `
@@ -3845,18 +3913,21 @@
             if (!match) return;
             
             const players = getActivePlayers();
-            // Sort by custom order if men's team
-             if (currentTeam === 'masculino') {
+            // Use custom order for both teams
+            if (currentTeam === 'masculino' || currentTeam === 'femenino') {
+                const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
+                
                 players.sort((a, b) => {
-                    const idxA = CUSTOM_ORDER_MASCULINO.indexOf(a.id);
-                    const idxB = CUSTOM_ORDER_MASCULINO.indexOf(b.id);
+                    const idxA = orderList.indexOf(a.id);
+                    const idxB = orderList.indexOf(b.id);
                     if (idxA === -1 && idxB === -1) return 0;
-                    if (idxA === -1) return 1;
+                    if (idxA === -1) return 1; // Los que no estén en la lista van al final
                     if (idxB === -1) return -1;
                     return idxA - idxB;
                 });
             } else {
-                 players.sort((a, b) => {
+                // Fallback por si acaso
+                players.sort((a, b) => {
                     if (a.posicion === 'entrenador') return -1;
                     if (b.posicion === 'entrenador') return 1;
                     return a.dorsal - b.dorsal;
