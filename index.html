@@ -3302,29 +3302,32 @@
         // ==========================================
         // CALENDAR
         // ==========================================
+        // ==========================================
+        // SISTEMA DE PRECARGA DE CALENDARIO
+        // ==========================================
+        
+        // Memoria para guardar los calendarios y no tener que recargarlos
+        const CALENDAR_CACHE = { masculino: null, femenino: null };
 
-        async function loadCalendar() {
-            if (!currentTeam || !TEAMS_CONFIG[currentTeam]) return;
-            const config = TEAMS_CONFIG[currentTeam];
+        async function getCalendarEvents(team) {
+            // 1. Si ya lo tenemos en memoria, lo devolvemos al instante (¡Velocidad pura!)
+            if (CALENDAR_CACHE[team]) return CALENDAR_CACHE[team];
 
-            const container = document.getElementById('calendar-container');
-            container.innerHTML = `
-                <div class="calendar-loading text-center py-12">
-                    <div class="text-4xl mb-4">⏳</div>
-                    <p class="text-gray-600">Cargando calendario oficial...</p>
-                </div>
-            `;
-            
+            const config = TEAMS_CONFIG[team];
+            if (!config) return [];
+
             const icalUrl = config.icalUrl;
             
+            // Lista de proxies para saltar el bloqueo CORS
             const proxies = [
                 (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
                 (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
                 (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
             ];
-            
+
             let icalData = null;
-            
+
+            // Intentamos descargar con cada proxy
             for (const proxyFn of proxies) {
                 try {
                     const proxyUrl = proxyFn(icalUrl);
@@ -3340,25 +3343,57 @@
                     console.warn('Proxy failed');
                 }
             }
-            
+
+            let events = [];
             if (icalData) {
-                calendarEvents = parseICalData(icalData);
-            } else {
-                calendarEvents = [];
+                // Pasamos 'team' explícitamente para no depender de 'currentTeam'
+                events = parseICalData(icalData, team);
             }
-            
+
+            // Añadir partidos manuales (Mundial de Clubes) si corresponde
             if (config.manualJuneMatches) {
                 const manualMatches = [
                     { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: 'Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
                     { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: 'Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
                     { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: 'Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
                 ];
-                calendarEvents = [...manualMatches, ...calendarEvents];
-                calendarEvents.sort((a, b) => a.start - b.start);
+                events = [...manualMatches, ...events];
+                events.sort((a, b) => a.start - b.start);
             }
+            
+            // Guardamos en caché para el futuro
+            CALENDAR_CACHE[team] = events;
+            return events;
+        }
+
+        function preloadCalendars() {
+            console.log("🚀 Iniciando precarga inteligente de calendarios...");
+            getCalendarEvents('masculino');
+            getCalendarEvents('femenino');
+        }
+
+
+       async function loadCalendar() {
+            if (!currentTeam) return;
+            
+            const container = document.getElementById('calendar-container');
+            
+            // Si NO está en caché, mostramos "Cargando..." (solo pasará si entras muy muy rápido)
+            if (!CALENDAR_CACHE[currentTeam]) {
+                container.innerHTML = `
+                    <div class="calendar-loading text-center py-12">
+                        <div class="text-4xl mb-4">⏳</div>
+                        <p class="text-gray-600">Cargando calendario oficial...</p>
+                    </div>
+                `;
+            }
+
+            // Pedimos los eventos (si la precarga funcionó, esto es instantáneo)
+            calendarEvents = await getCalendarEvents(currentTeam);
             
             renderCalendar();
         }
+
         // Mapa de traducción: Nombre en Calendario (.ics) -> Nombre en tu Web
         function mapIcsCompetition(icsDescription) {
             if (!icsDescription) return null;
@@ -3389,7 +3424,8 @@
 
             return null;
         }
-        function parseICalData(icalData) {
+       // AHORA ACEPTA 'teamContext' PARA SABER QUÉ EQUIPO ES DURANTE LA PRECARGA
+        function parseICalData(icalData, teamContext = currentTeam) {
             const events = [];
             const normalizedData = icalData.replace(/\r\n /g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const lines = normalizedData.split('\n');
@@ -3412,37 +3448,43 @@
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
                         
-                        // 1. Intentamos detectar por Descripción (Plan A)
-                        // IMPORTANTE: mapIcsCompetition ya hace .toLowerCase() dentro
-                        const realComp = mapIcsCompetition(currentEvent.description);
+                        // 1. Detección por Descripción (Plan A)
+                        let realComp = mapIcsCompetition(currentEvent.description);
+                        
+                        // CORRECCIÓN AUTOMÁTICA USANDO teamContext
+                        if (teamContext === 'femenino' && realComp) {
+                            if (realComp === 'Champions League') realComp = 'UWCL';
+                            if (realComp === 'Liga EA Sports') realComp = 'Liga F';
+                            if (realComp === 'Copa del Rey') realComp = 'Copa de la Reina';
+                            if (realComp === 'Supercopa de España') realComp = 'Supercopa Femenina';
+                        }
                         
                         if (realComp) {
                             currentEvent.competition = realComp; 
                             currentEvent.possibleCompetition = realComp;
                         } else {
-                            // 2. Si falla, detectamos por Título (Plan B - Fallback)
+                            // 2. Detección por Título (Plan B)
                             const summaryLower = currentEvent.summary.toLowerCase();
                             let detectedComp = null;
                             
                              if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) {
-                                 detectedComp = currentTeam === 'femenino' ? 'UWCL' : 'Champions League';
+                                 detectedComp = teamContext === 'femenino' ? 'UWCL' : 'Champions League';
                              }
                              else if (summaryLower.includes('copa')) {
-                                 detectedComp = currentTeam === 'femenino' ? 'Copa de la Reina' : 'Copa del Rey';
+                                 detectedComp = teamContext === 'femenino' ? 'Copa de la Reina' : 'Copa del Rey';
                              }
                              else if (summaryLower.includes('liga')) {
-                                 detectedComp = currentTeam === 'femenino' ? 'Liga F' : 'Liga EA Sports';
+                                 detectedComp = teamContext === 'femenino' ? 'Liga F' : 'Liga EA Sports';
                              }
                              else if (summaryLower.includes('supercopa')) {
-                                 detectedComp = currentTeam === 'femenino' ? 'Supercopa Femenina' : 'Supercopa de España';
+                                 detectedComp = teamContext === 'femenino' ? 'Supercopa Femenina' : 'Supercopa de España';
                              }
                              
-                             // 🔥 NUEVO: Si es Femenino y no hemos detectado NADA, asumimos Liga F 🔥
-                             if (!detectedComp && currentTeam === 'femenino') {
+                             // Fallback por defecto
+                             if (!detectedComp && teamContext === 'femenino') {
                                  detectedComp = 'Liga F';
                              }
                              
-                             // Guardamos lo detectado como definitivo
                              if (detectedComp) {
                                  currentEvent.competition = detectedComp;
                              }
@@ -4354,6 +4396,7 @@
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             console.log('App ready');
+            preloadCalendars();
         });
 
     </script>
