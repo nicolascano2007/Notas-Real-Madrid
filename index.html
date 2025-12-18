@@ -902,7 +902,30 @@
                         </div>
                     </div>
                 </div>
-                
+                <div class="bg-gray-100 p-3 rounded-lg mb-4 flex flex-col md:flex-row gap-3 items-center border border-gray-200">
+                                    <div class="flex-1 w-full">
+                                        <input type="text" id="filter-rival" placeholder="🔍 Buscar rival (ej: Barça)" 
+                                               class="w-full px-3 py-2 rounded border border-gray-300 text-sm focus:ring-2 focus:ring-blue-500"
+                                               onkeyup="applyMatchFilters()">
+                                    </div>
+                                    <div class="w-full md:w-auto">
+                                        <select id="filter-competition" class="w-full px-3 py-2 rounded border border-gray-300 text-sm" onchange="applyMatchFilters()">
+                                            <option value="all">Todas las Competiciones</option>
+                                            <option value="Liga">Liga</option>
+                                            <option value="Champions">Champions League</option>
+                                            <option value="Copa">Copa del Rey</option>
+                                            <option value="Supercopa">Supercopa</option>
+                                        </select>
+                                    </div>
+                                    <div class="w-full md:w-auto">
+                                        <select id="filter-result" class="w-full px-3 py-2 rounded border border-gray-300 text-sm" onchange="applyMatchFilters()">
+                                            <option value="all">Todos los resultados</option>
+                                            <option value="victoria">✅ Victorias</option>
+                                            <option value="empate">➖ Empates</option>
+                                            <option value="derrota">❌ Derrotas</option>
+                                        </select>
+                                    </div>
+                                </div>
                 <div id="matches-list" class="space-y-4"></div>
                 <div id="no-matches" class="hidden text-center py-12">
                     <div class="text-6xl mb-4">📅</div>
@@ -952,16 +975,19 @@
                 
                 
                 <!-- SUB-SECTION: GENERAL -->
-                <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
-                    <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                     <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b">
                          <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
-                         <div class="flex gap-2">
-                             <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-sm transition-colors">
-                                📥 Exportar CSV
-                            </button>
 
-                         </div>
-                    </div>
+                    <div class="flex gap-2">
+                  <button onclick="exportStats()" ...>
+                     📥 Exportar CSV
+                         </button>
+
+                        <button onclick="openComparatorModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                🆚 Comparador VS
+                     </button>
+                         </div> </div>
 
                     <!-- Summary Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
@@ -1049,7 +1075,7 @@
                                         <th id="th-avgRating" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('avgRating')">Nota</th>
                                         <th id="th-goals" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('goals')">Gol</th>
                                         <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')">Asist</th>
-                                        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase bg-slate-700 sortable" onclick="handleSort('ga')">G/A</th>
+                                        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('ga')">G/A</th>
                                         <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('minutes')">Min</th>
                                         <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')">MVP</th>
                                         <th id="th-wins" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('wins')">V</th>
@@ -1233,7 +1259,33 @@
             </div>
         </div>
     </div>
+    </div>
+    </div>
+    <div id="modal-comparator" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 m-4 relative overflow-y-auto max-h-[90vh]">
+            <button onclick="document.getElementById('modal-comparator').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">✕</button>
+            
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-4">⚔️ Duelo de Estadísticas</h2>
+            
+            <div class="flex justify-between items-center gap-4 mb-8">
+                <select id="comp-p1" class="flex-1 p-3 border-2 border-blue-100 rounded-xl font-bold text-blue-800 focus:border-blue-500 bg-blue-50" onchange="updateComparatorChart()"></select>
+                <div class="text-2xl font-black text-gray-300">VS</div>
+                <select id="comp-p2" class="flex-1 p-3 border-2 border-red-100 rounded-xl font-bold text-red-800 focus:border-red-500 bg-red-50" onchange="updateComparatorChart()"></select>
+            </div>
 
+            <div class="flex flex-col md:flex-row gap-8 items-center">
+                <div class="flex-1 w-full relative h-[350px]">
+                    <canvas id="chart-radar-vs"></canvas>
+                </div>
+
+                <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-3 text-center">Datos Totales</h4>
+                    <div id="comparator-stats-table" class="space-y-3 text-sm">
+                        </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         // ==========================================
         // DATA & CONSTANTS
@@ -2058,7 +2110,7 @@
                     <td class="px-4 py-3 text-center font-semibold ${getRatingColor(stats.avgRating)}">${stats.avgRating}</td>
                     <td class="px-4 py-3 text-center font-medium text-emerald-600">${isCoach ? '-' : stats.goals}</td>
                     <td class="px-4 py-3 text-center">${isCoach ? '-' : stats.assists}</td>
-                    <td class="px-4 py-3 text-center bg-slate-50 font-bold text-slate-700">${isCoach ? '-' : stats.ga}</td>
+                    <td class="px-4 py-3 text-center font-bold">${isCoach ? '-' : stats.ga}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${isCoach ? '-' : stats.minutes + "'"}</td>
                     <td class="px-4 py-3 text-center">
                         ${stats.mvpCount > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-sm font-medium">${stats.mvpCount}</span>` : '-'}
@@ -4291,8 +4343,9 @@
             
             return '#6b7280';
         }
-function renderMatches() {
-            let matches = getData('matches');
+        function renderMatches(matchesData = null) { // 1. Aceptamos un dato opcional
+             // 2. Si nos pasan datos (del buscador), usamos esos. Si no, cargamos todos.
+            let matches = matchesData || getData('matches');
             const players = getPlayers();
             const container = document.getElementById('matches-list');
             const noMatches = document.getElementById('no-matches');
@@ -5291,6 +5344,187 @@ function renderMatches() {
                 updateChartsTheme(true);
             }
             updateDarkModeButton(savedMode);
+        }
+        function applyMatchFilters() {
+            const text = document.getElementById('filter-rival').value.toLowerCase();
+            const comp = document.getElementById('filter-competition').value;
+            const res = document.getElementById('filter-result').value;
+            
+            const matches = getData('matches');
+
+            const filtered = matches.filter(m => {
+                // 1. Filtro Texto (Rival)
+                const matchText = m.opponent.toLowerCase();
+                if (text && !matchText.includes(text)) return false;
+
+                // 2. Filtro Competición
+                if (comp !== 'all' && m.competition !== comp) return false;
+
+                // 3. Filtro Resultado
+                if (res !== 'all' && m.outcome !== res) return false;
+
+                return true;
+            });
+
+            renderMatches(filtered); // Reutilizamos tu función pasándole la lista filtrada
+        }
+        // ==========================================
+        // COMPARADOR DE JUGADORES (RADAR)
+        // ==========================================
+        let radarChart = null;
+
+        function openComparatorModal() {
+            const modal = document.getElementById('modal-comparator');
+            const p1Select = document.getElementById('comp-p1');
+            const p2Select = document.getElementById('comp-p2');
+            const players = getPlayers().filter(p => p.posicion !== 'entrenador');
+
+            // Llenar selects si están vacíos
+            if (p1Select.options.length === 0) {
+                players.forEach(p => {
+                    const opt = `<option value="${p.id}">${p.apodo || p.apellido}</option>`;
+                    p1Select.innerHTML += opt;
+                    p2Select.innerHTML += opt;
+                });
+                // Seleccionar dos diferentes por defecto
+                if(players.length > 1) p2Select.selectedIndex = 1; 
+            }
+
+            modal.classList.remove('hidden');
+            updateComparatorChart();
+        }
+
+        function updateComparatorChart() {
+            const id1 = document.getElementById('comp-p1').value;
+            const id2 = document.getElementById('comp-p2').value;
+            const players = getPlayers();
+            const matches = getData('matches');
+
+            const p1 = players.find(p => p.id === id1);
+            const p2 = players.find(p => p.id === id2);
+
+            // Calcular Stats de cada uno
+            const getStats = (pid) => {
+                let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
+                matches.forEach(m => {
+                    const ps = m.playerStats.find(s => s.playerId === pid);
+                    if (ps) {
+                        g += ps.goals || 0;
+                        a += ps.assists || 0;
+                        mins += ps.minutes || 0;
+                        matchesCount++;
+                        if(m.mvp === pid) mvp++;
+                        if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
+                    }
+                });
+                return { 
+                    goals: g, 
+                    assists: a, 
+                    minutes: mins, 
+                    mvp: mvp, 
+                    avg: rateCount > 0 ? (rateSum / rateCount) : 0,
+                    matches: matchesCount
+                };
+            };
+
+            const s1 = getStats(id1);
+            const s2 = getStats(id2);
+
+            // --- NORMALIZACIÓN (Para que el gráfico se vea bien 0-100) ---
+            // Buscamos el "Máximo" del equipo para usarlo de referencia (techo)
+            // Si el máximo goleador lleva 20 goles, 20 goles = 100 puntos.
+            let maxGoals = 1, maxAssists = 1, maxMins = 1;
+            matches.forEach(m => m.playerStats.forEach(ps => {
+                // Cálculo rápido de máximos globales (simplificado)
+                if(ps.goals > 0 && ps.goals * 5 > maxGoals) maxGoals = 15; // Aproximación
+            }));
+            // Ajustamos techos manuales para evitar divisiones por cero o gráficos feos
+            const ceilings = { goals: 20, assists: 15, minutes: matches.length * 90, avg: 10, mvp: 5 };
+
+            const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
+
+            const data1 = [
+                normalize(s1.goals, ceilings.goals),
+                normalize(s1.assists, ceilings.assists),
+                normalize(s1.avg, ceilings.avg),
+                normalize(s1.minutes, ceilings.minutes),
+                normalize(s1.mvp, ceilings.mvp)
+            ];
+            
+            const data2 = [
+                normalize(s2.goals, ceilings.goals),
+                normalize(s2.assists, ceilings.assists),
+                normalize(s2.avg, ceilings.avg),
+                normalize(s2.minutes, ceilings.minutes),
+                normalize(s2.mvp, ceilings.mvp)
+            ];
+
+            // --- RENDERIZAR GRÁFICO ---
+            const ctx = document.getElementById('chart-radar-vs').getContext('2d');
+            if (radarChart) radarChart.destroy();
+
+            const isDark = document.body.classList.contains('dark-mode');
+            const color1 = 'rgba(59, 130, 246,'; // Blue
+            const color2 = 'rgba(239, 68, 68,';  // Red
+
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Goles', 'Asistencias', 'Nota Media', 'Minutos', 'MVPs'],
+                    datasets: [
+                        {
+                            label: p1.apodo || p1.apellido,
+                            data: data1,
+                            borderColor: color1 + ' 1)',
+                            backgroundColor: color1 + ' 0.2)',
+                            pointBackgroundColor: color1 + ' 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: p2.apodo || p2.apellido,
+                            data: data2,
+                            borderColor: color2 + ' 1)',
+                            backgroundColor: color2 + ' 0.2)',
+                            pointBackgroundColor: color2 + ' 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { display: false }, // Ocultar números del eje
+                            grid: { color: isDark ? '#334155' : '#e5e7eb' },
+                            pointLabels: {
+                                font: { size: 12, weight: 'bold' },
+                                color: isDark ? '#f1f5f9' : '#374151'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // --- ACTUALIZAR TABLA DE DATOS ---
+            const row = (label, v1, v2) => `
+                <div class="flex justify-between items-center border-b border-gray-200 pb-1 last:border-0">
+                    <span class="font-bold ${v1 > v2 ? 'text-blue-600' : 'text-gray-400'}">${typeof v1 === 'number' && v1 % 1 !== 0 ? v1.toFixed(2) : v1}</span>
+                    <span class="text-xs text-gray-500 uppercase mx-2">${label}</span>
+                    <span class="font-bold ${v2 > v1 ? 'text-red-600' : 'text-gray-400'}">${typeof v2 === 'number' && v2 % 1 !== 0 ? v2.toFixed(2) : v2}</span>
+                </div>
+            `;
+            
+            document.getElementById('comparator-stats-table').innerHTML = `
+                ${row('Goles', s1.goals, s2.goals)}
+                ${row('Asistencias', s1.assists, s2.assists)}
+                ${row('Nota Media', s1.avg, s2.avg)}
+                ${row('Minutos', s1.minutes, s2.minutes)}
+                ${row('MVPs', s1.mvp, s2.mvp)}
+                ${row('Partidos', s1.matches, s2.matches)}
+            `;
         }
 
         // Global Modal Close Handler
