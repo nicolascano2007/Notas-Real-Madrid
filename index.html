@@ -1473,18 +1473,29 @@
             return { totalFavor: totalUs, totalContra: totalThem, outcome };
         }
         
-        function recalculateCompetitionState(compName) {
+       function recalculateCompetitionState(compName) {
+            console.log(`Recalculando estado para: ${compName}`);
+            
+            // 1. Obtener estado actual y limpiar la competición específica
             let state = getCompetitionState();
             if (state[compName]) {
                 delete state[compName];
             }
-            saveCompetitionState(state);
+            saveCompetitionState(state); // Guardamos limpio primero
             
+            // 2. Obtener todos los partidos de esa competición ordenados por fecha
             const matches = getData('matches')
                 .filter(m => m.competition === compName)
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
                 
-            matches.forEach(match => checkEliminationAfterMatch(match));
+            // 3. Re-evaluar cada partido uno a uno
+            matches.forEach(match => {
+                checkEliminationAfterMatch(match);
+            });
+            
+            // 4. Verificar en consola
+            const newState = getCompetitionState();
+            console.log("Nuevo estado:", newState[compName]);
         }
 
         // ==========================================
@@ -4192,7 +4203,7 @@
             modal.classList.add('active');
         }
 
-        document.getElementById('edit-match-form').addEventListener('submit', function(e) {
+document.getElementById('edit-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const matchId = document.getElementById('edit-match-id').value;
@@ -4207,6 +4218,7 @@
             const playerStats = [];
             let starterCount = 0;
 
+            // --- Lógica de recolección de estadísticas de jugadores (INTACTA) ---
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
                 const isCoach = row.querySelector('.stat-goals') === null;
                 const starterChk = row.querySelector('.chk-starter');
@@ -4256,15 +4268,18 @@
                 }
             });
             
-             // Validate 11 Starters
+             // Validación de 11 titulares
              if (starterCount !== 11) {
                 alert(`⚠️ Error de validación: Se han seleccionado ${starterCount} titulares. Deben ser exactamente 11 (sin contar al entrenador).`);
                 return;
             }
+            // -------------------------------------------------------------
             
             const result = document.getElementById('edit-result').value.trim();
-            
-        matches[matchIndex] = {
+            // NUEVO: Capturar el checkbox de forzar eliminación
+            const forceElimination = document.getElementById('edit-force-elimination') ? document.getElementById('edit-force-elimination').checked : false;
+
+            matches[matchIndex] = {
                 ...match,
                 date: document.getElementById('edit-date').value,
                 opponent: document.getElementById('edit-opponent').value,
@@ -4273,21 +4288,21 @@
                 outcome: calculateMatchOutcome(result, match.venue),
                 mvp: calculateAutoMVP(playerStats),
                 playerStats: playerStats,
-                forceElimination: document.getElementById('edit-force-elimination').checked // <--- NUEVO: Guardar checkbox
+                forceElimination: forceElimination // <--- NUEVO: Guardar la propiedad
             };
             
             saveData('matches', matches);
             closeEditMatchModal();
             
-            // Recalcular estado de competición
+            // NUEVO: Recalcular y actualizar todas las pantallas
             recalculateCompetitionState(match.competition);
-            
-            // Refrescar vistas
             renderMatches();
-            renderStats(); 
-            renderCompetitionStatus(); // <--- IMPORTANTE: Actualizar las tarjetas del panel principal
-            renderPrincipal();         // <--- IMPORTANTE: Actualizar datos del dashboard
-            });
+            renderStats();
+            renderCompetitionStatus(); // Actualiza tarjetas en menú principal
+            renderPrincipal();         // Actualiza dashboard
+            
+            alert('✅ Partido actualizado correctamente.');
+        });
 
         
         function closeEditMatchModal() {
