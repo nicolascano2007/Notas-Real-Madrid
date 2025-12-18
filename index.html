@@ -1530,14 +1530,14 @@
             renderStats();
         }
 
-        function renderStats() {
+function renderStats() {
             const matches = getData('matches');
             const players = getPlayers();
             
             const competitionFilter = document.getElementById('stats-filter-competition').value;
             const statusFilter = document.getElementById('stats-filter-status').value;
             
-            // Update Headers Visuals
+            // Actualizar visuales de las cabeceras (flechitas de orden)
             document.querySelectorAll('th.sortable').forEach(th => {
                 th.classList.remove('th-active');
                 th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
@@ -1553,11 +1553,11 @@
                 filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
             }
 
-            // Streak Logic
+            // Lógica de Rachas (Últimos 5 partidos)
             const streakContainer = document.getElementById('team-streak');
             const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
             
-            if (last5Matches.length > 0) {
+            if (last5Matches.length > 0 && streakContainer) {
                 streakContainer.innerHTML = last5Matches.map(m => {
                     let outcomeClass = 'streak-d';
                     let letter = 'E';
@@ -1565,11 +1565,11 @@
                     else if (m.outcome === 'derrota') { outcomeClass = 'streak-l'; letter = 'D'; }
                     return `<span class="streak-dot ${outcomeClass}" title="${m.opponent} (${m.result})">${letter}</span>`;
                 }).join('');
-            } else {
+            } else if (streakContainer) {
                 streakContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin partidos jugados</span>';
             }
 
-            // Global Stats Calculation
+            // Cálculo de Estadísticas Globales
             let totalWins = 0, totalDraws = 0, totalLosses = 0;
             let totalGoalsFor = 0, totalGoalsAgainst = 0;
             let totalAssists = 0;
@@ -1594,25 +1594,26 @@
                 }
             });
             
-            document.getElementById('stat-total-matches').textContent = filteredMatches.length;
-            document.getElementById('stat-wins').textContent = totalWins;
-            document.getElementById('stat-draws').textContent = totalDraws;
-            document.getElementById('stat-losses').textContent = totalLosses;
-            document.getElementById('stat-total-goals').textContent = totalGoalsFor;
-            document.getElementById('stat-total-goals-against').textContent = totalGoalsAgainst;
+            if(document.getElementById('stat-total-matches')) document.getElementById('stat-total-matches').textContent = filteredMatches.length;
+            if(document.getElementById('stat-wins')) document.getElementById('stat-wins').textContent = totalWins;
+            if(document.getElementById('stat-draws')) document.getElementById('stat-draws').textContent = totalDraws;
+            if(document.getElementById('stat-losses')) document.getElementById('stat-losses').textContent = totalLosses;
+            if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = totalGoalsFor;
+            if(document.getElementById('stat-total-goals-against')) document.getElementById('stat-total-goals-against').textContent = totalGoalsAgainst;
 
             let filteredPlayers = [...players];
             if (statusFilter) {
                 filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
             }
             
-            // EXCLUDE COACH FROM COUNT
+            // Excluir entrenador del conteo total
             const playerOnlyCount = filteredPlayers.filter(p => p.posicion !== 'entrenador').length;
-            document.getElementById('stat-total-players').textContent = playerOnlyCount;
+            if(document.getElementById('stat-total-players')) document.getElementById('stat-total-players').textContent = playerOnlyCount;
 
             const playerStats = filteredPlayers.map(player => {
                 const stats = {
                     id: player.id,
+                    // AQUÍ ESTABA EL ERROR: Usamos comillas invertidas para que funcione bien
                     name: player.apodo || `${player.nombre} ${player.apellido}`,
                     number: player.dorsal,
                     foto: player.foto,
@@ -1631,12 +1632,15 @@
                     losses: 0,
                     yellowCards: 0,
                     redCards: 0,
-                    last5Ratings: [] // For top form calc
+                    last5Ratings: [] 
                 };
                 
+                // Ordenar partidos para procesar cronológicamente
                 const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+                // Bucle de cálculo (ESTA ES LA PARTE QUE SEGURAMENTE SE BORRÓ ANTES)
                 playerMatchesSorted.forEach(match => {
+                    // Buscamos si el jugador jugó en este partido
                     const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
                     
                     if (ps) {
@@ -1670,38 +1674,40 @@
                 return stats;
             });
             
-            document.getElementById('stat-total-assists').textContent = totalAssists;
+            if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
 
             // Top Form Players Logic
             const formContainer = document.getElementById('top-form-players');
-            const playersWithRecentGames = playerStats
-                .filter(p => p.last5Ratings.length > 0 && p.posicion !== 'entrenador')
-                .map(p => {
-                    const recent = p.last5Ratings.slice(0, 5);
-                    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
-                    return { ...p, recentAvg: avg };
-                })
-                .sort((a, b) => b.recentAvg - a.recentAvg)
-                .slice(0, 3);
+            if (formContainer) {
+                const playersWithRecentGames = playerStats
+                    .filter(p => p.last5Ratings.length > 0 && p.posicion !== 'entrenador')
+                    .map(p => {
+                        const recent = p.last5Ratings.slice(0, 5);
+                        const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                        return { ...p, recentAvg: avg };
+                    })
+                    .sort((a, b) => b.recentAvg - a.recentAvg)
+                    .slice(0, 3);
 
-            if (playersWithRecentGames.length > 0) {
-                formContainer.innerHTML = playersWithRecentGames.map((p, i) => `
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-gray-400 w-4">${i+1}.</span>
-                            <img src="${p.foto}" class="top-form-img">
-                            <span class="text-sm font-medium">${p.name}</span>
+                if (playersWithRecentGames.length > 0) {
+                    formContainer.innerHTML = playersWithRecentGames.map((p, i) => `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-gray-400 w-4">${i+1}.</span>
+                                <img src="${p.foto}" class="top-form-img">
+                                <span class="text-sm font-medium">${p.name}</span>
+                            </div>
+                            <span class="text-sm font-bold text-green-600">${p.recentAvg.toFixed(2)}</span>
                         </div>
-                        <span class="text-sm font-bold text-green-600">${p.recentAvg.toFixed(2)}</span>
-                    </div>
-                `).join('');
-            } else {
-                formContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin datos suficientes</span>';
+                    `).join('');
+                } else {
+                    formContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin datos suficientes</span>';
+                }
             }
 
 
+            // Ordenar tabla
             playerStats.sort((a, b) => {
-                // Primary Sort: Inactives to bottom
                 if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
                 if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
 
