@@ -2045,15 +2045,21 @@
             const players = getPlayers();
             
             // --- 1. DATOS PARA GRÁFICO DE GOLES (DONUT) ---
-            const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0, 'portero': 0 };
+            // Definimos solo las 3 grandes categorías
+            const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0 };
             
             filteredMatches.forEach(m => {
                 m.playerStats.forEach(ps => {
                     const p = players.find(pl => pl.id === ps.playerId);
                     if (p && ps.goals > 0) {
-                        // Sumamos goles a su posición (asegurando que existe la clave)
-                        if (goalsByPos[p.posicion] !== undefined) {
-                            goalsByPos[p.posicion] += ps.goals;
+                        let pos = p.posicion;
+                        
+                        // FUSIÓN CLAVE: Si es extremo, lo contamos como delantero para este gráfico
+                        if (pos === 'extremo') pos = 'delantero';
+                        
+                        // Solo sumamos si entra en una de las 3 categorías principales (ignoramos porteros si marcaran)
+                        if (goalsByPos[pos] !== undefined) {
+                            goalsByPos[pos] += ps.goals;
                         }
                     }
                 });
@@ -2061,33 +2067,41 @@
 
             const ctxGoals = document.getElementById('chart-goals-distribution').getContext('2d');
             
-            // Destruir anterior si existe para actualizar
             if (goalsChart) goalsChart.destroy();
 
             goalsChart = new Chart(ctxGoals, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Delanteros', 'Medios', 'Defensas'],
+                    labels: ['Delanteros (+Ext)', 'Medios', 'Defensas'],
                     datasets: [{
                         data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
                         backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                        hoverOffset: 4,
                         borderWidth: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
+                                    return ` ${value} Goles (${percentage})`;
+                                }
+                            }
+                        }
                     }
                 }
             });
 
             // --- 2. DATOS PARA EVOLUCIÓN (LÍNEA) ---
-            // Ordenamos partidos por fecha
             const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
             
             const labels = sortedMatches.map(m => {
-                // Nombre corto: "J1 vs Barça" o "Octavos vs City"
                 const shortRound = m.round.replace('Jornada', 'J').replace('Fase de Liga - ', '').replace('Fase de Grupos - ', 'G');
                 return `${shortRound} vs ${m.opponent}`;
             });
@@ -2112,30 +2126,47 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Nota Media Equipo',
+                        label: 'Nota Media',
                         data: ratings,
-                        borderColor: '#f59e0b', // Amber-500
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        tension: 0.3, // Curvatura suave
+                        borderColor: '#f59e0b',
+                        backgroundColor: (context) => {
+                            const ctx = context.chart.ctx;
+                            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+                            gradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+                            return gradient;
+                        },
+                        tension: 0.3,
                         fill: true,
                         pointBackgroundColor: '#fff',
                         pointBorderColor: '#f59e0b',
-                        pointRadius: 4
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     scales: {
-                        y: { min: 0, max: 10, grid: { color: '#f3f4f6' } },
-                        x: { display: false } // Ocultamos eje X si hay muchos partidos para que no se sature
+                        y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, border: { display: false } },
+                        x: { display: false }
                     },
                     plugins: {
                         tooltip: {
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            titleColor: '#1f2937',
+                            bodyColor: '#1f2937',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1,
                             callbacks: {
-                                title: (context) => context[0].label // Mostrar rival al pasar ratón
+                                title: (context) => context[0].label
                             }
-                        }
+                        },
+                        legend: { display: false }
                     }
                 }
             });
