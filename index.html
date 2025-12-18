@@ -4940,46 +4940,52 @@ function renderMatches() {
         // SISTEMA DE COPIA DE SEGURIDAD (BACKUP)
         // ==========================================
 
+        // ==========================================
+        // SISTEMA DE COPIA DE SEGURIDAD (CORREGIDO)
+        // ==========================================
+
         function backupData() {
-            // 1. Recopilar todo lo que hay en localStorage
+            if (!currentTeam) {
+                alert("⚠️ Error: No hay un equipo seleccionado.");
+                return;
+            }
+
+            // CORRECCIÓN: Usamos getData() que sabe buscar en la carpeta correcta (ej: masculino_matches)
+            const matches = getData('matches');
+            const competitionState = getData('competitionState') || {}; // Usamos getData en vez de getCompetitionState para consistencia
+            const playerStates = getData('playerStates') || []; // También guardamos los estados (activo/inactivo)
+
+            // Creamos el paquete completo
             const data = {
-                matches: JSON.parse(localStorage.getItem('matches') || '[]'),
-                competitionState: JSON.parse(localStorage.getItem('competitionState') || '{}'),
-                team: localStorage.getItem('currentTeam') || 'masculino',
+                team: currentTeam, // "masculino" o "femenino"
+                matches: matches,
+                competitionState: competitionState,
+                playerStates: playerStates,
                 timestamp: new Date().toISOString(),
-                version: '1.0'
+                version: '1.1'
             };
 
-            // 2. Convertir a texto JSON
+            // Convertir y descargar
             const dataStr = JSON.stringify(data, null, 2);
-            
-            // 3. Crear un "Blob" (archivo virtual)
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             
-            // 4. Forzar descarga
             const a = document.createElement('a');
             const date = new Date().toISOString().split('T')[0];
+            // El nombre del archivo ahora incluye el equipo para no confundirlos
+            a.download = `Backup_RealMadrid_${currentTeam}_${date}.json`;
             a.href = url;
-            a.download = `RealMadrid_Manager_Backup_${date}.json`;
             document.body.appendChild(a);
             a.click();
-            
-            // Limpieza
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            alert("✅ Copia de seguridad descargada. Guárdala bien.");
+            alert(`✅ Copia de seguridad descargada (${matches.length} partidos).`);
         }
 
         function restoreData(input) {
             const file = input.files[0];
             if (!file) return;
-
-            if (!confirm("⚠️ ¡ATENCIÓN!\n\nAl cargar este archivo se BORRARÁN los datos actuales y se sustituirán por los de la copia.\n\n¿Estás seguro?")) {
-                input.value = ''; // Limpiar input
-                return;
-            }
 
             const reader = new FileReader();
             
@@ -4988,18 +4994,35 @@ function renderMatches() {
                     const content = e.target.result;
                     const data = JSON.parse(content);
                     
-                    // Validar que parece un archivo nuestro
-                    if (!data.matches || !data.competitionState) {
-                        throw new Error("Formato de archivo incorrecto");
+                    // Validaciones de seguridad
+                    if (!data.matches || !data.team) {
+                        throw new Error("El archivo no tiene el formato correcto o le falta el equipo.");
                     }
 
-                    // Guardar en el navegador
-                    localStorage.setItem('matches', JSON.stringify(data.matches));
-                    localStorage.setItem('competitionState', JSON.stringify(data.competitionState));
-                    if (data.team) localStorage.setItem('currentTeam', data.team);
+                    // Aviso si intentas cargar datos del Femenino estando en el Masculino (o viceversa)
+                    if (data.team !== currentTeam) {
+                        const confirmar = confirm(`⚠️ ¡CUIDADO!\n\nEste archivo pertenece al equipo "${data.team.toUpperCase()}" pero estás en el panel del "${currentTeam.toUpperCase()}".\n\nSi continúas, sobrescribirás los datos de ${currentTeam} con los de ${data.team}.\n\n¿Estás seguro?`);
+                        if (!confirmar) {
+                            input.value = '';
+                            return;
+                        }
+                    } else {
+                        // Confirmación normal
+                        if (!confirm(`⚠️ Se van a restaurar ${data.matches.length} partidos.\nEsto BORRARÁ los datos actuales de esta sesión.\n¿Continuar?`)) {
+                            input.value = '';
+                            return;
+                        }
+                    }
 
-                    alert("✅ Datos restaurados con éxito. La página se recargará.");
-                    location.reload(); // Recargar para aplicar cambios
+                    // CORRECCIÓN: Usamos saveData() para guardar en la etiqueta correcta
+                    saveData('matches', data.matches);
+                    saveData('competitionState', data.competitionState || {});
+                    if (data.playerStates) {
+                        saveData('playerStates', data.playerStates);
+                    }
+
+                    alert("✅ Datos restaurados con éxito. Recargando...");
+                    location.reload(); 
 
                 } catch (err) {
                     alert("❌ Error al leer el archivo: " + err.message);
@@ -5007,6 +5030,7 @@ function renderMatches() {
             };
             
             reader.readAsText(file);
+            input.value = ''; // Limpiar el input para poder cargar el mismo archivo de nuevo si se quiere
         }
 
         function hardReset() {
