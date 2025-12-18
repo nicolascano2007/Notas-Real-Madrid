@@ -188,6 +188,127 @@
             font-weight: bold;
             color: #374151;
         }
+        /* --- ESTILOS PIZARRA TÁCTICA --- */
+        .pitch-container {
+            width: 100%;
+            /* Relación de aspecto horizontal (4:3 o 3:2 según prefieras) */
+            height: 100%; width: 100%;
+            background-color: #2e7d32;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.2) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255,255,255,0.2) 2px, transparent 2px);
+            background-size: 50px 50px; /* Cuadrícula más pequeña */
+            position: relative;
+            border: 4px solid white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+            margin: 0 auto;
+        }
+        
+        /* Ajustar líneas para campo horizontal */
+        .pitch-line-mid {
+            width: 2px; /* Ahora es vertical */
+            height: 100%;
+            left: 50%;
+            top: 0;
+            background: rgba(255,255,255,0.6);
+            position: absolute;
+        }
+        .pitch-circle {
+            width: 15%; /* Ajustar tamaño relativo */
+            aspect-ratio: 1/1; /* Mantener círculo perfecto */
+            height: auto;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            position: absolute;
+            border: 2px solid rgba(255,255,255,0.6);
+        }
+        .pitch-box-left, .pitch-box-right {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15%;
+            height: 40%;
+            border: 2px solid rgba(255,255,255,0.6);
+        }
+        .pitch-box-left { left: -2px; border-left: none; }
+        .pitch-box-right { right: -2px; border-right: none; }
+
+        /* Fichas de Jugadores */
+        .player-token {
+            width: 45px;
+            height: 45px;
+            position: absolute;
+            transform: translate(-50%, -50%); /* Para centrar exacto en la coordenada */
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.2s ease;
+        }
+        .player-token:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); }
+        .player-token img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center; /* <--- ESTO ES LA CLAVE */
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .player-token-name {
+            position: absolute;
+            bottom: -18px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 9px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* Zona de Banquillo (Drag Source) */
+        .bench-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            min-height: 100px;
+            align-content: flex-start;
+        }
+        .bench-slot {
+            width: 50px;
+            height: 50px;
+            background: #e5e7eb;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #9ca3af;
+        }
+
+        /* huecos vacíos en el campo */
+        .pitch-slot {
+            width: 45px;
+            height: 45px;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            z-index: 5;
+        }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -583,21 +704,92 @@
                             </div>
 
                             <!-- STEP 2: JUGADORES -->
-                            <div id="wizard-step-2" class="hidden">
-                                <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                                    <h3 class="text-lg font-bold text-gray-800">Paso 2: Estadísticas de Jugadores</h3>
-                                    <button type="button" onclick="goToStep1()" class="text-sm text-blue-600 hover:underline">⬅️ Volver a Datos</button>
+                            <div id="wizard-step-2" class="hidden h-full">
+                                <div class="flex flex-col sm:flex-row justify-between items-center mb-2 pb-2 border-b gap-3">
+                                    <h3 class="text-lg font-bold text-gray-800">Paso 2: Alineación</h3>
+                                    
+                                    <div class="flex items-center gap-3">
+                                        <div class="bg-gray-100 p-1 rounded-lg flex text-sm">
+                                            <button type="button" id="btn-mode-list" class="px-3 py-1 text-gray-500 hover:text-gray-700 transition-all" onclick="switchLineupMode('list')">Lista</button>
+                                            <button type="button" id="btn-mode-pitch" class="px-3 py-1 bg-white shadow rounded text-gray-800 font-medium transition-all" onclick="switchLineupMode('pitch')">Pizarra</button>
+                                        </div>
+                                        <button type="button" onclick="goToStep1()" class="text-sm text-blue-600 hover:underline">⬅️ Volver</button>
+                                    </div>
                                 </div>
 
-                                <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Selecciona "Titular" o "Suplente" para habilitar las estadísticas.</div>
-                                <div id="new-match-players-stats" class="space-y-3 h-[65vh] overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50"></div>                                
+                                <div id="mode-list-container" class="hidden">
+                                    <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Selecciona "Titular" o "Suplente".</div>
+                                    <div id="new-match-players-stats" class="space-y-3 h-[60vh] overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50"></div>
+                                </div>
+
+                                <div id="mode-pitch-container" class="flex flex-col h-full">
+                                    
+                                    <div class="mb-2 flex items-center justify-center gap-2">
+                                        <label class="text-sm font-bold text-gray-700">Esquema:</label>
+                                        <select id="formation-select" class="border rounded px-2 py-1 bg-white text-gray-800 focus:ring-2 focus:ring-green-500 text-sm" onchange="updatePitchFormation()">
+                                            <option value="4-3-3">4-3-3</option>
+                                            <option value="4-4-2">4-4-2</option>
+                                            <option value="4-2-3-1">4-2-3-1</option>
+                                            <option value="3-5-2">3-5-2</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="flex flex-col md:flex-row gap-4 h-[550px]"> 
+                                        
+                                        <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
+                                            <div class="pitch-container w-full h-full" id="tactical-pitch" style="margin: 0; border: none; border-radius: 0;">
+                                                <div class="pitch-line-mid"></div>
+                                                <div class="pitch-circle"></div>
+                                                <div class="pitch-box-left" style="left:0; border-left:none;"></div>
+                                                <div class="pitch-box-right" style="right:0; border-right:none;"></div>
+                                                
+                                                <div id="pitch-slots-layer"></div>
+                                                <div id="pitch-players-layer"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="w-full md:w-72 flex flex-col gap-2 h-full">
+                                            
+                                            <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
+                                                <div class="bg-gray-100 p-2 border-b border-gray-200">
+                                                    <h5 class="text-xs font-bold text-gray-600 uppercase text-center">Plantilla Disponible</h5>
+                                                </div>
+                                                <div id="bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start">
+                                                    </div>
+                                            </div>
+                                            
+                                            <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
+                                                <div class="bg-blue-100 p-1 border-b border-blue-200">
+                                                    <h5 class="text-[10px] font-bold text-blue-600 uppercase text-center">Suplentes Convocados</h5>
+                                                </div>
+                                                <div id="subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start">
+                                                    </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="flex gap-3 pt-4 border-t mt-4">
-                                    <button type="button" onclick="resetNewMatchForm()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                        Cancelar
+                                    <button type="button" onclick="goToStep1()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Atrás</button>
+                                    <button type="button" onclick="goToStep3()" class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-bold text-lg shadow-lg flex items-center justify-center gap-2 transform hover:scale-[1.01] transition-all">
+                                        CONFIRMAR ALINEACIÓN ➡️
                                     </button>
-                                    <button type="submit" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium">
-                                        Guardar Partido
-                                    </button>
+                                </div>
+                            </div>
+                            <div id="wizard-step-3" class="hidden">
+                                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 pb-2 border-b gap-3">
+                                    <h3 class="text-lg font-bold text-gray-800">Paso 3: Rendimiento</h3>
+                                    <button type="button" onclick="goToStep2()" class="text-sm text-blue-600 hover:underline">⬅️ Volver a Pizarra</button>
+                                </div>
+
+                                <div class="mb-2 text-sm text-green-700 bg-green-50 p-2 rounded">✅ Alineación confirmada. Introduce las estadísticas del partido.</div>
+                                
+                                <div id="final-stats-container" class="space-y-3 h-[60vh] overflow-y-auto border border-gray-200 rounded-xl p-4 bg-gray-50"></div>
+
+                                <div class="flex gap-3 pt-4 border-t mt-4">
+                                    <button type="button" onclick="resetNewMatchForm()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancelar</button>
+                                    <button type="submit" class="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium font-bold text-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">💾 GUARDAR PARTIDO</button>
                                 </div>
                             </div>
                         </form>
@@ -1045,6 +1237,37 @@
             { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "delantero", dorsal: 38, nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" }
         ];
+        // Coordenadas para la Pizarra Táctica (top%, left%)
+        // El portero siempre es el índice 0.
+        // Coordenadas Horizontal: Portero a la Izquierda (Left ~5%)
+        const FORMACIONES = {
+            '4-4-2': [
+                { left: 5, top: 50 }, // PT
+                { left: 25, top: 15 }, { left: 25, top: 38 }, { left: 25, top: 62 }, { left: 25, top: 85 }, // Defensas
+                { left: 50, top: 15 }, { left: 50, top: 38 }, { left: 50, top: 62 }, { left: 50, top: 85 }, // Medios
+                { left: 80, top: 35 }, { left: 80, top: 65 }  // Delanteros
+            ],
+            '4-3-3': [
+                { left: 5, top: 50 }, // PT
+                { left: 25, top: 10 }, { left: 25, top: 35 }, { left: 25, top: 65 }, { left: 25, top: 90 }, // Defensas
+                { left: 45, top: 50 }, { left: 60, top: 25 }, { left: 60, top: 75 }, // Medios (Pivote + 2 Interiores)
+                { left: 85, top: 15 }, { left: 85, top: 50 }, { left: 85, top: 85 }  // Delanteros
+            ],
+            '4-2-3-1': [
+                { left: 5, top: 50 }, // PT
+                { left: 22, top: 10 }, { left: 22, top: 35 }, { left: 22, top: 65 }, { left: 22, top: 90 }, // Defensas
+                { left: 42, top: 35 }, { left: 42, top: 65 }, // Doble Pivote
+                { left: 65, top: 15 }, { left: 65, top: 50 }, { left: 65, top: 85 }, // Mediapuntas
+                { left: 85, top: 50 }  // Punta
+            ],
+            '3-5-2': [
+                { left: 5, top: 50 }, // PT
+                { left: 22, top: 30 }, { left: 22, top: 50 }, { left: 22, top: 70 }, // 3 Centrales
+                { left: 45, top: 10 }, { left: 45, top: 90 }, // Carrileros
+                { left: 45, top: 50 }, { left: 60, top: 35 }, { left: 60, top: 65 }, // Medios
+                { left: 80, top: 35 }, { left: 80, top: 65 }  // Delanteros
+            ]
+        };
         const COMPETICIONES_MASCULINO = {
             'Liga EA Sports': {
                 id: 'liga',
@@ -2729,6 +2952,9 @@
 
             document.getElementById('wizard-step-1').classList.add('hidden');
             document.getElementById('wizard-step-2').classList.remove('hidden');
+            currentPitchPlayers = {}; // Reseteamos alineación
+            renderBench();            // Cargamos jugadores
+            updatePitchFormation();   // Pintamos el campo (4-3-3 por defecto)
         }
 
         function goToStep1() {
@@ -3146,7 +3372,7 @@
             document.getElementById('new-match-players-stats').innerHTML = '';
         }
         
-        document.getElementById('new-match-form').addEventListener('submit', function(e) {
+ document.getElementById('new-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const calendarEventId = document.getElementById('calendar-event-id').value;
@@ -3163,22 +3389,13 @@
             const stadium = document.getElementById('new-stadium').value;
             let result = document.getElementById('new-result').value.trim();
             
-            // Handle Penalties and Result Modification
+            // Lógica de Penaltis (igual que antes)
             const chkPenalties = document.getElementById('chk-penalties');
             if (chkPenalties.checked) {
                  const outcomeRadio = document.querySelector('input[name="penalties-outcome"]:checked');
                  if (outcomeRadio) {
                      const isWin = outcomeRadio.value === 'win';
                      const parts = result.split('-').map(Number);
-                     // Determine index for 'us' based on venue
-                     // Local input format: Us - Them (if venue=local) or Them - Us (if venue=visitor)?
-                     // Standard placeholder 'goles_local-goles_visitante'.
-                     // If venue is Local: we are index 0. If win, index 0++.
-                     // If venue is Visitor: we are index 1. If win, index 1++.
-                     // Neutral: Assuming we treat input as Local-Visitor, and if we say "Win penalties", we add to OUR score.
-                     // But which is our score in Neutral? Assuming index 0 (Left) is 'Real Madrid' typically in manual entry if we act as Home.
-                     // Let's assume venue dictates score side.
-                     
                      let usIndex = 0;
                      if (venue === 'visitante') usIndex = 1;
                      
@@ -3200,72 +3417,49 @@
             
             const outcome = calculateMatchOutcome(result, venue);
             
-            const statsContainer = document.getElementById('new-match-players-stats');
+            // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE ---
+            // Leemos del contenedor del PASO 3 (final-stats-container) en vez del Paso 2
+            const statsContainer = document.getElementById('final-stats-container');
             const playerStats = [];
-            let starterCount = 0;
             
+            // Recorremos la lista final (que ya solo tiene a los que jugaron)
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
-                const isCoach = row.querySelector('.stat-goals') === null;
-                const starterChk = row.querySelector('.chk-starter');
-                const subChk = row.querySelector('.chk-sub');
+                const playerId = row.getAttribute('data-player-id');
+                const rol = row.getAttribute('data-rol'); // Este dato lo guardamos al pasar al paso 3
+                const isCoach = rol === 'Entrenador';
                 
-                // Determine Played Status
-                let played = false;
-                let isStarter = false;
-
-                if (isCoach) {
-                    played = true; // Coach always plays
-                    isStarter = false; // Coach is staff
-                } else {
-                    played = (starterChk && starterChk.checked) || (subChk && subChk.checked);
-                    isStarter = (starterChk && starterChk.checked);
-                }
+                // Ya no hay checkboxes, el rol nos dice si fue titular
+                const isStarter = (rol === 'Titular');
                 
-                // Card inputs are always available
+                // Leemos los inputs
                 let yellow = parseInt(row.querySelector('.stat-yellow').value) || 0;
                 let red = parseInt(row.querySelector('.stat-red').value) || 0;
+                if (yellow >= 2) red = 1;
 
-                // Auto Red if 2 Yellows
-                if (yellow >= 2) {
-                    red = 1;
-                }
+                let rating = null;
+                let goals = 0;
+                let assists = 0;
+                let minutes = 0;
 
-                if (played || yellow > 0 || red > 0) {
-                    let rating = null;
-                    let goals = 0;
-                    let assists = 0;
-                    let minutes = 0;
+                const ratingInput = row.querySelector('.stat-rating').value;
+                rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
+                goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0);
+                assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0);
+                minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0);
 
-                    // Only capture performance stats if they actually played
-                    if (played) {
-                        if (!isCoach && isStarter) starterCount++;
-                        
-                        const ratingInput = row.querySelector('.stat-rating').value;
-                        rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
-                        goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0);
-                        assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0);
-                        minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0);
-                    }
-
-                    playerStats.push({
-                        playerId: row.dataset.playerId,
-                        isStarter: isStarter,
-                        rating: rating,
-                        goals: goals,
-                        assists: assists,
-                        minutes: minutes,
-                        yellowCards: yellow,
-                        redCards: red,
-                        played: played // Explicitly track if they played
-                    });
-                }
+                playerStats.push({
+                    playerId: playerId,
+                    isStarter: isStarter,
+                    rating: rating,
+                    goals: goals,
+                    assists: assists,
+                    minutes: minutes,
+                    yellowCards: yellow,
+                    redCards: red,
+                    played: true // Si está en esta lista, es que jugó (o es el míster)
+                });
             });
-            
-            // Validate 11 Starters
-            if (starterCount !== 11) {
-                alert(`⚠️ Error de validación: Se han seleccionado ${starterCount} titulares. Deben ser exactamente 11 (sin contar al entrenador).`);
-                return;
-            }
+            // -------------------------------------
             
             const mvp = calculateAutoMVP(playerStats);
             
@@ -3291,12 +3485,10 @@
             
             checkEliminationAfterMatch(matchData);
 
-            // --- NUEVO: Lógica de Ronda Extra (Champions/UWCL) ---
-            // Comprobamos si este partido activa el pop-up
+            // Lógica de Ronda Extra
             const triggered = checkExtraRoundTrigger(matchData);
             
             if (!triggered) {
-                // Si NO salta el pop-up, limpiamos y terminamos normal
                 resetNewMatchForm();
                 renderCompetitionStatus();
                 populateCompetitionSelect();
@@ -3304,8 +3496,6 @@
                 alert('✅ Partido registrado correctamente');
                 showTab('partidos');
             }
-            // Si triggered es TRUE, no hacemos nada más aquí.
-            // El modal se abre y la función 'confirmExtraRound' se encargará de limpiar y redirigir al confirmar.
         });
         
         // ==========================================
@@ -4369,6 +4559,338 @@ function renderMatches() {
         
         function capitalizeFirst(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        function switchLineupMode(mode) {
+            const listContainer = document.getElementById('mode-list-container');
+            const pitchContainer = document.getElementById('mode-pitch-container');
+            const btnList = document.getElementById('btn-mode-list');
+            const btnPitch = document.getElementById('btn-mode-pitch');
+
+            if (mode === 'list') {
+                listContainer.classList.remove('hidden');
+                pitchContainer.classList.add('hidden');
+                
+                btnList.classList.add('bg-white', 'shadow', 'text-gray-800', 'font-medium');
+                btnList.classList.remove('text-gray-500');
+                
+                btnPitch.classList.remove('bg-white', 'shadow', 'text-gray-800', 'font-medium');
+                btnPitch.classList.add('text-gray-500');
+            } else {
+                listContainer.classList.add('hidden');
+                pitchContainer.classList.remove('hidden');
+                
+                btnPitch.classList.add('bg-white', 'shadow', 'text-gray-800', 'font-medium');
+                btnPitch.classList.remove('text-gray-500');
+                
+                btnList.classList.remove('bg-white', 'shadow', 'text-gray-800', 'font-medium');
+                btnList.classList.add('text-gray-500');
+                
+                // Aquí llamaremos a renderizar la pizarra en la Fase 2
+                // renderTacticalBoard(); 
+            }
+        }
+        // ==========================================
+        // TACTICAL BOARD LOGIC (FASE 2)
+        // ==========================================
+
+        let currentPitchPlayers = {}; // Guardará { "slot-0": playerId, "slot-1": playerId... }
+        let currentFormation = '4-3-3'; // Formación por defecto
+
+        function updatePitchFormation() {
+            currentFormation = document.getElementById('formation-select').value;
+            renderTacticalBoard();
+        }
+
+        function renderTacticalBoard() {
+            const slotsLayer = document.getElementById('pitch-slots-layer');
+            const playersLayer = document.getElementById('pitch-players-layer');
+            const coords = FORMACIONES[currentFormation];
+
+            // 1. Pintar los huecos vacíos (Slots)
+            slotsLayer.innerHTML = coords.map((pos, index) => `
+                <div class="pitch-slot" 
+                     id="slot-${index}"
+                     style="top: ${pos.top}%; left: ${pos.left}%;"
+                     ondragover="allowDrop(event)" 
+                     ondrop="drop(event)">
+                </div>
+            `).join('');
+
+            // 2. Repintar jugadores que ya estuvieran en el campo
+            // (Si cambiamos de 4-3-3 a 4-4-2, intentamos mantenerlos en su sitio por índice)
+            playersLayer.innerHTML = ''; // Limpiamos capa visual
+            
+            Object.keys(currentPitchPlayers).forEach(slotId => {
+                const playerId = currentPitchPlayers[slotId];
+                // Solo pintamos si el hueco existe en la nueva formación
+                const slotEl = document.getElementById(slotId);
+                if (slotEl && playerId) {
+                    const player = getPlayers().find(p => p.id === playerId);
+                    if (player) {
+                        renderPlayerOnPitch(player, slotId, playersLayer);
+                    }
+                } else {
+                    // Si el hueco ya no existe (ej: pasamos de 3 delanteros a 2), 
+                    // devolvemos al jugador al banquillo virtualmente (lo borramos del campo)
+                    delete currentPitchPlayers[slotId];
+                    renderBench(); // Actualizamos banquillo para que vuelva a aparecer
+                }
+            });
+        }
+
+        // Pinta la ficha redonda del jugador en el campo
+        function renderPlayerOnPitch(player, slotId, container) {
+            const slotEl = document.getElementById(slotId);
+            if (!slotEl) return;
+
+            const div = document.createElement('div');
+            div.className = 'player-token';
+            div.style.top = slotEl.style.top;
+            div.style.left = slotEl.style.left;
+            div.draggable = true;
+            div.id = `token-${player.id}`;
+            div.setAttribute('data-player-id', player.id);
+            div.setAttribute('data-current-slot', slotId);
+            
+            // Eventos Drag para moverlo del campo a otro lado
+            div.ondragstart = drag;
+
+            div.innerHTML = `
+                <img src="${player.foto}" onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
+                <div class="player-token-name">${player.apodo || player.apellido}</div>
+            `;
+            
+            container.appendChild(div);
+        }
+
+        function renderBench() {
+            const benchZone = document.getElementById('bench-zone');
+            const subsZone = document.getElementById('subs-zone');
+            const players = getActivePlayers(); // Tu función existente
+            
+            // Filtramos: Solo mostramos en el banquillo a los que NO están en el campo
+            const playersOnPitchIds = Object.values(currentPitchPlayers);
+            const benchPlayers = players.filter(p => !playersOnPitchIds.includes(p.id));
+
+            // Ordenamos por dorsal o posición
+            benchPlayers.sort((a, b) => {
+                if (a.posicion === 'portero') return -1;
+                if (b.posicion === 'portero') return 1;
+                return a.dorsal - b.dorsal;
+            });
+
+            benchZone.innerHTML = benchPlayers.map(p => `
+                <div class="player-token relative" 
+                     style="position: relative; transform: none; width: 50px; height: 50px; margin: 4px;"
+                     draggable="true" 
+                     id="bench-${p.id}" 
+                     data-player-id="${p.id}"
+                     ondragstart="drag(event)">
+                    <img src="${p.foto}" onerror="this.src='https://via.placeholder.com/40x40?text=${p.dorsal}'">
+                    <div class="player-token-name">${p.apodo || p.apellido}</div>
+                </div>
+            `).join('');
+            
+            // Configurar zonas de drop
+            benchZone.ondragover = allowDrop;
+            benchZone.ondrop = dropToBench;
+            
+            subsZone.ondragover = allowDrop;
+            subsZone.ondrop = dropToSubs;
+        }
+
+        // --- DRAG & DROP NATIVO ---
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            // Guardamos el ID del jugador que estamos arrastrando
+            const playerId = ev.target.getAttribute('data-player-id');
+            const sourceSlot = ev.target.getAttribute('data-current-slot'); // Si viene del campo
+            
+            ev.dataTransfer.setData("playerId", playerId);
+            if (sourceSlot) ev.dataTransfer.setData("sourceSlot", sourceSlot);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const playerId = ev.dataTransfer.getData("playerId");
+            const sourceSlot = ev.dataTransfer.getData("sourceSlot");
+            
+            // Identificar dónde soltamos (puede ser el slot o el token que ya había ahí)
+            let target = ev.target;
+            // Si soltamos encima de un slot vacío (div.pitch-slot)
+            if (!target.classList.contains('pitch-slot')) {
+                // Si soltamos encima de una imagen o texto de otro jugador, buscamos el slot padre o cercano?
+                // Simplificación: Solo permitimos soltar en huecos vacíos por ahora para no complicar
+                // Pero si queremos sustituir, habría que detectar si target es un player-token.
+                return; 
+            }
+            
+            const targetSlotId = target.id;
+
+            // LÓGICA DE MOVIMIENTO
+            // 1. Si venía de otro hueco del campo, lo borramos de allí
+            if (sourceSlot) {
+                delete currentPitchPlayers[sourceSlot];
+            }
+
+            // 2. Si el hueco destino ya tenía alguien, lo mandamos al banquillo (intercambio simple)
+            // (Para hacer intercambio real A<->B habría que ver quién estaba y poner a A en el sitio de B)
+            if (currentPitchPlayers[targetSlotId]) {
+                // El que estaba ahí se va al limbo (al renderizar bench aparecerá)
+                // Opcional: Podríamos ponerlo en sourceSlot si existía (True Swap)
+            }
+
+            // 3. Asignamos jugador al nuevo hueco
+            currentPitchPlayers[targetSlotId] = playerId;
+
+            // 4. Refrescamos todo
+            renderTacticalBoard();
+            renderBench();
+            syncListWithBoard(); // FASE 3: Esto conectará con la lista antigua
+        }
+
+        function dropToBench(ev) {
+            ev.preventDefault();
+            const playerId = ev.dataTransfer.getData("playerId");
+            const sourceSlot = ev.dataTransfer.getData("sourceSlot");
+
+            if (sourceSlot) {
+                // Si venía del campo, lo quitamos del registro del campo
+                delete currentPitchPlayers[sourceSlot];
+                renderTacticalBoard();
+                renderBench();
+                syncListWithBoard();
+            }
+        }
+        
+        function dropToSubs(ev) {
+             ev.preventDefault();
+             // Aquí iría la lógica para marcar como "Suplente" explícito
+             // De momento lo tratamos igual que el banquillo general
+             dropToBench(ev);
+        }
+
+        // FASE 3 (Adelanto): Sincronizar Pizarra -> Checkbox de la Lista
+        // Esta función marca los checkboxes ocultos basándose en quién está en el campo
+        function syncListWithBoard() {
+            // 1. Limpiar todos los checkboxes
+            document.querySelectorAll('.chk-starter').forEach(chk => {
+                chk.checked = false;
+                handleRoleCheck(chk, 'starter'); // Actualizar visuales
+            });
+
+            // 2. Marcar los que están en currentPitchPlayers
+            Object.values(currentPitchPlayers).forEach(playerId => {
+                // Buscar el div del jugador en la lista oculta
+                const playerRow = document.querySelector(`div[data-player-id="${playerId}"]`);
+                if (playerRow) {
+                    const starterChk = playerRow.querySelector('.chk-starter');
+                    if (starterChk) {
+                        starterChk.checked = true;
+                        handleRoleCheck(starterChk, 'starter');
+                    }
+                }
+            });
+        }
+        function goToStep3() {
+            // 1. Validar que hay 11 titulares
+            const titularesIds = Object.values(currentPitchPlayers);
+            // Filtramos undefined o null por si acaso
+            const titularesReales = titularesIds.filter(id => id);
+            
+            if (titularesReales.length !== 11) {
+                alert(`⚠️ Tienes ${titularesReales.length} jugadores en el campo. Deben ser exactamente 11.`);
+                return;
+            }
+
+            // 2. Identificar Suplentes (Están en la zona #subs-zone)
+            const subsZone = document.getElementById('subs-zone');
+            const suplentesIds = Array.from(subsZone.children).map(el => el.getAttribute('data-player-id')).filter(id => id);
+
+            // 3. Generar la lista limpia
+            const container = document.getElementById('final-stats-container');
+            const allPlayers = getPlayers(); // Todos los datos
+            
+            // Unimos y marcamos rol
+            let selectedPlayers = [];
+            
+            // Titulares
+            titularesReales.forEach(id => {
+                const p = allPlayers.find(pl => pl.id === id);
+                if(p) selectedPlayers.push({ ...p, rol: 'Titular' });
+            });
+            
+            // Suplentes
+            suplentesIds.forEach(id => {
+                const p = allPlayers.find(pl => pl.id === id);
+                if(p) selectedPlayers.push({ ...p, rol: 'Suplente' });
+            });
+            
+            // Entrenador (Siempre va)
+            const coach = allPlayers.find(p => p.posicion === 'entrenador');
+            if(coach) selectedPlayers.push({ ...coach, rol: 'Entrenador' });
+
+            // Renderizar HTML limpio
+            container.innerHTML = selectedPlayers.map(p => {
+                const isCoach = p.posicion === 'entrenador';
+                const rolBadge = p.rol === 'Titular' 
+                    ? '<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded border border-green-200">TITULAR</span>'
+                    : (isCoach ? '<span class="bg-gray-200 text-gray-800 text-xs font-bold px-2 py-1 rounded">STAFF</span>' 
+                    : '<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-200">SUPLENTE</span>');
+
+                return `
+                <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" data-player-id="${p.id}" data-rol="${p.rol}">
+                    <div class="flex items-center gap-3 w-full md:w-1/3">
+                        <img src="${p.foto}" class="player-photo-xs border border-gray-200" onerror="this.src='https://via.placeholder.com/40x40'">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</span>
+                                ${rolBadge}
+                            </div>
+                            <span class="text-xs text-gray-500">#${p.dorsal} - ${p.posicion}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-2 w-full md:flex-1">
+                        <div class="flex flex-col">
+                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Nota</label>
+                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none" min="0" max="10" step="0.25" placeholder="-">
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Goles</label>
+                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Asist</label>
+                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Min</label>
+                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm text-center" min="0" max="120" value="${p.rol === 'Titular' ? 90 : 45}">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-0 md:pl-3 justify-center">
+                        <div class="flex flex-col items-center">
+                            <label class="text-[10px] mb-1">🟨</label>
+                            <input type="number" class="stat-yellow w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="2" value="0">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="text-[10px] mb-1">🟥</label>
+                            <input type="number" class="stat-red w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="1" value="0">
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+
+            // 4. Cambiar Pantalla
+            document.getElementById('wizard-step-2').classList.add('hidden');
+            document.getElementById('wizard-step-3').classList.remove('hidden');
         }
 
         // Global Modal Close Handler
