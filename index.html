@@ -2626,48 +2626,38 @@
             populateFormFromFixture(fixture);
         }
 
-       function populateFormFromFixture(fixture) {
+        function populateFormFromFixture(fixture) {
             document.getElementById('selected-fixture-info').classList.remove('hidden');
             
-            // Mostrar info visualmente
             const compLabel = fixture.competition ? ` - ${fixture.competition}` : '';
             document.getElementById('selected-fixture-details').textContent = 
                 `${fixture.opponent}${compLabel} - ${fixture.start.toLocaleDateString('es-ES')} - ${fixture.location || 'Estadio'}`;
             
-            const dateInput = document.getElementById('new-date');
-            dateInput.value = fixture.start.toISOString().split('T')[0];
-            
-            const opponentInput = document.getElementById('new-opponent');
-            opponentInput.value = fixture.opponent || '';
-            
+            document.getElementById('new-date').value = fixture.start.toISOString().split('T')[0];
+            document.getElementById('new-opponent').value = fixture.opponent || '';
             document.getElementById('calendar-event-id').value = fixture.id;
 
-            // --- LÓGICA DE COMPETICIÓN AUTOMÁTICA (MEJORADA) ---
+            // --- LÓGICA ROBUSTA PARA EL SELECTOR ---
             const compSelect = document.getElementById('new-competition');
-            
-            // Buscamos la competición ignorando mayúsculas/minúsculas para ser más robustos
             let foundCompKey = null;
+
             if (fixture.competition) {
+                // Buscamos ignorando mayúsculas y espacios (trim)
                 foundCompKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
-                    k.toLowerCase() === fixture.competition.toLowerCase()
+                    k.toLowerCase().trim() === fixture.competition.toLowerCase().trim()
                 );
             }
 
             if (foundCompKey) {
-                // Si la encontramos (aunque sea con distinta mayúscula), la seleccionamos
                 compSelect.value = foundCompKey;
                 compSelect.disabled = true; 
                 compSelect.classList.add('readonly-input', 'bg-gray-100', 'text-gray-600'); 
-                
-                // Forzamos la actualización de rondas
                 updateRoundOptions();
             } else {
-                // Si no se detecta, desbloqueamos
                 compSelect.value = "";
                 compSelect.disabled = false;
                 compSelect.classList.remove('readonly-input', 'bg-gray-100', 'text-gray-600');
             }
-            // ----------------------------------------
 
             const venueSelect = document.getElementById('new-venue');
             venueSelect.value = fixture.venue || '';
@@ -2684,6 +2674,7 @@
                 stadiumInput.classList.add('readonly-input');
             }
         }
+
         function clearSelectedFixture() {
             selectedCalendarFixture = null;
             resetNewMatchForm();
@@ -3421,14 +3412,15 @@
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
                         
-                        // 1. Extraer Competición REAL usando la descripción (SOLO UNA VEZ)
+                        // 1. Intentamos detectar por Descripción (Plan A)
+                        // IMPORTANTE: mapIcsCompetition ya hace .toLowerCase() dentro
                         const realComp = mapIcsCompetition(currentEvent.description);
                         
                         if (realComp) {
                             currentEvent.competition = realComp; 
                             currentEvent.possibleCompetition = realComp;
                         } else {
-                            // FALLBACK MEJORADO: Por si no hay descripción
+                            // 2. Si falla, detectamos por Título (Plan B - Fallback)
                             const summaryLower = currentEvent.summary.toLowerCase();
                             let detectedComp = null;
                             
@@ -3445,9 +3437,16 @@
                                  detectedComp = currentTeam === 'femenino' ? 'Supercopa Femenina' : 'Supercopa de España';
                              }
                              
+                             // 🔥 NUEVO: Si es Femenino y no hemos detectado NADA, asumimos Liga F 🔥
+                             if (!detectedComp && currentTeam === 'femenino') {
+                                 detectedComp = 'Liga F';
+                             }
+                             
+                             // Guardamos lo detectado como definitivo
                              if (detectedComp) {
                                  currentEvent.competition = detectedComp;
                              }
+                             
                              currentEvent.possibleCompetition = detectedComp || 'Partido Oficial';
                         }
                         
