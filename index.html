@@ -4072,25 +4072,17 @@
             const match = matches.find(m => m.id === matchId);
             if (!match) return;
             
+            // Ordenar jugadores (igual que antes)
             const players = getActivePlayers();
-            // Use custom order for both teams
             if (currentTeam === 'masculino' || currentTeam === 'femenino') {
                 const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
-                
                 players.sort((a, b) => {
                     const idxA = orderList.indexOf(a.id);
                     const idxB = orderList.indexOf(b.id);
                     if (idxA === -1 && idxB === -1) return 0;
-                    if (idxA === -1) return 1; // Los que no estén en la lista van al final
+                    if (idxA === -1) return 1;
                     if (idxB === -1) return -1;
                     return idxA - idxB;
-                });
-            } else {
-                // Fallback por si acaso
-                players.sort((a, b) => {
-                    if (a.posicion === 'entrenador') return -1;
-                    if (b.posicion === 'entrenador') return 1;
-                    return a.dorsal - b.dorsal;
                 });
             }
 
@@ -4100,6 +4092,9 @@
             
             document.getElementById('edit-match-id').value = match.id;
             subtitle.textContent = `vs ${match.opponent} - ${match.round}`;
+            
+            // Detectar si hubo penaltis guardados previamente (si el resultado tiene asterisco o outcome manual)
+            const hadPenalties = match.result.includes('*') || (match.outcome !== 'empate' && match.result.split('-')[0] === match.result.split('-')[1]);
             
             content.innerHTML = `
                 <div class="space-y-4">
@@ -4114,33 +4109,43 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Resultado</label>
-                            <input type="text" id="edit-result" value="${match.result}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 font-bold text-gray-800">
+                            <input type="text" id="edit-result" value="${match.result.replace('*','')}" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 font-bold text-gray-800">
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Estadio</label>
                         <input type="text" id="edit-stadium" value="${match.stadium}" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed">
                     </div>
-                    <div class="col-span-1 md:col-span-3 mt-3 bg-red-50 p-3 rounded-lg border border-red-100 flex items-center gap-3">
-                        <input type="checkbox" id="edit-force-elimination" class="w-5 h-5 text-red-600 rounded focus:ring-red-500" ${match.forceElimination ? 'checked' : ''}>
-                        <div>
-                            <label for="edit-force-elimination" class="text-sm font-bold text-red-800 cursor-pointer">Marcar como Eliminación</label>
-                            <p class="text-xs text-red-600">Activa esto si perdiste la eliminatoria (ej. penaltis) y el sistema no lo detectó.</p>
+
+                    <div class="bg-orange-50 p-3 rounded-lg border border-orange-200">
+                        <label class="flex items-center gap-2 cursor-pointer mb-2">
+                            <input type="checkbox" id="edit-chk-penalties" class="w-4 h-4 text-orange-600" onchange="document.getElementById('edit-penalty-outcome').classList.toggle('hidden')" ${hadPenalties ? 'checked' : ''}>
+                            <span class="text-sm font-bold text-orange-800">Hubo Tanda de Penaltis</span>
+                        </label>
+                        <div id="edit-penalty-outcome" class="${hadPenalties ? '' : 'hidden'} ml-6 flex gap-4">
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="edit-penalties-result" value="win" class="text-green-600" ${match.outcome === 'victoria' && hadPenalties ? 'checked' : ''}>
+                                <span class="text-sm text-green-700 font-bold">Ganamos</span>
+                            </label>
+                            <label class="flex items-center gap-1 cursor-pointer">
+                                <input type="radio" name="edit-penalties-result" value="loss" class="text-red-600" ${match.outcome === 'derrota' && hadPenalties ? 'checked' : ''}>
+                                <span class="text-sm text-red-700 font-bold">Perdimos</span>
+                            </label>
                         </div>
                     </div>
+                    <div>
                         <h4 class="font-semibold text-gray-800 mb-3">Estadísticas de Jugadores</h4>
                         <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Deben seleccionarse exactamente 11 titulares (sin contar al entrenador).</div>
-                        <div id="edit-players-stats" class="space-y-3 max-h-96 overflow-y-auto"></div>
+                        <div id="edit-players-stats" class="space-y-3 h-[50vh] overflow-y-auto"></div>
                     </div>
                 </div>
             `;
             
+            // Renderizar lista de jugadores (Igual que antes)
             const statsContainer = document.getElementById('edit-players-stats');
             statsContainer.innerHTML = players.map(player => {
                 const ps = match.playerStats.find(s => s.playerId === player.id);
-                // Check Played status (handle old data where played might be undefined but ps exists)
                 const played = ps ? (ps.played !== false) : false;
-                
                 const isCoach = player.posicion === 'entrenador';
                 const isStarter = ps ? (ps.isStarter === true || ps.isStarter === 'true') : false;
                 
@@ -4152,7 +4157,6 @@
                             <span class="font-medium text-gray-800">${player.nombre} ${player.apellido}</span>
                             <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
                         </div>
-                        
                          ${!isCoach ? `
                          <label class="flex items-center gap-1 text-sm cursor-pointer">
                             <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${played && isStarter ? 'checked' : ''}>
@@ -4162,146 +4166,106 @@
                             <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${played && !isStarter ? 'checked' : ''}>
                             <span>Suplente</span>
                          </label>
-                         ` : `
-                         <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
-                         `}
+                         ` : `<span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>`}
                     </div>
-                    
                     <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="display: ${played || isCoach ? 'grid' : 'none'}">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Nota</label>
-                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating !== null && ps?.rating !== undefined ? ps.rating : ''}" placeholder="–">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Goles</label>
-                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.goals || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Asist.</label>
-                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.assists || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Minutos</label>
-                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="${ps?.minutes || 90}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Nota</label><input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" value="${ps?.rating !== null && ps?.rating !== undefined ? ps.rating : ''}" placeholder="–"></div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Goles</label>${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.goals || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}</div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Asist.</label>${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="${ps?.assists || 0}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}</div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Minutos</label>${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="${ps?.minutes || 90}">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}</div>
                     </div>
-                    
                      <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
-                            <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="${ps?.yellowCards || 0}">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
-                            <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="${ps?.redCards || 0}">
-                        </div>
+                        <div><label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label><input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="${ps?.yellowCards || 0}"></div>
+                        <div><label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label><input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="${ps?.redCards || 0}"></div>
                     </div>
-                </div>
-            `;
+                </div>`;
             }).join('');
             
             modal.classList.add('active');
         }
 
-document.getElementById('edit-match-form').addEventListener('submit', function(e) {
+        document.getElementById('edit-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const matchIndex = matches.findIndex(m => m.id === matchId);
-            
             if (matchIndex === -1) return;
-            
             const match = matches[matchIndex];
-            const statsContainer = document.getElementById('edit-players-stats');
             
+            // 1. Recoger datos de jugadores (Código estándar)
+            const statsContainer = document.getElementById('edit-players-stats');
             const playerStats = [];
             let starterCount = 0;
 
-            // --- Lógica de recolección de estadísticas de jugadores (INTACTA) ---
             statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
                 const isCoach = row.querySelector('.stat-goals') === null;
                 const starterChk = row.querySelector('.chk-starter');
                 const subChk = row.querySelector('.chk-sub');
-                
-                let played = false;
-                let isStarter = false;
-
-                if (isCoach) {
-                    played = true;
-                } else {
-                    played = (starterChk && starterChk.checked) || (subChk && subChk.checked);
-                    isStarter = (starterChk && starterChk.checked);
-                }
-                
+                let played = isCoach ? true : ((starterChk && starterChk.checked) || (subChk && subChk.checked));
+                let isStarter = (starterChk && starterChk.checked);
                 let yellow = parseInt(row.querySelector('.stat-yellow').value) || 0;
                 let red = parseInt(row.querySelector('.stat-red').value) || 0;
                 if (yellow >= 2) red = 1;
 
                 if (played || yellow > 0 || red > 0) {
-                    let rating = null;
-                    let goals = 0;
-                    let assists = 0;
-                    let minutes = 0;
-
+                    let rating = null, goals = 0, assists = 0, minutes = 0;
                     if (played) {
                         if (!isCoach && isStarter) starterCount++;
-                        
                         const ratingInput = row.querySelector('.stat-rating').value;
-                        rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
+                        rating = (ratingInput === "") ? null : parseFloat(ratingInput);
                         goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0);
                         assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0);
                         minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0);
                     }
-
-                    playerStats.push({
-                        playerId: row.dataset.playerId,
-                        isStarter: isStarter,
-                        rating: rating,
-                        goals: goals,
-                        assists: assists,
-                        minutes: minutes,
-                        yellowCards: yellow,
-                        redCards: red,
-                        played: played
-                    });
+                    playerStats.push({ playerId: row.dataset.playerId, isStarter, rating, goals, assists, minutes, yellowCards: yellow, redCards: red, played });
                 }
             });
             
-             // Validación de 11 titulares
-             if (starterCount !== 11) {
-                alert(`⚠️ Error de validación: Se han seleccionado ${starterCount} titulares. Deben ser exactamente 11 (sin contar al entrenador).`);
+            if (starterCount !== 11) {
+                alert(`⚠️ Se han seleccionado ${starterCount} titulares. Deben ser 11.`);
                 return;
             }
-            // -------------------------------------------------------------
-            
-            const result = document.getElementById('edit-result').value.trim();
-            // NUEVO: Capturar el checkbox de forzar eliminación
-            const forceElimination = document.getElementById('edit-force-elimination') ? document.getElementById('edit-force-elimination').checked : false;
 
+            // 2. Calcular Resultado y Desenlace (Automático)
+            let result = document.getElementById('edit-result').value.trim();
+            let outcome = calculateMatchOutcome(result, match.venue);
+            
+            // Lógica de Penaltis en Edición
+            const chkPenalties = document.getElementById('edit-chk-penalties');
+            if (chkPenalties && chkPenalties.checked) {
+                const radioWin = document.querySelector('input[name="edit-penalties-result"][value="win"]');
+                const radioLoss = document.querySelector('input[name="edit-penalties-result"][value="loss"]');
+                
+                if (radioWin && radioWin.checked) outcome = 'victoria';
+                if (radioLoss && radioLoss.checked) outcome = 'derrota';
+                
+                if (!result.includes('*')) result += '*'; // Marca visual de penaltis
+            }
+
+            // 3. Guardar Partido
             matches[matchIndex] = {
                 ...match,
-                date: document.getElementById('edit-date').value,
-                opponent: document.getElementById('edit-opponent').value,
-                stadium: document.getElementById('edit-stadium').value,
                 result: result,
-                outcome: calculateMatchOutcome(result, match.venue),
+                outcome: outcome,
                 mvp: calculateAutoMVP(playerStats),
                 playerStats: playerStats,
-                forceElimination: forceElimination // <--- NUEVO: Guardar la propiedad
+                forceElimination: false // Limpiamos flags manuales antiguos
             };
             
             saveData('matches', matches);
             closeEditMatchModal();
             
-            // NUEVO: Recalcular y actualizar todas las pantallas
+            // 4. Recalcular Estado de Competición (CRUCIAL para el 0-4)
             recalculateCompetitionState(match.competition);
+            
+            // 5. Refrescar Vistas
             renderMatches();
             renderStats();
-            renderCompetitionStatus(); // Actualiza tarjetas en menú principal
-            renderPrincipal();         // Actualiza dashboard
+            renderCompetitionStatus();
+            renderPrincipal();
             
-            alert('✅ Partido actualizado correctamente.');
+            alert('✅ Partido actualizado y estado recalculado.');
         });
 
         
