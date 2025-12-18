@@ -1613,7 +1613,7 @@
             const playerStats = filteredPlayers.map(player => {
                 const stats = {
                     id: player.id,
-                    name: player.apodo || ${player.nombre} ${player.apellido},
+                    name: player.apodo || `${player.nombre} ${player.apellido}`,
                     number: player.dorsal,
                     foto: player.foto,
                     posicion: player.posicion,
