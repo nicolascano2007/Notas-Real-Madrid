@@ -3877,7 +3877,7 @@
             
             return '#6b7280';
         }
-      function renderMatches() {
+function renderMatches() {
             let matches = getData('matches');
             const players = getPlayers();
             const container = document.getElementById('matches-list');
@@ -3906,21 +3906,17 @@
                 const outcomeClass = getResultClass(match.outcome);
                 const compColor = COMPETICIONES_ACTUALES[match.competition]?.color || 'bg-gray-200';
                 
-                // --- CÁLCULO DE NOTA MEDIA DEL EQUIPO ---
+                // Cálculo de nota media
                 let totalRating = 0;
                 let ratedCount = 0;
-                
                 match.playerStats.forEach(ps => {
-                    // Contamos a todos los que tengan nota (jugadores + entrenador)
                     if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
                         totalRating += parseFloat(ps.rating);
                         ratedCount++;
                     }
                 });
-                
                 const teamAvg = ratedCount > 0 ? (totalRating / ratedCount).toFixed(2) : '-';
                 const ratingColor = getTeamRatingColor(teamAvg);
-                // -----------------------------------------
 
                 return `
                     <div class="card bg-white rounded-xl shadow-sm p-4">
@@ -3938,7 +3934,7 @@
                                 <div class="flex flex-wrap gap-3 text-sm text-gray-600 mt-2 items-center">
                                     <span>⚽ ${totalGoals} goles</span>
                                     
-                                    ${mvpPlayer ? `<span class="text-amber-600 border-l border-gray-300 pl-3">🏆 MVP: ${mvpPlayer.nombre}</span>` : ''}
+                                    ${mvpPlayer ? `<span class="text-amber-600 border-l border-gray-300 pl-3">🏆 MVP: ${mvpPlayer.apodo || mvpPlayer.nombre}</span>` : ''}
                                     
                                     <span class="border-l border-gray-300 pl-3 font-bold" style="color: ${ratingColor}">
                                         📊 Nota Equipo: ${teamAvg}
