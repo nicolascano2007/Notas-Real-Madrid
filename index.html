@@ -2472,7 +2472,20 @@ function generateSeasonPDF() {
 
             const opt = {
                 margin: 10,
-                filename: `Reporte_${teamTitle.replace(/ /g
+                filename: `Reporte_${teamTitle.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 1.5 }, // Escala reducida para más velocidad
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(reportContent).save().then(() => {
+                btn.innerHTML = originalText;
+            }).catch(err => {
+                console.error(err);
+                btn.innerHTML = originalText;
+                alert("Error generando PDF");
+            });
+        }
         // ==========================================
         // COMPARATOR LOGIC
         // ==========================================
