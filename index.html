@@ -2642,19 +2642,27 @@
             
             document.getElementById('calendar-event-id').value = fixture.id;
 
-            // --- LÓGICA DE COMPETICIÓN AUTOMÁTICA ---
+            // --- LÓGICA DE COMPETICIÓN AUTOMÁTICA (MEJORADA) ---
             const compSelect = document.getElementById('new-competition');
             
-            if (fixture.competition && COMPETICIONES_ACTUALES[fixture.competition]) {
-                // Si detectamos la competición y existe en nuestra configuración:
-                compSelect.value = fixture.competition;
-                compSelect.disabled = true; // Bloqueamos el select
-                compSelect.classList.add('readonly-input', 'bg-gray-100', 'text-gray-600'); // Estilo gris visual
+            // Buscamos la competición ignorando mayúsculas/minúsculas para ser más robustos
+            let foundCompKey = null;
+            if (fixture.competition) {
+                foundCompKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
+                    k.toLowerCase() === fixture.competition.toLowerCase()
+                );
+            }
+
+            if (foundCompKey) {
+                // Si la encontramos (aunque sea con distinta mayúscula), la seleccionamos
+                compSelect.value = foundCompKey;
+                compSelect.disabled = true; 
+                compSelect.classList.add('readonly-input', 'bg-gray-100', 'text-gray-600'); 
                 
-                // Forzamos la actualización de rondas automáticamente
+                // Forzamos la actualización de rondas
                 updateRoundOptions();
             } else {
-                // Si no se detecta (o es Amistoso no configurado), dejamos elegir
+                // Si no se detecta, desbloqueamos
                 compSelect.value = "";
                 compSelect.disabled = false;
                 compSelect.classList.remove('readonly-input', 'bg-gray-100', 'text-gray-600');
@@ -2676,7 +2684,6 @@
                 stadiumInput.classList.add('readonly-input');
             }
         }
-
         function clearSelectedFixture() {
             selectedCalendarFixture = null;
             resetNewMatchForm();
@@ -3391,7 +3398,7 @@
 
             return null;
         }
-       function parseICalData(icalData) {
+        function parseICalData(icalData) {
             const events = [];
             const normalizedData = icalData.replace(/\r\n /g, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
             const lines = normalizedData.split('\n');
@@ -3414,14 +3421,14 @@
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
                         
-                        // 1. Extraer Competición REAL usando la descripción
+                        // 1. Extraer Competición REAL usando la descripción (SOLO UNA VEZ)
                         const realComp = mapIcsCompetition(currentEvent.description);
                         
                         if (realComp) {
                             currentEvent.competition = realComp; 
                             currentEvent.possibleCompetition = realComp;
                         } else {
-                            // FALLBACK MEJORADO: Distingue entre masculino y femenino si falla la descripción
+                            // FALLBACK MEJORADO: Por si no hay descripción
                             const summaryLower = currentEvent.summary.toLowerCase();
                             let detectedComp = null;
                             
@@ -3438,6 +3445,9 @@
                                  detectedComp = currentTeam === 'femenino' ? 'Supercopa Femenina' : 'Supercopa de España';
                              }
                              
+                             if (detectedComp) {
+                                 currentEvent.competition = detectedComp;
+                             }
                              currentEvent.possibleCompetition = detectedComp || 'Partido Oficial';
                         }
                         
@@ -3454,7 +3464,7 @@
                         if (key === 'SUMMARY') currentEvent.summary = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
                         else if (key === 'DTSTART') currentEvent.start = parseICalDate(value);
                         else if (key === 'LOCATION') currentEvent.location = value.replace(/\\,/g, ',').replace(/\\;/g, ';');
-                        else if (key === 'DESCRIPTION') currentEvent.description = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' '); // NUEVO: Leer descripción
+                        else if (key === 'DESCRIPTION') currentEvent.description = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
                     }
                 }
             }
