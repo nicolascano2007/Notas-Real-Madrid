@@ -310,7 +310,6 @@
             z-index: 5;
         }
     </style>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -463,6 +462,34 @@
                              </div>
                     </div>
 
+                </div>
+                <div class="mt-8 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        💾 Gestión de Datos
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-4">
+                        Guarda una copia de seguridad de toda tu temporada o restaura un archivo guardado anteriormente. 
+                        <span class="text-amber-600 font-bold">¡Haz esto frecuentemente para no perder datos!</span>
+                    </p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button onclick="backupData()" class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                            ⬇️ Descargar Copia de Seguridad
+                        </button>
+
+                        <div class="flex-1 relative">
+                            <input type="file" id="import-file" accept=".json" class="hidden" onchange="restoreData(this)">
+                            <button onclick="document.getElementById('import-file').click()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                                ⬆️ Restaurar Datos
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-100 text-right">
+                        <button onclick="hardReset()" class="text-xs text-red-400 hover:text-red-600 underline">
+                            Borrar todo y empezar de cero
+                        </button>
+                    </div>
                 </div>
             </section>
             
@@ -893,9 +920,7 @@
                              <button onclick="exportStats()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-sm transition-colors">
                                 📥 Exportar CSV
                             </button>
-                            <button onclick="generateSeasonPDF()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-sm shadow-sm transition-colors">
-                                📄 Generar PDF
-                            </button>
+
                          </div>
                     </div>
 
@@ -2260,232 +2285,7 @@
             link.click();
             document.body.removeChild(link);
         }
-        // ==========================================
-        // PDF GENERATION LOGIC
-        // ==========================================
 
-function generateSeasonPDF() {
-            const matches = getData('matches');
-            const players = getPlayers();
-            
-            if (matches.length === 0) {
-                alert("No hay datos suficientes para generar un reporte.");
-                return;
-            }
-
-            // --- 1. CÁLCULOS (Idéntico a lo que ya tienes) ---
-            let stats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, cleanSheets: 0 };
-            let homeStats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, count: 0 };
-            let awayStats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, count: 0 };
-            
-            matches.forEach(m => {
-                const parts = m.result.replace('*','').split('-').map(Number);
-                const isHome = m.venue === 'local';
-                const goalsUs = isHome ? parts[0] : parts[1];
-                const goalsThem = isHome ? parts[1] : parts[0];
-                
-                if (m.outcome === 'victoria') stats.w++;
-                else if (m.outcome === 'empate') stats.d++;
-                else stats.l++;
-                stats.gf += goalsUs;
-                stats.ga += goalsThem;
-                if (goalsThem === 0) stats.cleanSheets++;
-
-                const targetStats = isHome ? homeStats : awayStats;
-                targetStats.count++;
-                if (m.outcome === 'victoria') targetStats.w++;
-                else if (m.outcome === 'empate') targetStats.d++;
-                else targetStats.l++;
-                targetStats.gf += goalsUs;
-                targetStats.ga += goalsThem;
-            });
-
-            const pStats = players.map(p => {
-                let g = 0, a = 0, rateSum = 0, rateCount = 0, mins = 0;
-                matches.forEach(m => {
-                    const ps = m.playerStats.find(s => s.playerId === p.id);
-                    if (ps) {
-                        g += ps.goals || 0;
-                        a += ps.assists || 0;
-                        mins += ps.minutes || 0;
-                        if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
-                    }
-                });
-                return { 
-                    name: p.apodo || p.apellido, // Solo Texto
-                    goals: g, 
-                    assists: a, 
-                    minutes: mins,
-                    avg: rateCount > 0 ? (rateSum / rateCount).toFixed(2) : 0,
-                    pos: p.posicion
-                };
-            });
-
-            // Tops
-            const topScorers = [...pStats].sort((a,b) => b.goals - a.goals).slice(0, 5).filter(p => p.goals > 0);
-            const topAssisters = [...pStats].sort((a,b) => b.assists - a.assists).slice(0, 5).filter(p => p.assists > 0);
-            const topRated = [...pStats].filter(p => p.minutes > 200).sort((a,b) => b.avg - a.avg).slice(0, 5);
-
-            // Mensual
-            const monthlyData = {};
-            matches.forEach(m => {
-                const k = m.date.substring(0, 7);
-                if (!monthlyData[k]) monthlyData[k] = { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
-                monthlyData[k].p++;
-                if (m.outcome === 'victoria') monthlyData[k].w++;
-                else if (m.outcome === 'empate') monthlyData[k].d++;
-                else monthlyData[k].l++;
-                const parts = m.result.replace('*','').split('-').map(Number);
-                monthlyData[k].gf += (m.venue==='local'?parts[0]:parts[1]);
-                monthlyData[k].ga += (m.venue==='local'?parts[1]:parts[0]);
-            });
-
-            // --- 2. CONSTRUIR HTML (SOLO TEXTO Y CSS) ---
-            const reportContent = document.createElement('div');
-            reportContent.style.width = '800px'; 
-            reportContent.style.padding = '20px';
-            reportContent.style.fontFamily = 'Helvetica, Arial, sans-serif'; // Fuente estándar más rápida
-            reportContent.style.color = '#1f2937';
-            reportContent.style.background = '#fff';
-
-            const teamTitle = currentTeam === 'masculino' ? 'Real Madrid Masculino' : 'Real Madrid Femenino';
-            const dateStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-
-            reportContent.innerHTML = `
-                <div style="text-align: center; border-bottom: 2px solid #fbbf24; padding-bottom: 15px; margin-bottom: 20px;">
-                    <h1 style="margin: 0; font-size: 24px; color: #1e3a8a;">REPORTE DE TEMPORADA</h1>
-                    <h2 style="margin: 5px 0; font-size: 16px; color: #4b5563;">${teamTitle}</h2>
-                    <p style="margin: 0; font-size: 12px; color: #9ca3af;">${dateStr}</p>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                    <div style="flex: 1; background: #f1f5f9; padding: 12px; border-radius: 6px;">
-                        <h3 style="margin:0 0 10px 0; font-size: 12px; color: #64748b; text-transform:uppercase;">Balance Total</h3>
-                        <div style="display: flex; justify-content: space-around; text-align: center;">
-                            <div><div style="font-size: 20px; font-weight: bold;">${matches.length}</div><div style="font-size: 9px;">PJ</div></div>
-                            <div><div style="font-size: 20px; font-weight: bold; color: #16a34a;">${stats.w}</div><div style="font-size: 9px;">V</div></div>
-                            <div><div style="font-size: 20px; font-weight: bold; color: #dc2626;">${stats.l}</div><div style="font-size: 9px;">D</div></div>
-                            <div><div style="font-size: 20px; font-weight: bold; color: #2563eb;">${stats.gf}</div><div style="font-size: 9px;">GF</div></div>
-                        </div>
-                    </div>
-                    
-                    <div style="flex: 1; display: flex; gap: 10px;">
-                        <div style="flex: 1; background: #eff6ff; padding: 10px; border-radius: 6px; font-size: 11px;">
-                            <strong style="color: #1e40af;">🏠 CASA</strong><br>
-                            PJ: ${homeStats.count}<br>
-                            V-E-D: ${homeStats.w}-${homeStats.d}-${homeStats.l}<br>
-                            GF/GC: ${homeStats.gf} / ${homeStats.ga}
-                        </div>
-                        <div style="flex: 1; background: #faf5ff; padding: 10px; border-radius: 6px; font-size: 11px;">
-                            <strong style="color: #6b21a8;">✈️ FUERA</strong><br>
-                            PJ: ${awayStats.count}<br>
-                            V-E-D: ${awayStats.w}-${awayStats.d}-${awayStats.l}<br>
-                            GF/GC: ${awayStats.gf} / ${awayStats.ga}
-                        </div>
-                    </div>
-                </div>
-
-                <h3 style="border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; font-size: 14px; color: #374151;">Líderes</h3>
-                <div style="display: flex; gap: 15px; margin-bottom: 25px;">
-                    <div style="flex: 1;">
-                        <h4 style="font-size: 11px; margin-bottom: 6px; color: #059669;">GOLEADORES</h4>
-                        ${topScorers.map((p, i) => `<div style="font-size: 11px; border-bottom: 1px solid #f8fafc; padding: 3px 0; display: flex; justify-content: space-between;"><span>${i+1}. ${p.name}</span> <strong>${p.goals}</strong></div>`).join('')}
-                    </div>
-                    <div style="flex: 1;">
-                        <h4 style="font-size: 11px; margin-bottom: 6px; color: #7c3aed;">ASISTENTES</h4>
-                        ${topAssisters.map((p, i) => `<div style="font-size: 11px; border-bottom: 1px solid #f8fafc; padding: 3px 0; display: flex; justify-content: space-between;"><span>${i+1}. ${p.name}</span> <strong>${p.assists}</strong></div>`).join('')}
-                    </div>
-                    <div style="flex: 1;">
-                        <h4 style="font-size: 11px; margin-bottom: 6px; color: #d97706;">MEJOR VALORACIÓN</h4>
-                        ${topRated.map((p, i) => `<div style="font-size: 11px; border-bottom: 1px solid #f8fafc; padding: 3px 0; display: flex; justify-content: space-between;"><span>${i+1}. ${p.name}</span> <strong>${p.avg}</strong></div>`).join('')}
-                    </div>
-                </div>
-
-                <h3 style="border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; font-size: 14px; color: #374151;">Mensual</h3>
-                <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 25px;">
-                    <thead>
-                        <tr style="background: #334155; color: white;">
-                            <th style="padding: 5px;">Mes</th><th style="padding: 5px;">PJ</th><th style="padding: 5px;">V</th><th style="padding: 5px;">E</th><th style="padding: 5px;">D</th><th style="padding: 5px;">GF</th><th style="padding: 5px;">GC</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${Object.entries(monthlyData).sort().map(([k, d]) => `
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 5px;">${new Date(k+'-01').toLocaleDateString('es-ES',{month:'short', year:'2-digit'}).toUpperCase()}</td>
-                                <td style="padding: 5px; text-align: center; font-weight: bold;">${d.p}</td>
-                                <td style="padding: 5px; text-align: center; color: #16a34a;">${d.w}</td>
-                                <td style="padding: 5px; text-align: center; color: #d97706;">${d.d}</td>
-                                <td style="padding: 5px; text-align: center; color: #dc2626;">${d.l}</td>
-                                <td style="padding: 5px; text-align: center;">${d.gf}</td>
-                                <td style="padding: 5px; text-align: center;">${d.ga}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-
-                <h3 style="border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; font-size: 14px; color: #374151;">Por Líneas (Nota Media)</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 25px;">
-                    ${['delantero', 'centrocampista', 'defensa', 'portero'].map(pos => {
-                        const playersInPos = pStats.filter(p => p.pos === pos && p.avg > 0);
-                        const avg = playersInPos.length > 0 ? (playersInPos.reduce((sum, p) => sum + parseFloat(p.avg), 0) / playersInPos.length).toFixed(2) : '-';
-                        return `
-                            <div style="flex: 1; background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; text-align: center;">
-                                <div style="font-size: 9px; text-transform: uppercase; color: #64748b;">${pos}s</div>
-                                <div style="font-size: 18px; font-weight: bold; color: #1e293b;">${avg}</div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-
-                <div class="html2pdf__page-break"></div>
-                <h3 style="border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 10px; font-size: 14px; color: #374151;">Estadísticas Completas</h3>
-                <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
-                    <thead>
-                        <tr style="background: #e2e8f0; color: #334155;">
-                            <th style="padding: 5px; text-align: left;">Jugador</th>
-                            <th style="padding: 5px;">PJ</th>
-                            <th style="padding: 5px;">Min</th>
-                            <th style="padding: 5px;">Goles</th>
-                            <th style="padding: 5px;">Asist</th>
-                            <th style="padding: 5px;">Media</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${pStats.sort((a,b) => b.minutes - a.minutes).map(p => `
-                            <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 5px; font-weight: bold;">${p.name}</td>
-                                <td style="padding: 5px; text-align: center;">${Math.round(p.minutes / 90)}</td>
-                                <td style="padding: 5px; text-align: center;">${p.minutes}</td>
-                                <td style="padding: 5px; text-align: center; ${p.goals > 0 ? 'color:#16a34a; font-weight:bold;' : ''}">${p.goals}</td>
-                                <td style="padding: 5px; text-align: center; ${p.assists > 0 ? 'color:#2563eb; font-weight:bold;' : ''}">${p.assists}</td>
-                                <td style="padding: 5px; text-align: center; font-weight: bold;">${p.avg}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-
-            // --- 3. GENERAR PDF DIRECTAMENTE (SIN ESPERAS) ---
-            const btn = document.querySelector('button[onclick="generateSeasonPDF()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Generando...';
-
-            const opt = {
-                margin: 10,
-                filename: `Reporte_${teamTitle.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 1.5 }, // Escala reducida para más velocidad
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().set(opt).from(reportContent).save().then(() => {
-                btn.innerHTML = originalText;
-            }).catch(err => {
-                console.error(err);
-                btn.innerHTML = originalText;
-                alert("Error generando PDF");
-            });
-        }
         // ==========================================
         // COMPARATOR LOGIC
         // ==========================================
@@ -5135,6 +4935,88 @@ function renderMatches() {
             // 4. Cambiar Pantalla
             document.getElementById('wizard-step-2').classList.add('hidden');
             document.getElementById('wizard-step-3').classList.remove('hidden');
+        }
+        // ==========================================
+        // SISTEMA DE COPIA DE SEGURIDAD (BACKUP)
+        // ==========================================
+
+        function backupData() {
+            // 1. Recopilar todo lo que hay en localStorage
+            const data = {
+                matches: JSON.parse(localStorage.getItem('matches') || '[]'),
+                competitionState: JSON.parse(localStorage.getItem('competitionState') || '{}'),
+                team: localStorage.getItem('currentTeam') || 'masculino',
+                timestamp: new Date().toISOString(),
+                version: '1.0'
+            };
+
+            // 2. Convertir a texto JSON
+            const dataStr = JSON.stringify(data, null, 2);
+            
+            // 3. Crear un "Blob" (archivo virtual)
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            // 4. Forzar descarga
+            const a = document.createElement('a');
+            const date = new Date().toISOString().split('T')[0];
+            a.href = url;
+            a.download = `RealMadrid_Manager_Backup_${date}.json`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Limpieza
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert("✅ Copia de seguridad descargada. Guárdala bien.");
+        }
+
+        function restoreData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!confirm("⚠️ ¡ATENCIÓN!\n\nAl cargar este archivo se BORRARÁN los datos actuales y se sustituirán por los de la copia.\n\n¿Estás seguro?")) {
+                input.value = ''; // Limpiar input
+                return;
+            }
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const data = JSON.parse(content);
+                    
+                    // Validar que parece un archivo nuestro
+                    if (!data.matches || !data.competitionState) {
+                        throw new Error("Formato de archivo incorrecto");
+                    }
+
+                    // Guardar en el navegador
+                    localStorage.setItem('matches', JSON.stringify(data.matches));
+                    localStorage.setItem('competitionState', JSON.stringify(data.competitionState));
+                    if (data.team) localStorage.setItem('currentTeam', data.team);
+
+                    alert("✅ Datos restaurados con éxito. La página se recargará.");
+                    location.reload(); // Recargar para aplicar cambios
+
+                } catch (err) {
+                    alert("❌ Error al leer el archivo: " + err.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function hardReset() {
+            if (confirm("⛔ ¿ESTÁS SEGURO?\n\nEsto borrará TODOS los partidos y estadísticas para siempre.\nNo se puede deshacer.")) {
+                const team = currentTeam; // Guardar equipo actual para no perdernos
+                localStorage.clear();
+                localStorage.setItem('currentTeam', team); // Restaurar preferencia
+                alert("🗑️ Todo borrado. Empezamos de cero.");
+                location.reload();
+            }
         }
 
         // Global Modal Close Handler
