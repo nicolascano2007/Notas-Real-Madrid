@@ -3364,24 +3364,30 @@
         // Mapa de traducción: Nombre en Calendario (.ics) -> Nombre en tu Web
         function mapIcsCompetition(icsDescription) {
             if (!icsDescription) return null;
-            const desc = icsDescription.trim(); // Mantiene mayúsculas/minúsculas originales del ics por si acaso, pero buscamos flexiblemente
-
-            // Masculino
-            if (desc.includes('La Liga')) return 'Liga EA Sports';
-            if (desc.includes('Champions League')) return 'Champions League';
-            if (desc.includes('FIFA Club World Cup') || desc.includes('Mundial de Clubes')) return 'Mundial de Clubes';
-            if (desc.includes('Supercopa de España')) return 'Supercopa de España';
-            if (desc.includes('Copa del Rey')) return 'Copa del Rey';
             
-            // Femenino
-            if (desc.includes('Primera división femenina') || desc.includes('Liga F')) return 'Liga F';
-            if (desc.includes('Women') && desc.includes('Champions')) return 'UWCL';
-            if (desc.includes('UWCL')) return 'UWCL';
-            if (desc.includes('Copa de la Reina') || desc.includes('Copa de la reina')) return 'Copa de la Reina';
-            if (desc.includes('Supercopa Femenina') || desc.includes('Supercopa femenina')) return 'Supercopa Femenina';
+            // 1. Convertimos todo a minúsculas para evitar errores de mayúsculas
+            const desc = icsDescription.toLowerCase().trim(); 
 
-            // Otros
-            if (desc.includes('Amistoso')) return 'Amistoso';
+            // --- MASCULINO ---
+            if (desc.includes('la liga') || desc.includes('laliga')) return 'Liga EA Sports';
+            if (desc.includes('champions league')) return 'Champions League';
+            if (desc.includes('fifa club world cup') || desc.includes('mundial de clubes') || desc.includes('intercontinental')) return 'Mundial de Clubes';
+            if (desc.includes('supercopa de españa')) return 'Supercopa de España';
+            if (desc.includes('copa del rey')) return 'Copa del Rey';
+            
+            // --- FEMENINO ---
+            // Detecta "Primera División" aunque venga con mayúsculas
+            if (desc.includes('primera división') || desc.includes('primera division') || desc.includes('liga f')) return 'Liga F';
+            
+            // Detecta Champions Femenina
+            if ((desc.includes('women') && desc.includes('champions')) || desc.includes('uwcl')) return 'UWCL';
+            
+            // Copas
+            if (desc.includes('copa de la reina')) return 'Copa de la Reina';
+            if (desc.includes('supercopa') && (desc.includes('femenina') || desc.includes('women'))) return 'Supercopa Femenina';
+
+            // --- OTROS ---
+            if (desc.includes('amistoso')) return 'Amistoso';
 
             return null;
         }
@@ -3412,15 +3418,26 @@
                         const realComp = mapIcsCompetition(currentEvent.description);
                         
                         if (realComp) {
-                            currentEvent.competition = realComp; // Competición confirmada
+                            currentEvent.competition = realComp; 
                             currentEvent.possibleCompetition = realComp;
                         } else {
-                            // Fallback a la detección antigua si no hay descripción útil
+                            // FALLBACK MEJORADO: Distingue entre masculino y femenino si falla la descripción
                             const summaryLower = currentEvent.summary.toLowerCase();
                             let detectedComp = null;
-                             if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) detectedComp = 'Champions League'; // Simplificado
-                             else if (summaryLower.includes('copa')) detectedComp = 'Copa del Rey';
-                             else if (summaryLower.includes('liga')) detectedComp = 'Liga EA Sports';
+                            
+                             if (summaryLower.includes('champions') || summaryLower.includes('uwcl')) {
+                                 detectedComp = currentTeam === 'femenino' ? 'UWCL' : 'Champions League';
+                             }
+                             else if (summaryLower.includes('copa')) {
+                                 detectedComp = currentTeam === 'femenino' ? 'Copa de la Reina' : 'Copa del Rey';
+                             }
+                             else if (summaryLower.includes('liga')) {
+                                 detectedComp = currentTeam === 'femenino' ? 'Liga F' : 'Liga EA Sports';
+                             }
+                             else if (summaryLower.includes('supercopa')) {
+                                 detectedComp = currentTeam === 'femenino' ? 'Supercopa Femenina' : 'Supercopa de España';
+                             }
+                             
                              currentEvent.possibleCompetition = detectedComp || 'Partido Oficial';
                         }
                         
