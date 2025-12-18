@@ -1530,7 +1530,7 @@
             renderStats();
         }
 
-function renderStats() {
+        function renderStats() {
             const matches = getData('matches');
             const players = getPlayers();
             
@@ -1613,7 +1613,6 @@ function renderStats() {
             const playerStats = filteredPlayers.map(player => {
                 const stats = {
                     id: player.id,
-                    // AQUÍ ESTABA EL ERROR: Usamos comillas invertidas para que funcione bien
                     name: player.apodo || `${player.nombre} ${player.apellido}`,
                     number: player.dorsal,
                     foto: player.foto,
@@ -1638,9 +1637,7 @@ function renderStats() {
                 // Ordenar partidos para procesar cronológicamente
                 const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                // Bucle de cálculo (ESTA ES LA PARTE QUE SEGURAMENTE SE BORRÓ ANTES)
                 playerMatchesSorted.forEach(match => {
-                    // Buscamos si el jugador jugó en este partido
                     const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
                     
                     if (ps) {
@@ -1706,7 +1703,6 @@ function renderStats() {
             }
 
 
-            // Ordenar tabla
             playerStats.sort((a, b) => {
                 if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
                 if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
