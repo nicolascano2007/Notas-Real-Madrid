@@ -4983,7 +4983,7 @@ function renderMatches() {
             alert(`✅ Copia de seguridad descargada (${matches.length} partidos).`);
         }
 
-        function restoreData(input) {
+      function restoreData(input) {
             const file = input.files[0];
             if (!file) return;
 
@@ -4994,43 +4994,62 @@ function renderMatches() {
                     const content = e.target.result;
                     const data = JSON.parse(content);
                     
-                    // Validaciones de seguridad
+                    // 1. Validaciones básicas
                     if (!data.matches || !data.team) {
-                        throw new Error("El archivo no tiene el formato correcto o le falta el equipo.");
+                        throw new Error("El archivo no es válido (faltan datos o equipo).");
                     }
 
-                    // Aviso si intentas cargar datos del Femenino estando en el Masculino (o viceversa)
+                    // 2. Validación de Equipo Cruzado (Importante)
                     if (data.team !== currentTeam) {
-                        const confirmar = confirm(`⚠️ ¡CUIDADO!\n\nEste archivo pertenece al equipo "${data.team.toUpperCase()}" pero estás en el panel del "${currentTeam.toUpperCase()}".\n\nSi continúas, sobrescribirás los datos de ${currentTeam} con los de ${data.team}.\n\n¿Estás seguro?`);
-                        if (!confirmar) {
+                        if (!confirm(`⚠️ ARCHIVO DE OTRO EQUIPO\n\nEl archivo es del: ${data.team.toUpperCase()}\nEstás en: ${currentTeam.toUpperCase()}\n\n¿Quieres sobrescribir los datos de ${currentTeam.toUpperCase()} con los del archivo?`)) {
                             input.value = '';
                             return;
                         }
                     } else {
-                        // Confirmación normal
-                        if (!confirm(`⚠️ Se van a restaurar ${data.matches.length} partidos.\nEsto BORRARÁ los datos actuales de esta sesión.\n¿Continuar?`)) {
+                        if (!confirm(`⚠️ RESTAURAR COPIA\n\nSe van a cargar ${data.matches.length} partidos.\nLos datos actuales se perderán.\n¿Continuar?`)) {
                             input.value = '';
                             return;
                         }
                     }
 
-                    // CORRECCIÓN: Usamos saveData() para guardar en la etiqueta correcta
+                    // 3. Guardar Datos
                     saveData('matches', data.matches);
                     saveData('competitionState', data.competitionState || {});
                     if (data.playerStates) {
                         saveData('playerStates', data.playerStates);
                     }
 
-                    alert("✅ Datos restaurados con éxito. Recargando...");
-                    location.reload(); 
+                    // 4. VERIFICACIÓN (Comprobamos si se ha guardado bien)
+                    const checkMatches = getData('matches');
+                    if (!checkMatches || checkMatches.length !== data.matches.length) {
+                        throw new Error("Error al escribir en la memoria del navegador.");
+                    }
+
+                    // 5. Refrescar TODO al instante (Sin recargar página)
+                    // Esto fuerza a la web a leer los nuevos datos inmediatamente
+                    calendarEvents = []; // Limpiamos caché de calendario para evitar conflictos
+                    loadCalendar();      // Recargamos calendario
+                    
+                    renderPlayers();          // Actualizamos estados de jugadores
+                    renderCompetitionStatus(); // Actualizamos rondas
+                    renderMatches();           // Actualizamos lista de partidos
+                    renderStats();             // Actualizamos estadísticas
+                    renderPrincipal();         // Actualizamos panel principal
+                    
+                    alert(`✅ ÉXITO: ${checkMatches.length} partidos restaurados correctamente.`);
+                    
+                    // Te llevamos a la pestaña de partidos para que veas que están ahí
+                    showTab('partidos');
 
                 } catch (err) {
-                    alert("❌ Error al leer el archivo: " + err.message);
+                    console.error(err);
+                    alert("❌ ERROR: " + err.message);
+                } finally {
+                    input.value = ''; // Limpiar input para permitir recargar el mismo archivo si hace falta
                 }
             };
             
             reader.readAsText(file);
-            input.value = ''; // Limpiar el input para poder cargar el mismo archivo de nuevo si se quiere
         }
 
         function hardReset() {
