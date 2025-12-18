@@ -309,6 +309,38 @@
             background: rgba(255,255,255,0.1);
             z-index: 5;
         }
+        /* --- MODO OSCURO (DARK MODE) --- */
+        body.dark-mode { background-color: #0f172a; color: #f1f5f9; }
+        
+        .dark-mode .bg-white { background-color: #1e293b !important; color: #f1f5f9; border-color: #334155; }
+        .dark-mode .bg-gray-50, .dark-mode .bg-gray-100 { background-color: #0f172a !important; color: #cbd5e1; border-color: #334155; }
+        .dark-mode .bg-gray-200 { background-color: #334155 !important; color: #e2e8f0; }
+        
+        .dark-mode .text-gray-800, .dark-mode .text-gray-700, .dark-mode .text-gray-600 { color: #f1f5f9 !important; }
+        .dark-mode .text-gray-500 { color: #94a3b8 !important; }
+        .dark-mode .text-slate-700 { color: #f8fafc !important; }
+        
+        .dark-mode .border-gray-200, .dark-mode .border-gray-300, .dark-mode .border-gray-100 { border-color: #334155 !important; }
+        
+        .dark-mode input, .dark-mode select { 
+            background-color: #1e293b; 
+            border-color: #475569; 
+            color: #f1f5f9; 
+        }
+        .dark-mode input:focus, .dark-mode select:focus { border-color: #fbbf24; }
+        .dark-mode .card:hover { background-color: #334155; }
+        
+        /* Ajustes Específicos */
+        .dark-mode .modal .bg-white { background-color: #1e293b !important; }
+        .dark-mode th { background-color: #0f172a; color: #fbbf24; }
+        .dark-mode .calendar-day { background-color: #1e293b; border-color: #334155; }
+        .dark-mode .calendar-day:hover { background-color: #334155; }
+        .dark-mode .calendar-day.other-month { background-color: #0f172a; opacity: 0.5; }
+        
+        /* Ajuste de Pizarra */
+        .dark-mode .pitch-container { border-color: #334155; }
+        .dark-mode .bench-container { background-color: #0f172a; border-color: #334155; }
+        .dark-mode .player-token { border-color: #334155; background-color: #1e293b; color: white; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -354,6 +386,12 @@
                             <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
                         </div>
                     </div>
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" ...>
+                        </div>
+
+                    <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
+                        🌙
+                    </button>
                 </div>
             </div>
         </header>
@@ -5215,6 +5253,45 @@ function renderMatches() {
                 location.reload();
             }
         }
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            
+            // Guardar preferencia
+            localStorage.setItem('darkMode', isDark);
+            
+            // Actualizar botón
+            updateDarkModeButton(isDark);
+            
+            // Actualizar gráficos (si estamos en esa pestaña)
+            updateChartsTheme(isDark);
+        }
+
+        function updateDarkModeButton(isDark) {
+            const btn = document.getElementById('btn-dark-mode');
+            if(btn) btn.textContent = isDark ? '☀️' : '🌙';
+        }
+
+        function updateChartsTheme(isDark) {
+            // Cambiar colores globales de Chart.js
+            Chart.defaults.color = isDark ? '#e2e8f0' : '#4b5563';
+            Chart.defaults.borderColor = isDark ? '#334155' : '#e5e7eb';
+            
+            // Si los gráficos existen, redibujarlos para aplicar nuevos colores
+            // Simplemente llamamos a renderStats si la pestaña está activa
+            if (!document.getElementById('section-stats').classList.contains('hidden')) {
+                renderStats(); 
+            }
+        }
+
+        function initDarkMode() {
+            const savedMode = localStorage.getItem('darkMode') === 'true';
+            if (savedMode) {
+                document.body.classList.add('dark-mode');
+                updateChartsTheme(true);
+            }
+            updateDarkModeButton(savedMode);
+        }
 
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
@@ -5228,6 +5305,7 @@ function renderMatches() {
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             console.log('App ready');
+            initDarkMode();
             preloadCalendars();
         });
 
