@@ -2264,8 +2264,8 @@
         // PDF GENERATION LOGIC
         // ==========================================
 
-        function generateSeasonPDF() {
-            // 1. Recopilar Datos
+async function generateSeasonPDF() {
+            // 1. Recopilar Datos (Igual que antes)
             const matches = getData('matches');
             const players = getPlayers();
             
@@ -2274,9 +2274,7 @@
                 return;
             }
 
-            // --- CÁLCULOS PREVIOS (Reutilizamos lógica existente para asegurar consistencia) ---
-            
-            // A. Resumen General
+            // --- CÁLCULOS (Código idéntico al anterior) ---
             let stats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, cleanSheets: 0 };
             let homeStats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, count: 0 };
             let awayStats = { w: 0, d: 0, l: 0, gf: 0, ga: 0, count: 0 };
@@ -2287,7 +2285,6 @@
                 const goalsUs = isHome ? parts[0] : parts[1];
                 const goalsThem = isHome ? parts[1] : parts[0];
                 
-                // General
                 if (m.outcome === 'victoria') stats.w++;
                 else if (m.outcome === 'empate') stats.d++;
                 else stats.l++;
@@ -2295,7 +2292,6 @@
                 stats.ga += goalsThem;
                 if (goalsThem === 0) stats.cleanSheets++;
 
-                // Casa vs Fuera (Neutral cuenta como fuera para simplificar reporte visual)
                 const targetStats = isHome ? homeStats : awayStats;
                 targetStats.count++;
                 if (m.outcome === 'victoria') targetStats.w++;
@@ -2305,7 +2301,6 @@
                 targetStats.ga += goalsThem;
             });
 
-            // B. Mejores Jugadores (Top 3 Goles, Asist, Nota)
             const pStats = players.map(p => {
                 let g = 0, a = 0, rateSum = 0, rateCount = 0, mins = 0;
                 matches.forEach(m => {
@@ -2329,12 +2324,11 @@
 
             const topScorers = [...pStats].sort((a,b) => b.goals - a.goals).slice(0, 5).filter(p => p.goals > 0);
             const topAssisters = [...pStats].sort((a,b) => b.assists - a.assists).slice(0, 5).filter(p => p.assists > 0);
-            const topRated = [...pStats].filter(p => p.minutes > 200).sort((a,b) => b.avg - a.avg).slice(0, 5); // Mínimo 200 min
+            const topRated = [...pStats].filter(p => p.minutes > 200).sort((a,b) => b.avg - a.avg).slice(0, 5);
 
-            // C. Reporte Mensual
             const monthlyData = {};
             matches.forEach(m => {
-                const k = m.date.substring(0, 7); // YYYY-MM
+                const k = m.date.substring(0, 7);
                 if (!monthlyData[k]) monthlyData[k] = { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0 };
                 monthlyData[k].p++;
                 if (m.outcome === 'victoria') monthlyData[k].w++;
@@ -2345,12 +2339,19 @@
                 monthlyData[k].ga += (m.venue==='local'?parts[1]:parts[0]);
             });
 
-            // 2. CONSTRUIR HTML DEL REPORTE (Estilo limpio para impresión)
+            // 2. CONSTRUIR HTML (Contenido oculto)
             const reportContent = document.createElement('div');
+            // Estilos para asegurar que se vea bien
+            reportContent.style.width = '800px'; // Ancho fijo A4 aprox
             reportContent.style.padding = '20px';
             reportContent.style.fontFamily = 'Inter, sans-serif';
             reportContent.style.color = '#1f2937';
             reportContent.style.background = '#fff';
+            
+            // Truco: Lo ponemos "fuera de pantalla" pero en el DOM para que cargue imágenes
+            reportContent.style.position = 'absolute';
+            reportContent.style.left = '-9999px';
+            reportContent.style.top = '0';
 
             const teamTitle = currentTeam === 'masculino' ? 'Real Madrid Masculino' : 'Real Madrid Femenino';
             const dateStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -2384,7 +2385,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div style="flex: 1; display: flex; gap: 10px;">
                         <div style="flex: 1; background: #eff6ff; padding: 10px; border-radius: 8px; font-size: 12px;">
                             <strong style="color: #1e40af;">🏠 CASA</strong><br>
@@ -2423,9 +2423,9 @@
                         <tr style="background: #1f2937; color: white;">
                             <th style="padding: 8px; text-align: left;">Mes</th>
                             <th style="padding: 8px; text-align: center;">PJ</th>
-                            <th style="padding: 8px; text-align: center;">Victorias</th>
-                            <th style="padding: 8px; text-align: center;">Empates</th>
-                            <th style="padding: 8px; text-align: center;">Derrotas</th>
+                            <th style="padding: 8px; text-align: center;">V</th>
+                            <th style="padding: 8px; text-align: center;">E</th>
+                            <th style="padding: 8px; text-align: center;">D</th>
                             <th style="padding: 8px; text-align: center;">GF</th>
                             <th style="padding: 8px; text-align: center;">GC</th>
                         </tr>
@@ -2464,7 +2464,8 @@
                     }).join('')}
                 </div>
 
-                <div class="html2pdf__page-break"></div> <h3 style="border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px; font-size: 16px; color: #374151;">Estadísticas Detalladas por Jugador</h3>
+                <div class="html2pdf__page-break"></div>
+                <h3 style="border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px; font-size: 16px; color: #374151;">Estadísticas Detalladas</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
                     <thead>
                         <tr style="background: #f1f5f9; color: #475569;">
@@ -2477,11 +2478,11 @@
                         </tr>
                     </thead>
                     <tbody>
-
                         ${pStats.sort((a,b) => b.minutes - a.minutes).map(p => `
                             <tr style="border-bottom: 1px solid #e2e8f0;">
                                 <td style="padding: 6px; font-weight: bold;">${p.name}</td>
-                                <td style="padding: 6px; text-align: center;">${Math.round(p.minutes / 90)}~</td> <td style="padding: 6px; text-align: center;">${p.minutes}'</td>
+                                <td style="padding: 6px; text-align: center;">${Math.round(p.minutes / 90)}~</td>
+                                <td style="padding: 6px; text-align: center;">${p.minutes}'</td>
                                 <td style="padding: 6px; text-align: center; ${p.goals > 0 ? 'font-weight:bold; color:#16a34a;' : 'color:#9ca3af;'}">${p.goals}</td>
                                 <td style="padding: 6px; text-align: center; ${p.assists > 0 ? 'font-weight:bold; color:#2563eb;' : 'color:#9ca3af;'}">${p.assists}</td>
                                 <td style="padding: 6px; text-align: center; font-weight: bold;">${p.avg}</td>
@@ -2491,25 +2492,51 @@
                 </table>
             `;
 
-            // 3. GENERAR EL PDF
+            // 3. Insertar en DOM y ESPERAR a que carguen imágenes
+            document.body.appendChild(reportContent);
+            
+            // Notificación visual
+            const btn = document.querySelector('button[onclick="generateSeasonPDF()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Preparando imágenes...';
+
+            // Promesa: Esperar a que carguen todas las imágenes o timeout de 2 segundos
+            const images = Array.from(reportContent.querySelectorAll('img'));
+            const imagePromises = images.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve; // Si falla, seguimos igual para no bloquear
+                });
+            });
+
+            // Timeout de seguridad: Si en 2s no han cargado, generamos igual
+            const timeout = new Promise(resolve => setTimeout(resolve, 2000));
+
+            await Promise.race([Promise.all(imagePromises), timeout]);
+
+            btn.innerHTML = '⏳ Generando PDF...';
+
+            // 4. Configuración con CORS activado
             const opt = {
                 margin: 10,
                 filename: `Reporte_${teamTitle.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
+                html2canvas: { scale: 2, useCORS: true }, // <--- CLAVE: useCORS para imágenes externas
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Notificación visual
-            const btn = document.querySelector('button[onclick="generateSeasonPDF()"]');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ Generando...';
-            
+            // 5. Generar y Limpiar
             html2pdf().set(opt).from(reportContent).save().then(() => {
+                document.body.removeChild(reportContent); // Limpiar DOM
+                btn.innerHTML = originalText;
+            }).catch(err => {
+                console.error(err);
+                alert("Hubo un error al generar el PDF. Revisa la consola.");
+                document.body.removeChild(reportContent);
                 btn.innerHTML = originalText;
             });
         }
-
         // ==========================================
         // COMPARATOR LOGIC
         // ==========================================
