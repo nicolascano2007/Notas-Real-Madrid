@@ -936,20 +936,41 @@
 
             <!-- COMPARATOR SECTION -->
             <section id="section-comparador" class="hidden fade-in">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Comparador de Jugadores</h2>
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 1</label>
-                            <select id="compare-p1" onchange="renderComparator()" class="w-full px-3 py-2 border rounded-lg"></select>
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">⚔️ Duelo de Estadísticas</h2>
+                    <p class="text-gray-500 text-sm">Compara el rendimiento detallado de dos jugadores</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-xs font-bold text-blue-800 uppercase mb-2 tracking-wider">Jugador 1</label>
+                            <select id="radar-p1" onchange="updateComparatorChart()" class="w-full p-3 border-2 border-blue-200 rounded-xl font-bold text-gray-700 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 bg-white transition-all"></select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Jugador 2</label>
-                            <select id="compare-p2" onchange="renderComparator()" class="w-full px-3 py-2 border rounded-lg"></select>
+                        
+                        <div class="flex flex-col items-center justify-center">
+                            <span class="text-3xl font-black text-slate-200">VS</span>
+                        </div>
+
+                        <div class="w-full md:w-1/3">
+                            <label class="block text-xs font-bold text-red-800 uppercase mb-2 tracking-wider">Jugador 2</label>
+                            <select id="radar-p2" onchange="updateComparatorChart()" class="w-full p-3 border-2 border-red-200 rounded-xl font-bold text-gray-700 focus:border-red-500 focus:ring-4 focus:ring-red-100 bg-white transition-all"></select>
                         </div>
                     </div>
-                    <div id="comparator-result" class="hidden">
-                        <!-- Populated by JS -->
+
+                    <div class="flex flex-col lg:flex-row gap-8 items-center">
+                        
+                        <div class="flex-1 w-full relative h-[400px] flex items-center justify-center p-4">
+                            <canvas id="chart-radar-vs"></canvas>
+                        </div>
+
+                        <div class="w-full lg:w-1/3 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+                            <h4 class="text-xs font-bold text-slate-500 uppercase mb-6 text-center tracking-widest border-b border-slate-200 pb-2">Comparativa Directa</h4>
+                            <div id="radar-stats-table" class="space-y-4 text-sm">
+                                <p class="text-center text-gray-400 italic">Selecciona dos jugadores para comparar</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -2530,133 +2551,188 @@
             document.body.removeChild(link);
         }
 
+     // ==========================================
+        // NUEVA LÓGICA COMPARADOR (RADAR CHART)
         // ==========================================
-        // COMPARATOR LOGIC
-        // ==========================================
+        
+        let radarChart = null;
+
         function populateComparatorSelects() {
-            const players = getActivePlayers().sort((a,b) => {
-                if (a.posicion === 'entrenador') return -1;
-                if (b.posicion === 'entrenador') return 1;
-                return a.dorsal - b.dorsal;
-            });
-            const options = '<option value="">Seleccionar jugador...</option>' + 
-                players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
+            // Usamos los nuevos IDs: radar-p1 y radar-p2
+            const p1Select = document.getElementById('radar-p1');
+            const p2Select = document.getElementById('radar-p2');
             
-            document.getElementById('compare-p1').innerHTML = options;
-            document.getElementById('compare-p2').innerHTML = options;
+            // Limpiar opciones previas
+            p1Select.innerHTML = '<option value="">Selecciona...</option>';
+            p2Select.innerHTML = '<option value="">Selecciona...</option>';
+
+            // Filtrar solo jugadores activos (y excluir entrenador si quieres, aunque a veces es curioso ver sus stats si jugara)
+            const players = getPlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
+            
+            const options = players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
+            
+            p1Select.innerHTML += options;
+            p2Select.innerHTML += options;
+
+            // Pre-seleccionar los dos primeros si existen para que se vea algo al entrar
+            if (players.length >= 2) {
+                p1Select.selectedIndex = 1;
+                p2Select.selectedIndex = 2;
+                // Dibujamos directamente
+                updateComparatorChart();
+            }
         }
 
-        function getPlayerStatsForComparator(playerId) {
-            const matches = getData('matches');
-            const stats = {
-                matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, ga: 0, 
-                totalRating: 0, ratingCount: 0, avgRating: 0,
-                yellowCards: 0, redCards: 0, mvpCount: 0
-            };
-
-            matches.forEach(m => {
-                const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
-                if (ps) {
-                    stats.matchesPlayed++;
-                    stats.goals += (ps.goals || 0);
-                    stats.assists += (ps.assists || 0);
-                    stats.minutes += (ps.minutes || 0);
-                    stats.yellowCards += (ps.yellowCards || 0);
-                    stats.redCards += (ps.redCards || 0);
-                    if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                        stats.totalRating += parseFloat(ps.rating);
-                        stats.ratingCount++;
-                    }
-                }
-                if (String(m.mvp) === String(playerId)) stats.mvpCount++;
-            });
+        function updateComparatorChart() {
+            const id1 = document.getElementById('radar-p1').value;
+            const id2 = document.getElementById('radar-p2').value;
+            const tableContainer = document.getElementById('radar-stats-table');
             
-            stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : 0;
-            stats.ga = stats.goals + stats.assists;
-            return stats;
-        }
-
-        function renderComparator() {
-            const p1Id = document.getElementById('compare-p1').value;
-            const p2Id = document.getElementById('compare-p2').value;
-            const resultContainer = document.getElementById('comparator-result');
-            
-            if (!p1Id || !p2Id) {
-                resultContainer.innerHTML = '';
-                resultContainer.classList.add('hidden');
+            if (!id1 || !id2) {
+                tableContainer.innerHTML = '<p class="text-center text-gray-400 italic py-4">Selecciona dos jugadores para comenzar el duelo.</p>';
+                if(radarChart) radarChart.destroy();
                 return;
             }
 
             const players = getPlayers();
-            const p1 = players.find(p => p.id === p1Id);
-            const p2 = players.find(p => p.id === p2Id);
-            const s1 = getPlayerStatsForComparator(p1Id);
-            const s2 = getPlayerStatsForComparator(p2Id);
+            const matches = getData('matches');
+            const p1 = players.find(p => p.id === id1);
+            const p2 = players.find(p => p.id === id2);
 
-            const isBetter = (val1, val2) => parseFloat(val1) > parseFloat(val2) ? 'stat-better' : '';
+            // --- 1. CALCULAR ESTADÍSTICAS ---
+            const getStats = (pid) => {
+                let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
+                matches.forEach(m => {
+                    const ps = m.playerStats.find(s => String(s.playerId) === String(pid));
+                    if (ps) {
+                        g += ps.goals || 0;
+                        a += ps.assists || 0;
+                        mins += ps.minutes || 0;
+                        matchesCount++;
+                        if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
+                    }
+                    if (String(m.mvp) === String(pid)) mvp++;
+                });
+                return { 
+                    goals: g, 
+                    assists: a, 
+                    minutes: mins, 
+                    mvp: mvp, 
+                    avg: rateCount > 0 ? (rateSum / rateCount) : 0,
+                    matches: matchesCount
+                };
+            };
+
+            const s1 = getStats(id1);
+            const s2 = getStats(id2);
+
+            // --- 2. NORMALIZACIÓN (0-100 para el gráfico) ---
+            // Definimos "techos" realistas para que el gráfico se vea bien lleno
+            // Si alguien supera el techo, se queda en 100.
+            const ceilings = { 
+                goals: 15,    // Un goleador top tendrá 100% con 15 goles
+                assists: 10, 
+                minutes: matches.length * 80, // Jugar casi todo
+                avg: 9,       // Nota media de 9 es el máximo
+                mvp: 5 
+            };
+
+            const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
+
+            const data1 = [
+                normalize(s1.goals, ceilings.goals),
+                normalize(s1.assists, ceilings.assists),
+                normalize(s1.avg, ceilings.avg),
+                normalize(s1.minutes, ceilings.minutes),
+                normalize(s1.mvp, ceilings.mvp)
+            ];
             
-            // Allow comparison even if stats are 0
-            resultContainer.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="w-full text-center">
-                        <thead>
-                            <tr class="text-sm text-gray-500">
-                                <th class="w-1/3 p-2">
-                                    <div class="flex flex-col items-center">
-                                        <img src="${p1.foto}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-slate-200">
-                                        <span>${p1.nombre}</span>
-                                    </div>
-                                </th>
-                                <th class="w-1/3 p-2">Estadística</th>
-                                <th class="w-1/3 p-2">
-                                    <div class="flex flex-col items-center">
-                                        <img src="${p2.foto}" class="w-16 h-16 rounded-full object-cover mb-2 border-2 border-slate-200">
-                                        <span>${p2.nombre}</span>
-                                    </div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-slate-800 font-medium">
-                            <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.matchesPlayed, s2.matchesPlayed)}">${s1.matchesPlayed}</td>
-                                <td class="p-3 text-gray-500 text-sm">Partidos</td>
-                                <td class="p-3 ${isBetter(s2.matchesPlayed, s1.matchesPlayed)}">${s2.matchesPlayed}</td>
-                            </tr>
-                            <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.avgRating, s2.avgRating)}">${s1.avgRating}</td>
-                                <td class="p-3 text-gray-500 text-sm">Nota Media</td>
-                                <td class="p-3 ${isBetter(s2.avgRating, s1.avgRating)}">${s2.avgRating}</td>
-                            </tr>
-                            <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.goals, s2.goals)}">${s1.goals}</td>
-                                <td class="p-3 text-gray-500 text-sm">Goles</td>
-                                <td class="p-3 ${isBetter(s2.goals, s1.goals)}">${s2.goals}</td>
-                            </tr>
-                            <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.assists, s2.assists)}">${s1.assists}</td>
-                                <td class="p-3 text-gray-500 text-sm">Asistencias</td>
-                                <td class="p-3 ${isBetter(s2.assists, s1.assists)}">${s2.assists}</td>
-                            </tr>
-                            <tr class="border-t bg-slate-50">
-                                <td class="p-3 ${isBetter(s1.ga, s2.ga)}">${s1.ga}</td>
-                                <td class="p-3 text-gray-500 text-sm font-bold">Goles + Asist</td>
-                                <td class="p-3 ${isBetter(s2.ga, s1.ga)}">${s2.ga}</td>
-                            </tr>
-                             <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.minutes, s2.minutes)}">${s1.minutes}</td>
-                                <td class="p-3 text-gray-500 text-sm">Minutos</td>
-                                <td class="p-3 ${isBetter(s2.minutes, s1.minutes)}">${s2.minutes}</td>
-                            </tr>
-                            <tr class="border-t">
-                                <td class="p-3 ${isBetter(s1.mvpCount, s2.mvpCount)}">${s1.mvpCount}</td>
-                                <td class="p-3 text-gray-500 text-sm">MVPs</td>
-                                <td class="p-3 ${isBetter(s2.mvpCount, s1.mvpCount)}">${s2.mvpCount}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            const data2 = [
+                normalize(s2.goals, ceilings.goals),
+                normalize(s2.assists, ceilings.assists),
+                normalize(s2.avg, ceilings.avg),
+                normalize(s2.minutes, ceilings.minutes),
+                normalize(s2.mvp, ceilings.mvp)
+            ];
+
+            // --- 3. DIBUJAR GRÁFICO ---
+            const ctx = document.getElementById('chart-radar-vs').getContext('2d');
+            if (radarChart) radarChart.destroy();
+
+            // Detectar modo oscuro para colores de texto
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#e2e8f0' : '#4b5563';
+            const gridColor = isDark ? '#334155' : '#e5e7eb';
+
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Goles', 'Asistencias', 'Nota Media', 'Minutos', 'MVPs'],
+                    datasets: [
+                        {
+                            label: p1.apodo || p1.apellido,
+                            data: data1,
+                            borderColor: 'rgba(59, 130, 246, 1)', // Azul
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: p2.apodo || p2.apellido,
+                            data: data2,
+                            borderColor: 'rgba(239, 68, 68, 1)', // Rojo
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: gridColor },
+                            grid: { color: gridColor },
+                            pointLabels: {
+                                font: { size: 12, weight: 'bold' },
+                                color: textColor
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            ticks: { display: false } // Ocultar números concéntricos
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: textColor } }
+                    }
+                }
+            });
+
+            // --- 4. ACTUALIZAR TABLA DE DATOS ---
+            const row = (label, v1, v2, isFloat=false) => {
+                const val1 = isFloat ? v1.toFixed(2) : v1;
+                const val2 = isFloat ? v2.toFixed(2) : v2;
+                // Color si gana
+                const c1 = Number(val1) > Number(val2) ? 'text-blue-600 font-black' : (Number(val1) === Number(val2) ? 'text-gray-500' : 'text-gray-400');
+                const c2 = Number(val2) > Number(val1) ? 'text-red-600 font-black' : (Number(val2) === Number(val1) ? 'text-gray-500' : 'text-gray-400');
+                
+                return `
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 last:border-0">
+                    <span class="text-base ${c1}">${val1}</span>
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold text-center w-24">${label}</span>
+                    <span class="text-base ${c2}">${val2}</span>
+                </div>`;
+            };
+            
+            tableContainer.innerHTML = `
+                ${row('Nota Media', s1.avg, s2.avg, true)}
+                ${row('Goles', s1.goals, s2.goals)}
+                ${row('Asistencias', s1.assists, s2.assists)}
+                ${row('MVPs', s1.mvp, s2.mvp)}
+                ${row('Minutos', s1.minutes, s2.minutes)}
+                ${row('Partidos', s1.matches, s2.matches)}
             `;
-            resultContainer.classList.remove('hidden');
         }
         // ==========================================
         // PRINCIPAL / DASHBOARD LOGIC
@@ -2850,7 +2926,7 @@
             if (tabName === 'nuevo') initNewMatchForm();
             if (tabName === 'partidos') renderMatches();
             if (tabName === 'stats') renderStats();
-            if (tabName === 'comparador') { populateComparatorSelects(); renderComparator(); }
+            if (tabName === 'comparador') { populateComparatorSelects(); /* updateComparatorChart se llama solo dentro de populate si hay jugadores */ }
         }
 
         // ==========================================
