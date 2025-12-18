@@ -309,8 +309,8 @@
             background: rgba(255,255,255,0.1);
             z-index: 5;
         }
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     </style>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -2477,7 +2477,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                    
+
                         ${pStats.sort((a,b) => b.minutes - a.minutes).map(p => `
                             <tr style="border-bottom: 1px solid #e2e8f0;">
                                 <td style="padding: 6px; font-weight: bold;">${p.name}</td>
