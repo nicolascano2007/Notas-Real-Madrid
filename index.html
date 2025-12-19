@@ -10,7 +10,7 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="shortcut icon" href="./favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/180px-Real_Madrid_CF.svg.png">
-    
+
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -384,8 +384,8 @@
             margin-bottom: 4px;
             overflow: hidden;
         }
-        .pitch-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        
+        /* ✅ AÑADIDO object-position: top !important */
+        .pitch-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top !important; }
         .pitch-name {
             background-color: rgba(31, 41, 55, 0.9);
             color: white;
@@ -2169,56 +2169,63 @@
             
             const matches = getData('matches').filter(m => m.competition === compName);
             const state = getCompetitionState();
-            const extraRoundState = state[compName]?.playsExtra; // true, false o undefined
             
-            // 1. Aplanar todas las rondas
+            // Datos del estado guardado
+            const eliminatedAt = state[compName]?.eliminatedAt;
+            const extraRoundState = state[compName]?.playsExtra;
+            
             let allRounds = [];
+            // Aplanar estructura
             comp.fases.forEach(fase => {
                 fase.rondas.forEach(ronda => {
                     allRounds.push({ ...ronda, faseTipo: fase.tipo, faseNombre: fase.nombre, faseOrdenLibre: fase.ordenLibre });
                 });
             });
 
-            // 2. Filtrar rondas según la decisión del usuario
-            // Si playsExtra es FALSE, quitamos las rondas extra.
-            // Si es TRUE o undefined (aún no decidido), las dejamos para que la lógica las maneje.
+            // Filtrar ronda extra si el usuario dijo que NO se juega
             if (extraRoundState === false) {
                 allRounds = allRounds.filter(r => !r.rondaExtra);
             }
 
-            // 3. Ordenar correctamente (necesario por los decimales)
+            // Ordenar por orden numérico
             allRounds.sort((a, b) => a.orden - b.orden);
             
             const completedRoundIds = matches.map(m => m.roundId);
             const result = [];
             const isLeagueFormat = comp.ordenLibre || comp.tipo === 'liga';
             
+            let eliminationTriggered = false; // Flag maestro de bloqueo
+
             for (let i = 0; i < allRounds.length; i++) {
                 const ronda = allRounds[i];
                 const isCompleted = completedRoundIds.includes(ronda.id);
+                
+                // Si ya pasamos la ronda de eliminación en una iteración anterior, bloqueamos todo lo que queda
+                if (eliminationTriggered) {
+                    result.push({ ...ronda, status: 'locked' });
+                    continue;
+                }
+
                 let isAvailable = false;
                 
                 if (ronda.faseTipo === 'liga' || ronda.faseOrdenLibre || isLeagueFormat) {
                     isAvailable = !isCompleted;
                 } else {
-                    // Lógica dinámica: Miramos la ronda ANTERIOR en la lista filtrada
-                    // Esto conecta automáticamente la Liga con Octavos si quitamos los Dieciseisavos
+                    // Lógica secuencial: Si la anterior está completa, esta está disponible
                     if (i === 0) {
-                        isAvailable = !isCompleted; // Si es la primera, está disponible
+                        isAvailable = !isCompleted; 
                     } else {
                         const prevRound = allRounds[i - 1];
+                        // La anterior cuenta como completada si se jugó O si era de tipo liga (que no bloquea)
                         const isPrevCompleted = completedRoundIds.includes(prevRound.id) || prevRound.faseTipo === 'liga' || prevRound.faseOrdenLibre;
                         isAvailable = !isCompleted && isPrevCompleted;
                     }
                 }
                 
-                // Bloqueo por eliminación
-                if (state[compName]?.eliminatedAt) {
-                    const eliminatedRound = allRounds.find(r => r.id === state[compName].eliminatedAt);
-                    // Usamos el índice para comparar orden relativo en la lista filtrada
-                    if (eliminatedRound && allRounds.indexOf(eliminatedRound) < i) {
-                        isAvailable = false;
-                    }
+                // DETECCIÓN DE ELIMINACIÓN
+                // Si esta ronda es donde nos eliminaron, activamos el flag para bloquear las siguientes
+                if (eliminatedAt === ronda.id) {
+                    eliminationTriggered = true;
                 }
                 
                 result.push({
@@ -2234,22 +2241,26 @@
             if (!comp) return;
             
             let roundInfo = null;
+            // Buscar la ronda en todas las fases
             comp.fases.forEach(fase => {
                 const found = fase.rondas.find(r => r.id === match.roundId);
                 if (found) roundInfo = { ...found, faseTipo: fase.tipo };
             });
             
-            if (!roundInfo || !roundInfo.eliminatoria) return;
-            if (roundInfo.faseTipo === 'liga') return;
+            // Si no es eliminatoria o es liga, no hacemos nada
+            if (!roundInfo || !roundInfo.eliminatoria || roundInfo.faseTipo === 'liga') return;
             
             let isEliminated = false;
 
+            // 1. Eliminación forzada manual
             if (match.forceElimination) {
                 isEliminated = true;
             }
-            if (roundInfo.partidoUnico) {
+            // 2. Partido Único (Copa, Supercopa, Finales)
+            else if (roundInfo.partidoUnico) {
                 isEliminated = match.outcome === 'derrota';
             } 
+            // 3. Partido de Vuelta (Champions, UWCL)
             else if (roundInfo.idaVuelta === 'vuelta') {
                 const matches = getData('matches').filter(m => m.competition === match.competition);
                 const idaMatch = matches.find(m => m.roundId === roundInfo.pareja);
@@ -2260,9 +2271,18 @@
                 }
             }
             
+            // SI ESTAMOS ELIMINADOS, GUARDAMOS EL ESTADO
             if (isEliminated) {
+                console.log(`❌ Eliminado de ${match.competition} en ${match.roundId}`);
                 const state = getCompetitionState();
-                state[match.competition] = { eliminated: true, eliminatedAt: match.roundId };
+                
+                // Aseguramos que existe el objeto para esa compe
+                if (!state[match.competition]) state[match.competition] = {};
+                
+                // Actualizamos flags sin borrar lo que hubiera (ej: playsExtra)
+                state[match.competition].eliminated = true;
+                state[match.competition].eliminatedAt = match.roundId;
+                
                 saveCompetitionState(state);
             }
         }
@@ -2299,27 +2319,31 @@
        function recalculateCompetitionState(compName) {
             console.log(`Recalculando estado para: ${compName}`);
             
-            // 1. Obtener estado actual y limpiar la competición específica
+            // 1. Obtener estado actual
             let state = getCompetitionState();
-            if (state[compName]) {
-                delete state[compName];
-            }
-            saveCompetitionState(state); // Guardamos limpio primero
             
-            // 2. Obtener todos los partidos de esa competición ordenados por fecha
+            // 2. Limpiar SOLO los flags de eliminación (respetando playsExtra si existe)
+            if (state[compName]) {
+                delete state[compName].eliminated;
+                delete state[compName].eliminatedAt;
+            } else {
+                state[compName] = {};
+            }
+            saveCompetitionState(state);
+            
+            // 3. Obtener partidos y re-evaluar cronológicamente
             const matches = getData('matches')
                 .filter(m => m.competition === compName)
                 .sort((a, b) => new Date(a.date) - new Date(b.date));
                 
-            // 3. Re-evaluar cada partido uno a uno
             matches.forEach(match => {
                 checkEliminationAfterMatch(match);
             });
             
-            // 4. Verificar en consola
+            // Log para verificar
             const newState = getCompetitionState();
-            console.log("Nuevo estado:", newState[compName]);
-        }
+            console.log("Estado final:", newState[compName]);
+       }
 
         // ==========================================
         // STATISTICS
@@ -2931,7 +2955,7 @@
                     </div>
                     ${scorerP ? `
                     <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                        <img src="${scorerP.foto}" class="w-12 h-12 rounded-full object-cover">
+                        <img src="${scorerP.foto}" class="w-12 h-12 rounded-full object-top">
                         <div>
                             <p class="text-xs text-gray-500 uppercase font-bold">Goleador</p>
                             <p class="font-bold text-gray-800">${scorerP.nombre}</p>
@@ -2940,7 +2964,7 @@
                     </div>` : ''}
                     ${ratedP ? `
                     <div class="bg-white border border-gray-200 p-4 rounded-xl flex items-center gap-3 shadow-sm">
-                        <img src="${ratedP.foto}" class="w-12 h-12 rounded-full object-cover">
+                        <img src="${ratedP.foto}" class="w-12 h-12 rounded-full object-top">
                         <div>
                             <p class="text-xs text-gray-500 uppercase font-bold">Mejor Valoración</p>
                             <p class="font-bold text-gray-800">${ratedP.nombre}</p>
@@ -6525,7 +6549,7 @@
                 // Generar HTML de la "Mini Tarjeta"
                 const cardHtml = `
                     <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
-                        <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/32'">
+                    <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top border border-gray-200" onerror="this.src='https://via.placeholder.com/32'">
                         <div class="flex-1 min-w-0">
                             <p class="text-xs font-bold text-gray-700 truncate">${p.apodo || p.apellido}</p>
                             <p class="text-[10px] text-gray-400">${item.count} part.</p>
