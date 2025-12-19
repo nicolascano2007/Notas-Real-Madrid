@@ -928,27 +928,100 @@
                         <form id="new-match-form" class="space-y-6">
                             <input type="hidden" id="calendar-event-id" value="">
                             
-                            <div id="ai-prediction-card" class="mt-4 bg-gradient-to-r from-indigo-900 to-purple-900 rounded-xl p-4 border border-indigo-700/50 shadow-lg relative overflow-hidden group">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-purple-500/30 transition-all duration-700"></div>
-    
-    <div class="relative z-10 grid grid-cols-2 gap-4">
-        <div class="flex items-center gap-3">
-            <div class="text-2xl animate-pulse">🔮</div>
-            <div>
-                <p class="text-[10px] uppercase text-indigo-300 font-bold tracking-wider">Predicción IA</p>
-                <p class="text-lg font-bold text-white" id="ai-score-prediction">Calculando...</p>
-            </div>
-        </div>
-        
-        <div class="flex items-center gap-3 border-l border-indigo-700/50 pl-4">
-            <div class="text-2xl">🔥</div>
-            <div>
-                <p class="text-[10px] uppercase text-indigo-300 font-bold tracking-wider">A Seguir</p>
-                <p class="text-sm font-bold text-white truncate" id="ai-player-watch">Analizando...</p>
-            </div>
-        </div>
-    </div>
-</div>
+                            <div id="wizard-step-1">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Paso 1: Datos del Partido</h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Competición *</label>
+                                        <select id="new-competition" required onchange="updateRoundOptions()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-white">
+                                            <option value="">Seleccionar competición...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Jornada / Ronda *</label>
+                                        <select id="new-round" required onchange="handleRoundChange()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-white">
+                                            <option value="">Primero selecciona competición...</option>
+                                        </select>
+                                        <p id="round-info" class="text-xs text-gray-500 mt-1"></p>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Rival *</label>
+                                        <input type="text" id="new-opponent" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-gray-100" readonly>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                                        <input type="date" id="new-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div id="stadium-container">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Estadio / Condición</label>
+                                        <div class="flex gap-2">
+                                            <select id="new-venue" class="w-1/3 px-2 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 bg-white" onchange="updateStadiumField()">
+                                                <option value="local">🏠 Local</option>
+                                                <option value="visitante">✈️ Visitante</option>
+                                                <option value="neutral">⚖️ Neutral</option>
+                                            </select>
+                                            <input type="text" id="new-stadium" class="w-2/3 px-3 py-2 border rounded-lg bg-gray-100" value="Santiago Bernabéu" readonly>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Resultado (Goles) *</label>
+                                        <input type="text" id="new-result" required oninput="updateOvertimeOptions()" placeholder="Ej: 2-1" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 font-bold text-lg text-center tracking-widest" pattern="^\d+-\d+$">
+                                        <p class="text-xs text-gray-500 mt-1 text-center">Formato: local-visitante (ej: 3-1)</p>
+                                    </div>
+                                </div>
+                                
+                                <div id="overtime-controls" class="hidden mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <h4 class="font-bold text-orange-800 mb-2 text-sm">Desenlace Eliminatoria</h4>
+                                    
+                                    <div id="extra-time-option" class="mb-2 hidden">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="chk-extra-time" class="w-4 h-4 text-orange-600">
+                                            <span class="text-sm font-medium text-gray-700">Prórroga jugada</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div id="penalties-option" class="hidden">
+                                        <label class="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input type="checkbox" id="chk-penalties" class="w-4 h-4 text-orange-600" onchange="togglePenaltyWinner()">
+                                            <span class="text-sm font-medium text-gray-700">Tanda de Penaltis</span>
+                                        </label>
+                                        <div id="penalty-winner-select" class="hidden ml-6">
+                                            <p class="text-xs text-gray-500 mb-1">Resultado de la tanda:</p>
+                                            <div class="flex gap-4">
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="penalties-outcome" value="win" class="text-green-600">
+                                                    <span class="text-sm text-green-700 font-bold">Victoria</span>
+                                                </label>
+                                                <label class="flex items-center gap-1 cursor-pointer">
+                                                    <input type="radio" name="penalties-outcome" value="loss" class="text-red-600">
+                                                    <span class="text-sm text-red-700 font-bold">Derrota</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="leg-indicator" class="hidden p-4 global-result rounded-lg mb-4 mt-4">
+                                    <p id="leg-info" class="text-sm text-blue-800"></p>
+                                </div>
+
+                                <div id="venue-alternation-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-lg mb-4">
+                                    <p id="venue-alternation-info" class="text-sm text-amber-800"></p>
+                                </div>
+                                
+                                <div class="flex justify-end pt-4 border-t">
+                                    <button type="button" onclick="goToStep2()" class="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium shadow-lg transform active:scale-95 transition-all">
+                                        Siguiente: Jugadores ➡️
+                                    </button>
+                                </div>
+                            </div>
 
                             <!-- STEP 2: JUGADORES -->
                             <div id="wizard-step-2" class="hidden h-full">
@@ -1648,6 +1721,30 @@
                         Confirmar
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div id="player-selector-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b bg-slate-800 text-white flex justify-between items-center">
+                <h3 class="font-bold">Seleccionar Jugador</h3>
+                <button onclick="closePlayerSelector()" class="text-gray-400 hover:text-white">✕</button>
+            </div>
+            
+            <div class="p-3 bg-gray-50 border-b">
+                <input type="text" id="player-selector-search" 
+                       onkeyup="filterSelectorList()" 
+                       placeholder="🔍 Buscar jugador..." 
+                       class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+
+            <div id="player-selector-list" class="overflow-y-auto p-2 space-y-1 flex-1">
+                </div>
+            
+            <div class="p-3 border-t bg-gray-50 text-center">
+                <button onclick="selectPlayerForSlot(null)" class="text-red-500 text-sm font-bold hover:underline">
+                    🗑️ Dejar posición vacía
+                </button>
             </div>
         </div>
     </div>
@@ -3454,7 +3551,12 @@
             document.getElementById('selected-fixture-details').textContent = 
                 `${fixture.opponent}${compLabel} - ${fixture.start.toLocaleDateString('es-ES')} - ${fixture.location || 'Estadio'}`;
             
-            document.getElementById('new-date').value = fixture.start.toISOString().split('T')[0];
+            // ✅ BLOQUEO DE FECHA AÑADIDO
+            const dateInput = document.getElementById('new-date');
+            dateInput.value = fixture.start.toISOString().split('T')[0];
+            dateInput.readOnly = true;
+            dateInput.classList.add('bg-gray-100', 'cursor-not-allowed');
+
             document.getElementById('new-opponent').value = fixture.opponent || '';
             document.getElementById('calendar-event-id').value = fixture.id;
 
@@ -3463,7 +3565,6 @@
             let foundCompKey = null;
 
             if (fixture.competition) {
-                // Buscamos ignorando mayúsculas y espacios (trim)
                 foundCompKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
                     k.toLowerCase().trim() === fixture.competition.toLowerCase().trim()
                 );
@@ -3932,13 +4033,18 @@
             inputs.style.display = (starterChk.checked || subChk.checked) ? 'grid' : 'none';
         }
 
-        function resetNewMatchForm() {
+       function resetNewMatchForm() {
             document.getElementById('new-match-form').reset();
             document.getElementById('new-round').innerHTML = '<option value="">Primero selecciona competición...</option>';
             document.getElementById('round-info').textContent = '';
             document.getElementById('leg-indicator').classList.add('hidden');
             document.getElementById('venue-alternation-warning').classList.add('hidden');
             
+            // ✅ DESBLOQUEAR FECHA
+            const dateInput = document.getElementById('new-date');
+            dateInput.readOnly = false;
+            dateInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
+
             // Resetear select de competición
             const compSelect = document.getElementById('new-competition');
             compSelect.disabled = false;
@@ -5205,22 +5311,23 @@
             const coords = FORMACIONES[currentFormation];
 
             // 1. Pintar los huecos vacíos (Slots)
+            // AÑADIDO: onclick="openPlayerSelector(...)" y cursor-pointer
             slotsLayer.innerHTML = coords.map((pos, index) => `
-                <div class="pitch-slot" 
+                <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
                      id="slot-${index}"
                      style="top: ${pos.top}%; left: ${pos.left}%;"
                      ondragover="allowDrop(event)" 
-                     ondrop="drop(event)">
+                     ondrop="drop(event)"
+                     onclick="openPlayerSelector('slot-${index}')"
+                     title="Clic para elegir jugador">
                 </div>
             `).join('');
 
             // 2. Repintar jugadores que ya estuvieran en el campo
-            // (Si cambiamos de 4-3-3 a 4-4-2, intentamos mantenerlos en su sitio por índice)
-            playersLayer.innerHTML = ''; // Limpiamos capa visual
+            playersLayer.innerHTML = ''; 
             
             Object.keys(currentPitchPlayers).forEach(slotId => {
                 const playerId = currentPitchPlayers[slotId];
-                // Solo pintamos si el hueco existe en la nueva formación
                 const slotEl = document.getElementById(slotId);
                 if (slotEl && playerId) {
                     const player = getPlayers().find(p => p.id === playerId);
@@ -5228,21 +5335,20 @@
                         renderPlayerOnPitch(player, slotId, playersLayer);
                     }
                 } else {
-                    // Si el hueco ya no existe (ej: pasamos de 3 delanteros a 2), 
-                    // devolvemos al jugador al banquillo virtualmente (lo borramos del campo)
                     delete currentPitchPlayers[slotId];
-                    renderBench(); // Actualizamos banquillo para que vuelva a aparecer
+                    renderBench(); 
                 }
             });
         }
 
         // Pinta la ficha redonda del jugador en el campo
+// Pinta la ficha redonda del jugador en el campo
         function renderPlayerOnPitch(player, slotId, container) {
             const slotEl = document.getElementById(slotId);
             if (!slotEl) return;
 
             const div = document.createElement('div');
-            div.className = 'player-token';
+            div.className = 'player-token hover:scale-110 transition-transform cursor-pointer'; // Añadido hover y cursor
             div.style.top = slotEl.style.top;
             div.style.left = slotEl.style.left;
             div.draggable = true;
@@ -5250,8 +5356,15 @@
             div.setAttribute('data-player-id', player.id);
             div.setAttribute('data-current-slot', slotId);
             
-            // Eventos Drag para moverlo del campo a otro lado
+            // Eventos Drag
             div.ondragstart = drag;
+            
+            // AÑADIDO: Evento Click para cambiar jugador
+            // stopPropagation es importante para que no haga click en el slot de abajo a la vez
+            div.onclick = (e) => {
+                e.stopPropagation();
+                openPlayerSelector(slotId);
+            };
 
             div.innerHTML = `
                 <img src="${player.foto}" onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
@@ -5382,6 +5495,101 @@
         function renderAll() {
             renderTacticalBoard();
             renderBench();
+        }
+        // ==========================================
+        // SELECTOR DE JUGADORES (CLICK & PICK)
+        // ==========================================
+
+        let currentSelectorSlot = null; // Guarda qué hueco estamos editando
+
+        function openPlayerSelector(slotId) {
+            currentSelectorSlot = slotId;
+            const modal = document.getElementById('player-selector-modal');
+            const list = document.getElementById('player-selector-list');
+            const searchInput = document.getElementById('player-selector-search');
+            
+            searchInput.value = ''; // Limpiar buscador
+            list.innerHTML = ''; // Limpiar lista
+
+            // 1. Obtener todos los jugadores disponibles
+            // (Todos los activos - Los que ya están en OTROS huecos del campo)
+            const allPlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
+            const playersOnPitchIds = Object.values(currentPitchPlayers);
+            const currentPlayerInThisSlot = currentPitchPlayers[slotId];
+
+            // Filtramos: Mostramos al que ya está en este hueco (para verlo marcado) + los que están en banquillo/reserva
+            const availablePlayers = allPlayers.filter(p => {
+                const isOnPitch = playersOnPitchIds.includes(p.id);
+                const isThisSlot = p.id === currentPlayerInThisSlot;
+                return !isOnPitch || isThisSlot;
+            });
+
+            // Ordenar por dorsal
+            availablePlayers.sort((a, b) => a.dorsal - b.dorsal);
+
+            // 2. Generar HTML
+            if (availablePlayers.length === 0) {
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">No hay jugadores disponibles.</div>';
+            } else {
+                list.innerHTML = availablePlayers.map(p => {
+                    const isSelected = p.id === currentPlayerInThisSlot;
+                    const badgeColor = isSelected ? 'bg-green-100 border-green-300' : 'bg-white hover:bg-blue-50 border-gray-100';
+                    
+                    return `
+                    <div onclick="selectPlayerForSlot('${p.id}')" class="selector-item cursor-pointer flex items-center gap-3 p-2 rounded-lg border ${badgeColor} transition-all">
+                        <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200">
+                        <div class="flex-1">
+                            <p class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</p>
+                            <p class="text-xs text-gray-500">${capitalizeFirst(p.posicion)} #${p.dorsal}</p>
+                        </div>
+                        ${isSelected ? '✅' : ''}
+                    </div>
+                    `;
+                }).join('');
+            }
+
+            modal.classList.add('active');
+            searchInput.focus();
+        }
+
+        function closePlayerSelector() {
+            document.getElementById('player-selector-modal').classList.remove('active');
+            currentSelectorSlot = null;
+        }
+
+        function selectPlayerForSlot(playerId) {
+            if (!currentSelectorSlot) return;
+
+            // 1. Si elegimos "Vaciar" (null)
+            if (!playerId) {
+                delete currentPitchPlayers[currentSelectorSlot];
+            } else {
+                // 2. Si elegimos un jugador
+                // Primero lo quitamos de suplentes si estaba ahí
+                const subIndex = currentSubstitutes.indexOf(playerId);
+                if (subIndex > -1) currentSubstitutes.splice(subIndex, 1);
+
+                // Asignamos al hueco
+                currentPitchPlayers[currentSelectorSlot] = playerId;
+            }
+
+            // 3. Actualizar todo y cerrar
+            renderAll();
+            closePlayerSelector();
+        }
+
+        function filterSelectorList() {
+            const term = document.getElementById('player-selector-search').value.toLowerCase();
+            const items = document.querySelectorAll('.selector-item');
+            
+            items.forEach(item => {
+                const text = item.innerText.toLowerCase();
+                if (text.includes(term)) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
         }
 
         // FASE 3 (Adelanto): Sincronizar Pizarra -> Checkbox de la Lista
