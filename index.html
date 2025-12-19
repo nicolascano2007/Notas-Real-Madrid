@@ -370,6 +370,69 @@
                 <p class="text-sm text-black-300 mt-2">Liga F, UWCL, Copa de la Reina...</p>
             </div>
         </div>
+        <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">🤖</div>
+                    
+                    <div class="bg-slate-900/40 backdrop-blur-md rounded-lg p-5">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-violet-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm border border-violet-400">AI Analysis</span>
+                                    <span class="text-violet-200 text-xs font-mono" id="ai-match-label">Analizando datos...</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                                    <span id="ai-prediction-text">Calculando probabilidades...</span>
+                                </h3>
+                                <p class="text-indigo-200 text-sm" id="ai-reasoning">Procesando racha y estadísticas...</p>
+                            </div>
+
+                            <div class="w-full md:w-auto flex flex-col gap-2 min-w-[200px]">
+                                <div class="flex justify-between text-xs font-bold text-indigo-100 uppercase tracking-widest">
+                                    <span>Probabilidad de Victoria</span>
+                                    <span id="ai-win-prob">--%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700/50 rounded-full overflow-hidden flex">
+                                    <div id="prob-bar-win" class="h-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)] transition-all duration-1000" style="width: 0%"></div>
+                                    <div id="prob-bar-draw" class="h-full bg-yellow-400 opacity-80 transition-all duration-1000" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-gray-300 mt-1">
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-green-400"></div> Victoria</span>
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-yellow-400"></div> Empate</span>
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-slate-600"></div> Derrota</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 border-t border-white/10 pt-4">
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔮</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Marcador Probable</p>
+                                    <p class="text-xl font-bold text-white" id="ai-score-prediction">-</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔥</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Jugador a Seguir</p>
+                                    <p class="text-sm font-bold text-white" id="ai-player-watch">-</p>
+                                    <p class="text-[10px] text-indigo-200" id="ai-player-reason">-</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔑</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Clave Táctica</p>
+                                    <p class="text-sm font-bold text-white" id="ai-tactical-key">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
     </section>
 
     <!-- APP CONTAINER (Hidden initially) -->
@@ -2525,190 +2588,6 @@
             link.click();
             document.body.removeChild(link);
         }
-
-     // ==========================================
-        // NUEVA LÓGICA COMPARADOR (RADAR CHART)
-        // ==========================================
-        
-        let radarChart = null;
-
-        function populateComparatorSelects() {
-            // Usamos los nuevos IDs: radar-p1 y radar-p2
-            const p1Select = document.getElementById('radar-p1');
-            const p2Select = document.getElementById('radar-p2');
-            
-            // Limpiar opciones previas
-            p1Select.innerHTML = '<option value="">Selecciona...</option>';
-            p2Select.innerHTML = '<option value="">Selecciona...</option>';
-
-            // Filtrar solo jugadores activos (y excluir entrenador si quieres, aunque a veces es curioso ver sus stats si jugara)
-            const players = getPlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
-            
-            const options = players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
-            
-            p1Select.innerHTML += options;
-            p2Select.innerHTML += options;
-
-            // Pre-seleccionar los dos primeros si existen para que se vea algo al entrar
-            if (players.length >= 2) {
-                p1Select.selectedIndex = 1;
-                p2Select.selectedIndex = 2;
-                // Dibujamos directamente
-                updateComparatorChart();
-            }
-        }
-
-        function updateComparatorChart() {
-            const id1 = document.getElementById('radar-p1').value;
-            const id2 = document.getElementById('radar-p2').value;
-            const tableContainer = document.getElementById('radar-stats-table');
-            
-            if (!id1 || !id2) {
-                tableContainer.innerHTML = '<p class="text-center text-gray-400 italic py-4">Selecciona dos jugadores para comenzar el duelo.</p>';
-                if(radarChart) radarChart.destroy();
-                return;
-            }
-
-            const players = getPlayers();
-            const matches = getData('matches');
-            const p1 = players.find(p => p.id === id1);
-            const p2 = players.find(p => p.id === id2);
-
-            // --- 1. CALCULAR ESTADÍSTICAS ---
-            const getStats = (pid) => {
-                let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
-                matches.forEach(m => {
-                    const ps = m.playerStats.find(s => String(s.playerId) === String(pid));
-                    if (ps) {
-                        g += ps.goals || 0;
-                        a += ps.assists || 0;
-                        mins += ps.minutes || 0;
-                        matchesCount++;
-                        if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
-                    }
-                    if (String(m.mvp) === String(pid)) mvp++;
-                });
-                return { 
-                    goals: g, 
-                    assists: a, 
-                    minutes: mins, 
-                    mvp: mvp, 
-                    avg: rateCount > 0 ? (rateSum / rateCount) : 0,
-                    matches: matchesCount
-                };
-            };
-
-            const s1 = getStats(id1);
-            const s2 = getStats(id2);
-
-            // --- 2. NORMALIZACIÓN (0-100 para el gráfico) ---
-            // Definimos "techos" realistas para que el gráfico se vea bien lleno
-            // Si alguien supera el techo, se queda en 100.
-            const ceilings = { 
-                goals: 15,    // Un goleador top tendrá 100% con 15 goles
-                assists: 10, 
-                minutes: matches.length * 80, // Jugar casi todo
-                avg: 9,       // Nota media de 9 es el máximo
-                mvp: 5 
-            };
-
-            const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
-
-            const data1 = [
-                normalize(s1.goals, ceilings.goals),
-                normalize(s1.assists, ceilings.assists),
-                normalize(s1.avg, ceilings.avg),
-                normalize(s1.minutes, ceilings.minutes),
-                normalize(s1.mvp, ceilings.mvp)
-            ];
-            
-            const data2 = [
-                normalize(s2.goals, ceilings.goals),
-                normalize(s2.assists, ceilings.assists),
-                normalize(s2.avg, ceilings.avg),
-                normalize(s2.minutes, ceilings.minutes),
-                normalize(s2.mvp, ceilings.mvp)
-            ];
-
-            // --- 3. DIBUJAR GRÁFICO ---
-            const ctx = document.getElementById('chart-radar-vs').getContext('2d');
-            if (radarChart) radarChart.destroy();
-
-            // Detectar modo oscuro para colores de texto
-            const isDark = document.body.classList.contains('dark-mode');
-            const textColor = isDark ? '#e2e8f0' : '#4b5563';
-            const gridColor = isDark ? '#334155' : '#e5e7eb';
-
-            radarChart = new Chart(ctx, {
-                type: 'radar',
-                data: {
-                    labels: ['Goles', 'Asistencias', 'Nota Media', 'Minutos', 'MVPs'],
-                    datasets: [
-                        {
-                            label: p1.apodo || p1.apellido,
-                            data: data1,
-                            borderColor: 'rgba(59, 130, 246, 1)', // Azul
-                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                            borderWidth: 2
-                        },
-                        {
-                            label: p2.apodo || p2.apellido,
-                            data: data2,
-                            borderColor: 'rgba(239, 68, 68, 1)', // Rojo
-                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
-                            borderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        r: {
-                            angleLines: { color: gridColor },
-                            grid: { color: gridColor },
-                            pointLabels: {
-                                font: { size: 12, weight: 'bold' },
-                                color: textColor
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100,
-                            ticks: { display: false } // Ocultar números concéntricos
-                        }
-                    },
-                    plugins: {
-                        legend: { labels: { color: textColor } }
-                    }
-                }
-            });
-
-            // --- 4. ACTUALIZAR TABLA DE DATOS ---
-            const row = (label, v1, v2, isFloat=false) => {
-                const val1 = isFloat ? v1.toFixed(2) : v1;
-                const val2 = isFloat ? v2.toFixed(2) : v2;
-                // Color si gana
-                const c1 = Number(val1) > Number(val2) ? 'text-blue-600 font-black' : (Number(val1) === Number(val2) ? 'text-gray-500' : 'text-gray-400');
-                const c2 = Number(val2) > Number(val1) ? 'text-red-600 font-black' : (Number(val2) === Number(val1) ? 'text-gray-500' : 'text-gray-400');
-                
-                return `
-                <div class="flex justify-between items-center border-b border-gray-200 pb-2 last:border-0">
-                    <span class="text-base ${c1}">${val1}</span>
-                    <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold text-center w-24">${label}</span>
-                    <span class="text-base ${c2}">${val2}</span>
-                </div>`;
-            };
-            
-            tableContainer.innerHTML = `
-                ${row('Nota Media', s1.avg, s2.avg, true)}
-                ${row('Goles', s1.goals, s2.goals)}
-                ${row('Asistencias', s1.assists, s2.assists)}
-                ${row('MVPs', s1.mvp, s2.mvp)}
-                ${row('Minutos', s1.minutes, s2.minutes)}
-                ${row('Partidos', s1.matches, s2.matches)}
-            `;
-        }
         // ==========================================
         // PRINCIPAL / DASHBOARD LOGIC
         // ==========================================
@@ -2882,6 +2761,7 @@
             `;
 
             document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
+            renderAIPrediction();
         }
 
         // ==========================================
@@ -5419,7 +5299,7 @@
 
             renderMatches(filtered); // Reutilizamos tu función pasándole la lista filtrada
         }
-// ==========================================
+        // ==========================================
         // LÓGICA COMPARADOR (RADAR CHART) - VERSIÓN FINAL
         // ==========================================
         
@@ -5594,6 +5474,143 @@
                     ${row('Partidos', s1.matches, s2.matches)}
                 `;
             }
+        }
+        // ==========================================
+        // AI PREDICTION ENGINE
+        // ==========================================
+
+        function renderAIPrediction() {
+            const container = document.getElementById('ai-prediction-card');
+            const now = new Date();
+            
+            // 1. Buscar Próximo Partido
+            const upcomingEvents = calendarEvents
+                .filter(e => e.start > now)
+                .sort((a, b) => a.start - b.start);
+
+            if (upcomingEvents.length === 0) {
+                container.classList.add('hidden'); // Si no hay partido, ocultamos la IA
+                return;
+            }
+
+            const nextMatch = upcomingEvents[0];
+            container.classList.remove('hidden');
+
+            // 2. Analizar Datos Históricos (La "IA")
+            const matches = getData('matches');
+            const players = getPlayers();
+            
+            // Estadísticas base
+            let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+            let formPoints = 0; // Puntos de forma (últimos 5)
+            
+            // Analizar últimos 5 partidos para "Racha"
+            const last5 = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+            last5.forEach(m => {
+                if (m.outcome === 'victoria') formPoints += 3;
+                else if (m.outcome === 'empate') formPoints += 1;
+            });
+
+            // Medias globales
+            matches.forEach(m => {
+                const parts = m.result.replace('*','').split('-').map(Number);
+                const isHome = m.venue === 'local';
+                if(isHome) { gf += parts[0]; ga += parts[1]; } 
+                else { gf += parts[1]; ga += parts[0]; }
+            });
+
+            const avgGF = matches.length > 0 ? (gf / matches.length) : 2; // Default 2 goles
+            const avgGA = matches.length > 0 ? (ga / matches.length) : 1; // Default 1 gol
+
+            // 3. Calcular Probabilidades (Algoritmo Heurístico)
+            // Factor Base: Real Madrid siempre favorito (60%)
+            let winProb = 60; 
+            
+            // Factor Forma: Si vienes ganando, sube. Si pierdes, baja.
+            const formFactor = (formPoints / 15) * 20; // Hasta +20% extra si ganas todo
+            winProb += formFactor;
+
+            // Factor Casa/Fuera
+            if (nextMatch.venue === 'local') winProb += 10;
+            else winProb -= 5;
+
+            // Factor Competición (Champions es más difícil)
+            if (nextMatch.competition && nextMatch.competition.includes('Champions')) winProb -= 10;
+
+            // Ajustes finales (topes)
+            if (winProb > 90) winProb = 90;
+            if (winProb < 30) winProb = 30;
+
+            const drawProb = Math.max(10, (100 - winProb) * 0.4); // El empate es un % del resto
+            // const lossProb = 100 - winProb - drawProb; (implícito)
+
+            // 4. Predicción de Resultado
+            // Usamos la media de goles y redondeamos
+            let predGF = Math.round(avgGF);
+            let predGA = Math.round(avgGA);
+            
+            // Ajuste por localía
+            if (nextMatch.venue === 'local') predGF = Math.max(predGF, predGF + 1);
+            
+            // Si la probabilidad de victoria es muy alta, aseguramos que GF > GA
+            if (winProb > 70 && predGF <= predGA) predGF = predGA + 1;
+
+            // 5. Jugador a Seguir (El que mejor nota media tenga o más goles)
+            let playerToWatch = "Bellingham"; // Fallback
+            let playerReason = "Lidera el equipo";
+            
+            // Buscar mejor jugador activo
+            const activePlayers = players.filter(p => p.posicion !== 'entrenador' && p.estado === 'Activo');
+            
+            // Crear ranking simple
+            const playerRanking = activePlayers.map(p => {
+                let score = 0;
+                let goals = 0;
+                let rating = 0;
+                let count = 0;
+                
+                matches.forEach(m => {
+                    const ps = m.playerStats.find(s => s.playerId === p.id);
+                    if (ps) {
+                        goals += ps.goals || 0;
+                        if(ps.rating) { rating += parseFloat(ps.rating); count++; }
+                    }
+                });
+                
+                const avg = count > 0 ? rating/count : 0;
+                score = (goals * 2) + (avg * 1.5); // Goles valen doble
+                return { name: p.apodo || p.apellido, score, goals, avg };
+            }).sort((a,b) => b.score - a.score);
+
+            if (playerRanking.length > 0) {
+                const top = playerRanking[0];
+                playerToWatch = top.name;
+                playerReason = top.goals > 0 ? `Máximo peligro (${top.goals} goles)` : `Motor del equipo (${top.avg.toFixed(1)} nota)`;
+            }
+
+            // 6. Clave Táctica (Aleatoria con lógica)
+            const tactics = [
+                "Dominar la posesión", "Balones a la espalda", "Presión alta", 
+                "Aprovechar balón parado", "Solidez defensiva", "Disparos lejanos",
+                "Juego por bandas", "Contraataque rápido"
+            ];
+            // Seleccionar táctica basada en el rival (simulado con hash simple del nombre)
+            const tacticIndex = nextMatch.opponent.length % tactics.length; 
+            const tacticalKey = tactics[tacticIndex];
+
+            // --- RENDERIZAR EN DOM ---
+            document.getElementById('ai-match-label').textContent = `vs ${nextMatch.opponent} (${nextMatch.venue === 'local' ? 'Casa' : 'Fuera'})`;
+            document.getElementById('ai-prediction-text').textContent = winProb >= 55 ? "Victoria Probable" : (winProb >= 40 ? "Partido Reñido" : "Partido Complicado");
+            document.getElementById('ai-reasoning').textContent = `Basado en ${matches.length} partidos analizados y forma actual.`;
+            
+            document.getElementById('ai-win-prob').textContent = Math.round(winProb) + '%';
+            document.getElementById('prob-bar-win').style.width = winProb + '%';
+            document.getElementById('prob-bar-draw').style.width = drawProb + '%';
+            
+            document.getElementById('ai-score-prediction').textContent = `${predGF} - ${predGA}`;
+            document.getElementById('ai-player-watch').textContent = playerToWatch;
+            document.getElementById('ai-player-reason').textContent = playerReason;
+            document.getElementById('ai-tactical-key').textContent = tacticalKey;
         }
 
         // Global Modal Close Handler
