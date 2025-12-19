@@ -1434,6 +1434,39 @@
                             <canvas id="chart-line-wars"></canvas>
                         </div>
                     </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-lg">🍩 El Rosco de la Carga</h4>
+                                <p class="text-xs text-gray-500">Distribución de minutos jugados (¿Quién está "quemado"?)</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <div class="w-full md:w-1/2 h-[300px] relative">
+                                <canvas id="chart-minutes-doughnut"></canvas>
+                                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span class="text-xs text-gray-400 uppercase font-bold">Total Equipo</span>
+                                    <span id="total-season-minutes" class="text-2xl font-black text-slate-700">0'</span>
+                                </div>
+                            </div>
+                            
+                            <div class="w-full md:w-1/2 grid grid-cols-2 gap-4">
+                                <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+                                    <p class="text-xs text-red-500 uppercase font-bold mb-1">🔥 El "Quemado"</p>
+                                    <p id="min-max-player" class="font-bold text-gray-800 text-sm">-</p>
+                                    <p id="min-max-value" class="text-xs text-gray-500">- min</p>
+                                </div>
+                                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                    <p class="text-xs text-blue-500 uppercase font-bold mb-1">❄️ El "Olvidado"</p>
+                                    <p id="min-min-player" class="font-bold text-gray-800 text-sm">-</p>
+                                    <p id="min-min-value" class="text-xs text-gray-500">- min</p>
+                                </div>
+                                <div class="col-span-2 bg-gray-50 p-3 rounded-lg text-xs text-gray-500 border border-gray-100">
+                                    <p><strong>💡 Análisis:</strong> Si un trozo ocupa más del 10% del gráfico, ese jugador es indispensable. Si no aparece o es una línea fina, necesita más oportunidades.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Home vs Away Comparison -->
                     <div>
                         <h4 class="font-bold text-gray-700 mb-4">Rendimiento: Casa vs Fuera</h4>
@@ -2705,6 +2738,7 @@
 
         function renderAdvancedStats() {
             renderLineWarsChart();
+            renderMinutesChart();
             populateImpactSelect();
             const matches = getData('matches');
             const players = getPlayers();
@@ -6830,6 +6864,119 @@
                         x: {
                             grid: { display: false },
                             ticks: { color: textColor, font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+        // ==========================================
+        // ROSCO DE MINUTOS (ROTACIONES)
+        // ==========================================
+        
+        let minutesChart = null;
+
+        function renderMinutesChart() {
+            const ctx = document.getElementById('chart-minutes-doughnut');
+            if (!ctx) return;
+
+            const matches = getData('matches');
+            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador'); // Solo jugadores de campo
+
+            if (matches.length === 0) return;
+
+            // 1. Calcular Minutos por Jugador
+            let totalTeamMinutes = 0;
+            const playerMinutes = players.map(p => {
+                let mins = 0;
+                matches.forEach(m => {
+                    const ps = m.playerStats.find(s => s.playerId === p.id);
+                    if (ps) mins += (ps.minutes || 0);
+                });
+                totalTeamMinutes += mins;
+                return { 
+                    name: p.apodo || p.apellido, 
+                    minutes: mins,
+                    id: p.id
+                };
+            });
+
+            // 2. Ordenar: Los que más juegan primero
+            playerMinutes.sort((a, b) => b.minutes - a.minutes);
+
+            // Filtrar los que tienen 0 minutos (para no ensuciar)
+            const activeRotation = playerMinutes.filter(p => p.minutes > 0);
+
+            // 3. Actualizar Datos Clave (Cajitas de al lado)
+            if (activeRotation.length > 0) {
+                document.getElementById('min-max-player').textContent = activeRotation[0].name;
+                document.getElementById('min-max-value').textContent = activeRotation[0].minutes + "'";
+                
+                const last = activeRotation[activeRotation.length - 1];
+                document.getElementById('min-min-player').textContent = last.name;
+                document.getElementById('min-min-value').textContent = last.minutes + "'";
+                
+                document.getElementById('total-season-minutes').textContent = (totalTeamMinutes / 11).toFixed(0) + "'"; // Promedio por posición aprox
+            }
+
+            // 4. Configurar Colores (Escala de Azules/Verdes o Multicolor)
+            // Usaremos una paleta dinámica para que se distingan bien
+            const colors = [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
+                '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#84cc16',
+                '#06b6d4', '#d946ef', '#eab308', '#64748b', '#a855f7'
+            ];
+
+            // Repetir colores si hay muchos jugadores
+            const bgColors = activeRotation.map((_, i) => colors[i % colors.length]);
+
+            // 5. Renderizar Gráfico
+            if (minutesChart) minutesChart.destroy();
+
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#e2e8f0' : '#4b5563';
+
+            minutesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: activeRotation.map(p => p.name),
+                    datasets: [{
+                        data: activeRotation.map(p => p.minutes),
+                        backgroundColor: bgColors,
+                        borderWidth: 2,
+                        borderColor: isDark ? '#1e293b' : '#ffffff',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%', // Hace el agujero del donut más grande
+                    layout: { padding: 10 },
+                    plugins: {
+                        legend: { display: false }, // Ocultamos leyenda porque son muchos nombres
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const val = context.raw;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = ((val / total) * 100).toFixed(1);
+                                    return ` ${val} min (${pct}%)`;
+                                }
+                            }
+                        },
+                        // Plugin de etiquetas (Datallabels)
+                        datalabels: {
+                            color: isDark ? '#fff' : '#333',
+                            font: { weight: 'bold', size: 9 },
+                            formatter: (value, ctx) => {
+                                // Solo mostrar nombre si el trozo es lo bastante grande (>4%)
+                                const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = (value / total) * 100;
+                                return pct > 4 ? ctx.chart.data.labels[ctx.dataIndex] : '';
+                            },
+                            anchor: 'center',
+                            align: 'center',
+                            offset: 0
                         }
                     }
                 }
