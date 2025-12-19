@@ -395,7 +395,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -5831,7 +5831,7 @@
             });
         }
         // ==========================================
-        // SCATTER CHART (Con Nombres Visibles)
+        // SCATTER CHART (CORREGIDO)
         // ==========================================
         let scatterChart = null;
 
@@ -5863,13 +5863,12 @@
 
                 if (totalMins === 0 || ratingCount === 0) return null;
 
-                // Usamos el apodo corto para que quepa mejor en el gráfico
                 const shortName = p.apodo || p.apellido;
 
                 return {
                     x: totalMins,
                     y: (ratingSum / ratingCount).toFixed(2),
-                    name: shortName, // Dato para la etiqueta
+                    name: shortName,
                     pos: p.posicion
                 };
             }).filter(item => item !== null);
@@ -5882,14 +5881,15 @@
 
             const isDark = document.body.classList.contains('dark-mode');
             const gridColor = isDark ? '#334155' : '#e5e7eb';
-            const textColor = isDark ? '#94a3b8' : '#4b5563'; // Un gris suave para los nombres
+            const textColor = isDark ? '#94a3b8' : '#4b5563';
             const axisColor = isDark ? '#f1f5f9' : '#1f2937';
 
-            // Registramos el plugin
-            Chart.register(ChartDataLabels);
+            // ⚠️ IMPORTANTE: No usamos Chart.register aquí para no romper el gráfico de pastel.
+            // Lo pasamos directamente en la configuración 'plugins' de abajo.
 
             scatterChart = new Chart(ctx, {
                 type: 'scatter',
+                plugins: [ChartDataLabels], // <--- AQUÍ ACTIVAMOS EL PLUGIN SOLO PARA ESTE GRÁFICO
                 data: {
                     datasets: [{
                         label: 'Jugadores',
@@ -5897,45 +5897,43 @@
                         backgroundColor: (context) => {
                             const val = context.raw;
                             if(!val) return '#9ca3af';
-                            // Colores según cuadrante
-                            if(val.x > avgMins && val.y > avgRating) return '#10b981'; // Estrellas (Verde)
-                            if(val.x < avgMins && val.y > avgRating) return '#f59e0b'; // Joyas (Naranja)
-                            if(val.x > avgMins && val.y < avgRating) return '#ef4444'; // Fatiga (Rojo)
-                            return '#6b7280'; // Fondo armario (Gris)
+                            if(val.x > avgMins && val.y > avgRating) return '#10b981'; // Verde
+                            if(val.x < avgMins && val.y > avgRating) return '#f59e0b'; // Naranja
+                            if(val.x > avgMins && val.y < avgRating) return '#ef4444'; // Rojo
+                            return '#6b7280'; // Gris
                         },
-                        pointRadius: 5,
-                        pointHoverRadius: 8
+                        pointRadius: 6,
+                        pointHoverRadius: 9
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     layout: {
-                        padding: { top: 20, right: 30, left: 10, bottom: 10 } // Espacio para que no se corten los nombres
+                        padding: { top: 20, right: 20, left: 10, bottom: 10 }
                     },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            enabled: true, // El tooltip sigue funcionando por si quieres ver el dato exacto
                             callbacks: {
                                 label: (ctx) => `${ctx.raw.name}: ${ctx.raw.y} Nota / ${ctx.raw.x} Min`
                             }
                         },
-                        // CONFIGURACIÓN DE LAS ETIQUETAS (NOMBRES)
+                        // Configuración de las etiquetas
                         datalabels: {
-                            align: 'top',      // Pone el nombre encima del punto
-                            anchor: 'center',  // Anclado al centro
-                            offset: 4,         // Un poco separado del punto
-                            color: textColor,  // Color del texto (se adapta al modo oscuro)
+                            align: 'top',
+                            anchor: 'center',
+                            offset: 4,
+                            color: textColor,
                             formatter: function(value) {
-                                return value.name; // Solo muestra el nombre
+                                return value.name;
                             },
                             font: {
-                                size: 10,      // Tamaño pequeño para que quepan
+                                size: 10,
                                 weight: 'bold',
                                 family: 'sans-serif'
                             },
-                            clip: false // Permite que el texto se salga un poco del borde si hace falta
+                            clip: false
                         }
                     },
                     scales: {
@@ -5955,7 +5953,6 @@
                 }
             });
         }
-
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
