@@ -581,7 +581,7 @@
                         </div>
                     </div>
                 </div>
-        <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
+                  <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
                     <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">🤖</div>
                     
                     <div class="bg-slate-900/40 backdrop-blur-md rounded-lg p-5">
@@ -634,6 +634,43 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        🚦 Semáforo de Forma <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Últimos 3 partidos jugados</span>
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        
+                        <div class="bg-emerald-50 rounded-xl border border-emerald-100 p-4 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3 border-b border-emerald-200 pb-2">
+                                <span class="text-xl">🔥</span>
+                                <h4 class="font-bold text-emerald-800 text-sm uppercase tracking-wide">En Racha (>7.5)</h4>
+                            </div>
+                            <div id="traffic-light-hot" class="space-y-2 min-h-[100px]">
+                                <p class="text-xs text-emerald-600 italic text-center py-4">Nadie está on fire...</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50 rounded-xl border border-amber-100 p-4 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3 border-b border-amber-200 pb-2">
+                                <span class="text-xl">😐</span>
+                                <h4 class="font-bold text-amber-800 text-sm uppercase tracking-wide">Estables (6.0 - 7.5)</h4>
+                            </div>
+                            <div id="traffic-light-regular" class="space-y-2 min-h-[100px]">
+                                </div>
+                        </div>
+
+                        <div class="bg-red-50 rounded-xl border border-red-100 p-4 shadow-sm">
+                            <div class="flex items-center gap-2 mb-3 border-b border-red-200 pb-2">
+                                <span class="text-xl">❄️</span>
+                                <h4 class="font-bold text-red-800 text-sm uppercase tracking-wide">Fríos (<6.0)</h4>
+                            </div>
+                            <div id="traffic-light-cold" class="space-y-2 min-h-[100px]">
+                                </div>
+                        </div>
+
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -3041,6 +3078,7 @@
 
             document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
             renderAIPrediction();
+            renderTrafficLight();
         }
 
         // ==========================================
@@ -5979,7 +6017,7 @@
                     
                     el.innerHTML = `
                         <div class="pitch-avatar">${avatarContent}</div>
-                        <div class="pitch-rating">${p.avg.toFixed(1)}</div>
+                        <div class="pitch-rating">${p.avg.toFixed(2)}</div>
                         <div class="pitch-name">${p.apodo || p.apellido}</div>
                     `;
                     container.appendChild(el);
@@ -6251,7 +6289,7 @@
                 
                 // Stats del jugador en ese partido
                 const stats = m.playerStats.find(ps => ps.playerId === m.mvp);
-                const rating = stats?.rating ? parseFloat(stats.rating).toFixed(1) : '-';
+                const rating = stats?.rating ? parseFloat(stats.rating).toFixed(2) : '-';
                 const goals = stats?.goals || 0;
                 const assists = stats?.assists || 0;
 
@@ -6296,7 +6334,81 @@
                 `;
             }).join('');
         }
-        
+        // ==========================================
+        // TRAFFIC LIGHT (SEMÁFORO DE FORMA)
+        // ==========================================
+
+        function renderTrafficLight() {
+            const hotContainer = document.getElementById('traffic-light-hot');
+            const regContainer = document.getElementById('traffic-light-regular');
+            const coldContainer = document.getElementById('traffic-light-cold');
+            
+            // Limpiar
+            hotContainer.innerHTML = ''; 
+            regContainer.innerHTML = ''; 
+            coldContainer.innerHTML = '';
+
+            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador');
+            const matches = getData('matches').sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar por fecha (recientes primero)
+
+            let categorizedPlayers = [];
+
+            players.forEach(p => {
+                // 1. Buscar sus últimos 3 partidos jugados
+                let playedMatches = [];
+                for (let m of matches) {
+                    const ps = m.playerStats.find(s => s.playerId === p.id);
+                    // Solo cuenta si tuvo nota (jugó)
+                    if (ps && ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                        playedMatches.push(parseFloat(ps.rating));
+                    }
+                    if (playedMatches.length === 3) break; // Ya tenemos los 3 últimos
+                }
+
+                // 2. Calcular media si ha jugado al menos 1 partido reciente
+                if (playedMatches.length > 0) {
+                    const avg = playedMatches.reduce((a, b) => a + b, 0) / playedMatches.length;
+                    categorizedPlayers.push({ player: p, avg: avg, count: playedMatches.length });
+                }
+            });
+
+            // 3. Ordenar por nota global
+            categorizedPlayers.sort((a, b) => b.avg - a.avg);
+
+            // 4. Renderizar en columnas
+            if (categorizedPlayers.length === 0) {
+                regContainer.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Sin datos recientes.</p>';
+                return;
+            }
+
+            categorizedPlayers.forEach(item => {
+                const p = item.player;
+                const avg = item.avg.toFixed(2);
+                
+                // Generar HTML de la "Mini Tarjeta"
+                const cardHtml = `
+                    <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
+                        <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/32'">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-bold text-gray-700 truncate">${p.apodo || p.apellido}</p>
+                            <p class="text-[10px] text-gray-400">${item.count} part.</p>
+                        </div>
+                        <span class="font-bold text-sm ${item.avg >= 7.5 ? 'text-emerald-600' : (item.avg < 6 ? 'text-red-600' : 'text-amber-600')}">${avg}</span>
+                    </div>
+                `;
+
+                // Clasificar
+                if (item.avg >= 7.5) hotContainer.innerHTML += cardHtml;
+                else if (item.avg < 6.0) coldContainer.innerHTML += cardHtml;
+                else regContainer.innerHTML += cardHtml;
+            });
+
+            // Mensajes vacíos si no hay nadie en una categoría
+            if (hotContainer.innerHTML === '') hotContainer.innerHTML = '<p class="text-xs text-emerald-400/50 text-center py-4 italic">Nadie en racha.</p>';
+            if (regContainer.innerHTML === '') regContainer.innerHTML = '<p class="text-xs text-amber-400/50 text-center py-4 italic">Sin jugadores estables.</p>';
+            if (coldContainer.innerHTML === '') coldContainer.innerHTML = '<p class="text-xs text-red-400/50 text-center py-4 italic">¡Todos rinden bien!</p>';
+        }
+
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
