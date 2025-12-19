@@ -1,10 +1,11 @@
 {
-  "name": "Gestor Real Madrid",
+  "name": "Notas Real Madrid",
   "short_name": "R. Madrid",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/192px-Real_Madrid_CF.svg.png",
