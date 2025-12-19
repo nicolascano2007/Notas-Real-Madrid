@@ -6481,6 +6481,10 @@
             reader.readAsText(file);
         }
 
+// ==========================================
+        // IMPORTADOR CSV BLINDADO (V4.0)
+        // ==========================================
+
         function processCSVData(csvText) {
             const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
             if (lines.length < 2) {
@@ -6488,14 +6492,40 @@
                 return;
             }
 
-            const separator = lines[0].includes(';') ? ';' : ',';
+            // Detectar separador inteligente (prioriza ; si existe, sino ,)
+            const separator = lines[0].indexOf(';') > -1 ? ';' : ',';
             
+            // --- NUEVA FUNCIÓN DE PARSEO ROBUSTA ---
+            // Esta función no corta a lo loco, mira si hay comillas protegiendo el dato
+            const parseCSVRow = (rowText) => {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < rowText.length; i++) {
+                    const char = rowText[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes; // Entramos o salimos de comillas
+                    } else if (char === separator && !inQuotes) {
+                        // Solo cortamos si NO estamos dentro de comillas
+                        result.push(current);
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current);
+                
+                // Limpiamos las comillas extra que pone Excel (ej: "6,50" -> 6,50)
+                return result.map(val => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+            };
+            // ----------------------------------------
+
             // 1. LEER CABECERAS
-            const headers = lines[0].split(separator).map(h => h.trim().replace(/"/g, ''));
-            const rivals = headers.slice(1);
+            const rivals = parseCSVRow(lines[0]).slice(1);
 
             // 2. DETECTAR FECHAS (FILA 2)
-            const row2 = lines[1].split(separator).map(c => c.trim().replace(/"/g, ''));
+            const row2 = parseCSVRow(lines[1]);
             const hasDateRow = row2.slice(1).some(cell => cell.includes('/') || cell.includes('-'));
 
             let startLine = 1;
@@ -6505,71 +6535,57 @@
                 startLine = 2;
                 csvDates = row2.slice(1);
             } else {
-                if (!confirm("⚠️ No se han detectado fechas en la fila 2. Sin fechas, el sistema NO podrá asociar los partidos al calendario oficial correctamente.\n\n¿Quieres continuar de todos modos (se crearán como nuevos)?")) return;
+                if (!confirm("⚠️ No se han detectado fechas en la fila 2. Sin fechas, el sistema NO podrá asociar los partidos al calendario oficial correctamente.\n\n¿Quieres continuar de todos modos?")) return;
             }
 
             const players = getPlayers();
             const matches = getData('matches');
-            // IMPORTANTE: Asegurarnos de que tenemos el calendario cargado para comparar
-            // Si calendarEvents está vacío, intentamos usar lo que haya en caché o memoria
             const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
 
             let linkedCount = 0;
             let newCount = 0;
 
-            // 3. ESTRUCTURA TEMPORAL
             const newMatchesMap = {};
             
             rivals.forEach((rivalName, index) => {
                 if(rivalName) {
-                    // A) Calcular fecha del CSV
-                    let csvDateObj = new Date(); // Por defecto hoy
+                    let csvDateObj = new Date();
                     let isValidDate = false;
 
                     if (hasDateRow && csvDates[index]) {
                         const dParts = csvDates[index].split(/[\/\-]/);
                         if (dParts.length === 3) {
-                            // Asumimos DD/MM/YYYY
                             const day = parseInt(dParts[0]);
-                            const month = parseInt(dParts[1]) - 1; // Meses en JS son 0-11
+                            const month = parseInt(dParts[1]) - 1;
                             const year = parseInt(dParts[2]);
-                            
-                            // Crear fecha a mediodía para evitar problemas de zona horaria
                             csvDateObj = new Date(year, month, day, 12, 0, 0);
                             isValidDate = true;
                         }
                     }
 
-                    // B) BUSCAR EN EL CALENDARIO OFICIAL (SMART LINK) 🔗
                     let foundEvent = null;
-                    
                     if (isValidDate && officialEvents.length > 0) {
                         foundEvent = officialEvents.find(e => {
-                            // 1. Coincidencia de nombre (flexible)
                             const nameMatch = e.opponent.toLowerCase().includes(rivalName.toLowerCase()) || 
                                               rivalName.toLowerCase().includes(e.opponent.toLowerCase());
-                            
-                            // 2. Coincidencia de fecha (Margen de 48h)
                             const diffTime = Math.abs(e.start - csvDateObj);
                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            
                             return nameMatch && diffDays <= 2;
                         });
                     }
 
-                    // C) Preparar datos base
                     newMatchesMap[index] = {
-                        opponent: rivalName, // Nombre por defecto (el del CSV)
+                        opponent: rivalName,
                         date: csvDateObj.toISOString().split('T')[0],
-                        linkedEvent: foundEvent, // Guardamos el evento encontrado
+                        linkedEvent: foundEvent,
                         playerStats: []
                     };
                 }
             });
 
-            // 4. LEER JUGADORES Y NOTAS
+            // 4. RECORRER JUGADORES USANDO EL NUEVO PARSER
             for (let i = startLine; i < lines.length; i++) {
-                const row = lines[i].split(separator).map(c => c.trim().replace(/"/g, ''));
+                const row = parseCSVRow(lines[i]); // <--- AQUÍ ESTÁ LA MAGIA
                 const playerName = row[0];
                 
                 const player = players.find(p => {
@@ -6579,9 +6595,16 @@
 
                 if (player) {
                     for (let col = 1; col < row.length; col++) {
-                        const noteStr = row[col];
-                        if (noteStr && !isNaN(parseFloat(noteStr.replace(',', '.')))) {
-                            const rating = parseFloat(noteStr.replace(',', '.'));
+                        let noteStr = row[col];
+                        
+                        // Si viene vacío, saltamos
+                        if (!noteStr) continue;
+
+                        // Reemplazar coma decimal por punto (6,50 -> 6.50)
+                        noteStr = noteStr.replace(',', '.');
+
+                        if (!isNaN(parseFloat(noteStr))) {
+                            const rating = parseFloat(noteStr);
                             
                             if (newMatchesMap[col - 1]) {
                                 newMatchesMap[col - 1].playerStats.push({
@@ -6597,32 +6620,29 @@
                 }
             }
 
-            // 5. CREAR PARTIDOS DEFINITIVOS
+            // 5. GUARDAR DATOS
             Object.values(newMatchesMap).forEach(m => {
                 if (m.playerStats.length > 0) {
-                    
                     let finalMatch = {};
 
                     if (m.linkedEvent) {
-                        // CASO 1: ASOCIADO AL CALENDARIO (¡Lo ideal!) ✅
                         linkedCount++;
                         finalMatch = {
                             id: generateId(),
-                            calendarEventId: m.linkedEvent.id, // ID oficial
+                            calendarEventId: m.linkedEvent.id,
                             competition: m.linkedEvent.competition || "Liga EA Sports",
-                            roundId: `jornada-${m.linkedEvent.start.getTime()}`, // ID único basado en fecha
+                            roundId: `jornada-${m.linkedEvent.start.getTime()}`,
                             round: "Partido Oficial",
-                            date: m.linkedEvent.start.toISOString().split('T')[0], // Usamos la fecha REAL del calendario
-                            opponent: m.linkedEvent.opponent, // Usamos el nombre REAL (ej: "FC Barcelona" en vez de "Barça")
+                            date: m.linkedEvent.start.toISOString().split('T')[0],
+                            opponent: m.linkedEvent.opponent,
                             venue: m.linkedEvent.venue,
                             stadium: m.linkedEvent.location,
-                            result: "0-0", // Pendiente de editar
-                            outcome: "empate", // Pendiente
+                            result: "0-0",
+                            outcome: "empate",
                             mvp: calculateAutoMVP(m.playerStats),
                             playerStats: m.playerStats
                         };
                     } else {
-                        // CASO 2: NO ENCONTRADO (Creado desde cero) 🆕
                         newCount++;
                         finalMatch = {
                             id: generateId(),
@@ -6640,22 +6660,18 @@
                             playerStats: m.playerStats
                         };
                     }
-
-                    // Evitar duplicados: Si ya existe un partido con ese calendarEventId, ¿lo sobrescribimos o avisamos?
-                    // Por simplicidad, lo añadimos, el usuario puede borrar el antiguo si quiere.
                     matches.push(finalMatch);
                 }
             });
 
             saveData('matches', matches);
             
-            // Recargar interfaz
             renderMatches();
             renderStats();
             renderPrincipal();
             renderTrafficLight();
             
-            alert(`✅ Importación finalizada.\n\n🔗 Enlazados al calendario: ${linkedCount}\n🆕 Creados nuevos: ${newCount}\n\nRecuerda editar los resultados (goles) manualmente.`);
+            alert(`✅ Importación completada.\n\n🔗 Enlazados: ${linkedCount}\n🆕 Nuevos: ${newCount}`);
         }
         function toggleCSVInfo() {
             const modal = document.getElementById('csv-info-modal');
