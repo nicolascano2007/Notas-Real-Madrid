@@ -4949,57 +4949,48 @@
             const match = matches.find(m => m.id === matchId);
             if (!match) return;
             
-            // 1. Identificar jugadores participantes en este partido
+            // 1. Identificar jugadores participantes
             const players = getPlayers();
             const participants = [];
             
             match.playerStats.forEach(ps => {
                 const p = players.find(pl => pl.id === ps.playerId);
                 if (p) {
-                    participants.push({ ...p, ...ps }); // Fusionamos datos del jugador y stats
+                    participants.push({ ...p, ...ps });
                 }
             });
 
-            // Guardamos esta lista para que el banquillo (renderBench) sepa qué mostrar
             editingMatchPlayersPool = participants.map(p => p.id); 
 
-            // 2. Configurar Estado de la Pizarra (Titulares vs Suplentes)
+            // 2. Configurar Estado de la Pizarra
             currentPitchPlayers = {}; 
             currentSubstitutes = [];
             
-            // DETECCIÓN INTELIGENTE: ¿Es un partido importado/sucio?
-            // Si hay más de 11 titulares marcados, asumimos que la importación no distinguió.
             const starterCount = participants.filter(p => p.isStarter === true || p.isStarter === 'true').length;
             const isMessyImport = starterCount > 11; 
 
             if (isMessyImport) {
-                // ESTRATEGIA "LIMPIEZA": Campo vacío, todos al banquillo para ordenar
-                // No asignamos nada a currentPitchPlayers.
-                // Tampoco a currentSubstitutes (para que salgan en "Disponibles")
-                console.log("Detectado partido importado/sucio: Vaciando pizarra para ordenación manual.");
+                console.log("Partido sucio: Vaciando pizarra.");
             } else {
-                // ESTRATEGIA NORMAL: Colocar titulares en el campo
-                // Intentamos llenar los slots del 4-3-3 (0 al 10)
                 const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
                 const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
                 
-                // Ordenar por posición para asignar slots lógicos
                 const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
                 starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
 
+                // ✅ CLAVE: Usamos 'edit-slot-X' para que coincida con los nuevos IDs
                 starters.forEach((p, index) => {
-                    if (index < 11) currentPitchPlayers[`slot-${index}`] = p.id;
+                    if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
                 });
                 
                 subs.forEach(p => currentSubstitutes.push(p.id));
             }
 
-            // 3. Preparar Modal con Interfaz de Pizarra
+            // 3. Preparar Modal con IDs ÚNICOS ('edit-')
             const modal = document.getElementById('edit-match-modal');
             const content = document.getElementById('edit-match-content');
             document.getElementById('edit-match-id').value = match.id;
             
-            // Reutilizamos el HTML del wizard paso 2 pero inyectado aquí
             content.innerHTML = `
                 <div class="flex flex-col h-full">
                     <div class="mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-800 flex justify-between items-center">
@@ -5018,19 +5009,19 @@
                                 <div class="pitch-circle"></div>
                                 <div class="pitch-box-left"></div>
                                 <div class="pitch-box-right"></div>
-                                <div id="pitch-slots-layer"></div>
-                                <div id="pitch-players-layer"></div>
+                                <div id="edit-pitch-slots-layer"></div>
+                                <div id="edit-pitch-players-layer"></div>
                             </div>
                         </div>
 
                         <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                             <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Disponibles (En este partido)</div>
-                                <div id="bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
+                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Disponibles</div>
+                                <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
                             </div>
                             <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
                                 <div class="bg-blue-100 p-1 border-b text-[10px] font-bold uppercase text-center text-blue-600">Suplentes Confirmados</div>
-                                <div id="subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
+                                <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
                             </div>
                         </div>
                     </div>
@@ -5043,9 +5034,8 @@
                 </div>
             `;
 
-            // Inicializar Pizarra y Banquillo
-            updatePitchFormation(); // Esto llama a renderTacticalBoard -> que usa currentPitchPlayers
-            renderBench();          // Esto usa editingMatchPlayersPool si lo modificamos
+            updatePitchFormation();
+            renderBench();
             
             modal.classList.add('active');
         }
@@ -5280,42 +5270,48 @@
         let currentFormation = '4-3-3'; // Formación por defecto
 
         function updatePitchFormation() {
-            currentFormation = document.getElementById('formation-select').value;
-            renderTacticalBoard();
+            const isEditing = document.getElementById('edit-match-modal').classList.contains('active');
+            const prefix = isEditing ? 'edit-' : '';
+            const selectId = isEditing ? 'edit-formation-select' : 'formation-select';
+            
+            const select = document.getElementById(selectId);
+            if (select) {
+                currentFormation = select.value;
+                renderTacticalBoard(prefix);
+            }
         }
 
-        function renderTacticalBoard() {
-            const slotsLayer = document.getElementById('pitch-slots-layer');
-            const playersLayer = document.getElementById('pitch-players-layer');
+        function renderTacticalBoard(prefix = '') {
+            // Buscamos los contenedores con el prefijo correcto
+            const slotsLayer = document.getElementById(prefix + 'pitch-slots-layer');
+            const playersLayer = document.getElementById(prefix + 'pitch-players-layer');
+            
+            if (!slotsLayer || !playersLayer) return; // Protección por si no existen
+
             const coords = FORMACIONES[currentFormation];
 
-            // 1. Pintar los huecos vacíos (Slots)
-            // AÑADIDO: onclick="openPlayerSelector(...)" y cursor-pointer
+            // Generamos slots con IDs únicos (ej: 'edit-slot-0')
             slotsLayer.innerHTML = coords.map((pos, index) => `
                 <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
-                     id="slot-${index}"
+                     id="${prefix}slot-${index}"
                      style="top: ${pos.top}%; left: ${pos.left}%;"
                      ondragover="allowDrop(event)" 
                      ondrop="drop(event)"
-                     onclick="openPlayerSelector('slot-${index}')"
+                     onclick="openPlayerSelector('${prefix}slot-${index}')"
                      title="Clic para elegir jugador">
                 </div>
             `).join('');
 
-            // 2. Repintar jugadores que ya estuvieran en el campo
             playersLayer.innerHTML = ''; 
             
             Object.keys(currentPitchPlayers).forEach(slotId => {
-                const playerId = currentPitchPlayers[slotId];
-                const slotEl = document.getElementById(slotId);
-                if (slotEl && playerId) {
+                // Solo pintamos si el slot pertenece a este contexto (prefijo coincidente)
+                if (slotId.startsWith(prefix)) {
+                    const playerId = currentPitchPlayers[slotId];
                     const player = getPlayers().find(p => p.id === playerId);
                     if (player) {
                         renderPlayerOnPitch(player, slotId, playersLayer);
                     }
-                } else {
-                    delete currentPitchPlayers[slotId];
-                    renderBench(); 
                 }
             });
         }
@@ -5353,35 +5349,29 @@
             container.appendChild(div);
         }
 
-        function renderBench() {
-            const benchZone = document.getElementById('bench-zone');
-            const subsZone = document.getElementById('subs-zone');
+        function renderBench(prefix = '') {
+            const benchZone = document.getElementById(prefix + 'bench-zone');
+            const subsZone = document.getElementById(prefix + 'subs-zone');
+            
             if(!benchZone || !subsZone) return;
 
-            // 1. Determinar Fuente de Jugadores
             let sourcePlayers = [];
             
             if (editingMatchPlayersPool) {
-                // MODO EDICIÓN: Solo los que estaban en el partido (importado o no)
-                const all = getPlayers(); // Necesitamos todos, incluso inactivos si jugaron antes
+                const all = getPlayers();
                 sourcePlayers = all.filter(p => editingMatchPlayersPool.includes(p.id) && p.posicion !== 'entrenador');
             } else {
-                // MODO NUEVO PARTIDO: Todos los activos de la plantilla
                 sourcePlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
             }
             
-            // 2. Identificar quién está dónde (Igual que antes)
             const playersOnPitchIds = Object.values(currentPitchPlayers);
             
-            // Disponibles: Ni en campo, ni en lista de suplentes confirmados
             const availablePlayers = sourcePlayers.filter(p => 
                 !playersOnPitchIds.includes(p.id) && !currentSubstitutes.includes(p.id)
             );
             
-            // Suplentes: Están en la lista de suplentes
             const subPlayers = sourcePlayers.filter(p => currentSubstitutes.includes(p.id));
 
-            // Ordenar
             const sorter = (a, b) => {
                 if (a.posicion === 'portero') return -1;
                 if (b.posicion === 'portero') return 1;
@@ -5390,14 +5380,14 @@
             availablePlayers.sort(sorter);
             subPlayers.sort(sorter);
 
-            // 3. Crear Fichas
             const createToken = (p) => `
                 <div class="player-token relative" 
                      style="position: relative; transform: none; width: 50px; height: 50px; margin: 4px;"
                      draggable="true" 
                      data-player-id="${p.id}"
                      ondragstart="drag(event)"
-                     onclick="openPlayerSelector(null)"> <img src="${p.foto}" style="object-position: top !important;" onerror="this.src='https://via.placeholder.com/40x40?text=${p.dorsal}'">
+                     onclick="openPlayerSelector(null)">
+                    <img src="${p.foto}" style="object-position: top !important;" onerror="this.src='https://via.placeholder.com/40x40?text=${p.dorsal}'">
                     <div class="player-token-name">${p.apodo || p.apellido}</div>
                 </div>
             `;
@@ -5405,7 +5395,6 @@
             benchZone.innerHTML = availablePlayers.map(createToken).join('');
             subsZone.innerHTML = subPlayers.map(createToken).join('');
             
-            // Re-asignar eventos Drag & Drop
             benchZone.ondragover = allowDrop;
             benchZone.ondrop = dropToBench;
             subsZone.ondragover = allowDrop;
@@ -5480,8 +5469,14 @@
         }
 
         function renderAll() {
-            renderTacticalBoard();
-            renderBench();
+            // Detectar si estamos editando
+            const isEditing = document.getElementById('edit-match-modal').classList.contains('active');
+            
+            // Si editamos, usamos el prefijo 'edit-' para buscar los IDs
+            const prefix = isEditing ? 'edit-' : '';
+            
+            renderTacticalBoard(prefix);
+            renderBench(prefix);
         }
         // ==========================================
         // SELECTOR DE JUGADORES (CLICK & PICK)
