@@ -394,7 +394,8 @@
             border: 1px solid white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -5830,7 +5831,7 @@
             });
         }
         // ==========================================
-        // SCATTER CHART (RENDIMIENTO VS MINUTOS)
+        // SCATTER CHART (Con Nombres Visibles)
         // ==========================================
         let scatterChart = null;
 
@@ -5841,7 +5842,7 @@
             const players = getPlayers();
             const matches = getData('matches');
 
-            // Preparar datos: { x: Minutos, y: Nota, r: Radio (fijo), player: Objeto }
+            // Preparar datos
             const dataPoints = players.map(p => {
                 if (p.posicion === 'entrenador') return null;
 
@@ -5862,15 +5863,18 @@
 
                 if (totalMins === 0 || ratingCount === 0) return null;
 
+                // Usamos el apodo corto para que quepa mejor en el gráfico
+                const shortName = p.apodo || p.apellido;
+
                 return {
                     x: totalMins,
                     y: (ratingSum / ratingCount).toFixed(2),
-                    name: p.apodo || p.apellido,
+                    name: shortName, // Dato para la etiqueta
                     pos: p.posicion
                 };
             }).filter(item => item !== null);
 
-            // Calcular medias para dibujar las líneas divisorias (La cruz central)
+            // Calcular medias para la cruz central
             const avgMins = dataPoints.reduce((acc, p) => acc + p.x, 0) / (dataPoints.length || 1);
             const avgRating = dataPoints.reduce((acc, p) => acc + parseFloat(p.y), 0) / (dataPoints.length || 1);
 
@@ -5878,7 +5882,11 @@
 
             const isDark = document.body.classList.contains('dark-mode');
             const gridColor = isDark ? '#334155' : '#e5e7eb';
-            const textColor = isDark ? '#e2e8f0' : '#4b5563';
+            const textColor = isDark ? '#94a3b8' : '#4b5563'; // Un gris suave para los nombres
+            const axisColor = isDark ? '#f1f5f9' : '#1f2937';
+
+            // Registramos el plugin
+            Chart.register(ChartDataLabels);
 
             scatterChart = new Chart(ctx, {
                 type: 'scatter',
@@ -5887,43 +5895,57 @@
                         label: 'Jugadores',
                         data: dataPoints,
                         backgroundColor: (context) => {
-                            // Colores dinámicos según el cuadrante
                             const val = context.raw;
                             if(!val) return '#9ca3af';
-                            if(val.x > avgMins && val.y > avgRating) return '#10b981'; // Green (Top Right)
-                            if(val.x < avgMins && val.y > avgRating) return '#f59e0b'; // Amber (Top Left - Gems)
-                            if(val.x > avgMins && val.y < avgRating) return '#ef4444'; // Red (Bottom Right - Fatigue)
-                            return '#6b7280'; // Gray (Bottom Left)
+                            // Colores según cuadrante
+                            if(val.x > avgMins && val.y > avgRating) return '#10b981'; // Estrellas (Verde)
+                            if(val.x < avgMins && val.y > avgRating) return '#f59e0b'; // Joyas (Naranja)
+                            if(val.x > avgMins && val.y < avgRating) return '#ef4444'; // Fatiga (Rojo)
+                            return '#6b7280'; // Fondo armario (Gris)
                         },
-                        pointRadius: 6,
-                        pointHoverRadius: 9
+                        pointRadius: 5,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 20, right: 30, left: 10, bottom: 10 } // Espacio para que no se corten los nombres
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
+                            enabled: true, // El tooltip sigue funcionando por si quieres ver el dato exacto
                             callbacks: {
-                                label: (ctx) => {
-                                    const p = ctx.raw;
-                                    return `${p.name}: ${p.y} Nota / ${p.x} Min`;
-                                }
+                                label: (ctx) => `${ctx.raw.name}: ${ctx.raw.y} Nota / ${ctx.raw.x} Min`
                             }
                         },
-                        annotation: {
-                            // Esto requiere un plugin extra, así que lo simulamos con las escalas
+                        // CONFIGURACIÓN DE LAS ETIQUETAS (NOMBRES)
+                        datalabels: {
+                            align: 'top',      // Pone el nombre encima del punto
+                            anchor: 'center',  // Anclado al centro
+                            offset: 4,         // Un poco separado del punto
+                            color: textColor,  // Color del texto (se adapta al modo oscuro)
+                            formatter: function(value) {
+                                return value.name; // Solo muestra el nombre
+                            },
+                            font: {
+                                size: 10,      // Tamaño pequeño para que quepan
+                                weight: 'bold',
+                                family: 'sans-serif'
+                            },
+                            clip: false // Permite que el texto se salga un poco del borde si hace falta
                         }
                     },
                     scales: {
                         x: {
-                            title: { display: true, text: 'Minutos Jugados', color: textColor },
+                            title: { display: true, text: 'Minutos Jugados', color: axisColor, font: { weight: 'bold' } },
                             grid: { color: gridColor },
                             ticks: { color: textColor }
                         },
                         y: {
-                            title: { display: true, text: 'Nota Media', color: textColor },
+                            title: { display: true, text: 'Nota Media', color: axisColor, font: { weight: 'bold' } },
                             grid: { color: gridColor },
                             ticks: { color: textColor },
                             min: 0,
