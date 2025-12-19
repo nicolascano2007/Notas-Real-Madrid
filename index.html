@@ -318,7 +318,7 @@
         
         .dark-mode .text-gray-800, .dark-mode .text-gray-700, .dark-mode .text-gray-600 { color: #f1f5f9 !important; }
         .dark-mode .text-gray-500 { color: #94a3b8 !important; }
-        .dark-mode .text-slate-700 { color: #f8fafc !important; }
+        .dark-mode .text-slate-700, .dark-mode .text-slate-800 { color: #f8fafc !important; }
         
         .dark-mode .border-gray-200, .dark-mode .border-gray-300, .dark-mode .border-gray-100 { border-color: #334155 !important; }
         
@@ -370,69 +370,6 @@
                 <p class="text-sm text-black-300 mt-2">Liga F, UWCL, Copa de la Reina...</p>
             </div>
         </div>
-        <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">🤖</div>
-                    
-                    <div class="bg-slate-900/40 backdrop-blur-md rounded-lg p-5">
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                            
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="bg-violet-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm border border-violet-400">AI Analysis</span>
-                                    <span class="text-violet-200 text-xs font-mono" id="ai-match-label">Analizando datos...</span>
-                                </div>
-                                <h3 class="text-2xl font-bold text-white mb-1 flex items-center gap-2">
-                                    <span id="ai-prediction-text">Calculando probabilidades...</span>
-                                </h3>
-                                <p class="text-indigo-200 text-sm" id="ai-reasoning">Procesando racha y estadísticas...</p>
-                            </div>
-
-                            <div class="w-full md:w-auto flex flex-col gap-2 min-w-[200px]">
-                                <div class="flex justify-between text-xs font-bold text-indigo-100 uppercase tracking-widest">
-                                    <span>Probabilidad de Victoria</span>
-                                    <span id="ai-win-prob">--%</span>
-                                </div>
-                                <div class="w-full h-3 bg-slate-700/50 rounded-full overflow-hidden flex">
-                                    <div id="prob-bar-win" class="h-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)] transition-all duration-1000" style="width: 0%"></div>
-                                    <div id="prob-bar-draw" class="h-full bg-yellow-400 opacity-80 transition-all duration-1000" style="width: 0%"></div>
-                                </div>
-                                <div class="flex justify-between text-[10px] text-gray-300 mt-1">
-                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-green-400"></div> Victoria</span>
-                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-yellow-400"></div> Empate</span>
-                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-slate-600"></div> Derrota</span>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 border-t border-white/10 pt-4">
-                            <div class="flex items-center gap-3">
-                                <div class="text-3xl">🔮</div>
-                                <div>
-                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Marcador Probable</p>
-                                    <p class="text-xl font-bold text-white" id="ai-score-prediction">-</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center gap-3">
-                                <div class="text-3xl">🔥</div>
-                                <div>
-                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Jugador a Seguir</p>
-                                    <p class="text-sm font-bold text-white" id="ai-player-watch">-</p>
-                                    <p class="text-[10px] text-indigo-200" id="ai-player-reason">-</p>
-                                </div>
-                            </div>
-
-                            <div class="flex items-center gap-3">
-                                <div class="text-3xl">🔑</div>
-                                <div>
-                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Clave Táctica</p>
-                                    <p class="text-sm font-bold text-white" id="ai-tactical-key">-</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
     </section>
 
     <!-- APP CONTAINER (Hidden initially) -->
@@ -544,7 +481,69 @@
                         </div>
                     </div>
                 </div>
+        <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">🤖</div>
+                    
+                    <div class="bg-slate-900/40 backdrop-blur-md rounded-lg p-5">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="bg-violet-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm border border-violet-400">AI Analysis</span>
+                                    <span class="text-violet-200 text-xs font-mono" id="ai-match-label">Analizando datos...</span>
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                                    <span id="ai-prediction-text">Calculando probabilidades...</span>
+                                </h3>
+                                <p class="text-indigo-200 text-sm" id="ai-reasoning">Procesando racha y estadísticas...</p>
+                            </div>
 
+                            <div class="w-full md:w-auto flex flex-col gap-2 min-w-[200px]">
+                                <div class="flex justify-between text-xs font-bold text-indigo-100 uppercase tracking-widest">
+                                    <span>Probabilidad de Victoria</span>
+                                    <span id="ai-win-prob">--%</span>
+                                </div>
+                                <div class="w-full h-3 bg-slate-700/50 rounded-full overflow-hidden flex">
+                                    <div id="prob-bar-win" class="h-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)] transition-all duration-1000" style="width: 0%"></div>
+                                    <div id="prob-bar-draw" class="h-full bg-yellow-400 opacity-80 transition-all duration-1000" style="width: 0%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-gray-300 mt-1">
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-green-400"></div> Victoria</span>
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-yellow-400"></div> Empate</span>
+                                    <span class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-slate-600"></div> Derrota</span>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 border-t border-white/10 pt-4">
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔮</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Marcador Probable</p>
+                                    <p class="text-xl font-bold text-white" id="ai-score-prediction">-</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔥</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Jugador a Seguir</p>
+                                    <p class="text-sm font-bold text-white" id="ai-player-watch">-</p>
+                                    <p class="text-[10px] text-indigo-200" id="ai-player-reason">-</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="text-3xl">🔑</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-indigo-300 font-bold">Clave Táctica</p>
+                                    <p class="text-sm font-bold text-white" id="ai-tactical-key">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
