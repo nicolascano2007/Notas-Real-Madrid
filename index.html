@@ -1002,12 +1002,12 @@
 
                     <div class="flex gap-2">
                   <button onclick="exportStats()" ...>
-                     📥 Exportar CSV
+                            📥 Exportar CSV
                          </button>
 
-                        <button onclick="openComparatorModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
-                🆚 Comparador VS
-                     </button>
+                        <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                              🆚 Comparador VS
+                        </button>
                          </div> </div>
 
                     <!-- Summary Cards -->
@@ -1281,31 +1281,6 @@
         </div>
     </div>
     </div>
-    </div>
-    <div id="modal-comparator" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6 m-4 relative overflow-y-auto max-h-[90vh]">
-            <button onclick="document.getElementById('modal-comparator').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 text-2xl">✕</button>
-            
-            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center border-b pb-4">⚔️ Duelo de Estadísticas</h2>
-            
-            <div class="flex justify-between items-center gap-4 mb-8">
-                <select id="comp-p1" class="flex-1 p-3 border-2 border-blue-100 rounded-xl font-bold text-blue-800 focus:border-blue-500 bg-blue-50" onchange="updateComparatorChart()"></select>
-                <div class="text-2xl font-black text-gray-300">VS</div>
-                <select id="comp-p2" class="flex-1 p-3 border-2 border-red-100 rounded-xl font-bold text-red-800 focus:border-red-500 bg-red-50" onchange="updateComparatorChart()"></select>
-            </div>
-
-            <div class="flex flex-col md:flex-row gap-8 items-center">
-                <div class="flex-1 w-full relative h-[350px]">
-                    <canvas id="chart-radar-vs"></canvas>
-                </div>
-
-                <div class="w-full md:w-1/3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-3 text-center">Datos Totales</h4>
-                    <div id="comparator-stats-table" class="space-y-3 text-sm">
-                        </div>
-                </div>
-            </div>
-        </div>
     </div>
     <script>
         // ==========================================
@@ -5444,54 +5419,69 @@
 
             renderMatches(filtered); // Reutilizamos tu función pasándole la lista filtrada
         }
+// ==========================================
+        // LÓGICA COMPARADOR (RADAR CHART) - VERSIÓN FINAL
         // ==========================================
-        // COMPARADOR DE JUGADORES (RADAR)
-        // ==========================================
+        
         let radarChart = null;
 
-        function openComparatorModal() {
-            const modal = document.getElementById('modal-comparator');
-            const p1Select = document.getElementById('comp-p1');
-            const p2Select = document.getElementById('comp-p2');
-            const players = getPlayers().filter(p => p.posicion !== 'entrenador');
+        function populateComparatorSelects() {
+            // Usamos los IDs de la SECCIÓN (no del modal)
+            const p1Select = document.getElementById('radar-p1');
+            const p2Select = document.getElementById('radar-p2');
+            
+            if (!p1Select || !p2Select) return;
 
-            // Llenar selects si están vacíos
-            if (p1Select.options.length === 0) {
-                players.forEach(p => {
-                    const opt = `<option value="${p.id}">${p.apodo || p.apellido}</option>`;
-                    p1Select.innerHTML += opt;
-                    p2Select.innerHTML += opt;
-                });
-                // Seleccionar dos diferentes por defecto
-                if(players.length > 1) p2Select.selectedIndex = 1; 
+            // Limpiar opciones previas
+            p1Select.innerHTML = '<option value="">Selecciona...</option>';
+            p2Select.innerHTML = '<option value="">Selecciona...</option>';
+
+            // Filtrar solo jugadores activos
+            const players = getPlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
+            
+            const options = players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
+            
+            p1Select.innerHTML += options;
+            p2Select.innerHTML += options;
+
+            // Pre-seleccionar para que no salga vacío
+            if (players.length >= 2) {
+                p1Select.selectedIndex = 1;
+                p2Select.selectedIndex = 2;
+                updateComparatorChart(); // Dibujar inicial
             }
-
-            modal.classList.remove('hidden');
-            updateComparatorChart();
         }
 
         function updateComparatorChart() {
-            const id1 = document.getElementById('comp-p1').value;
-            const id2 = document.getElementById('comp-p2').value;
+            const id1 = document.getElementById('radar-p1').value;
+            const id2 = document.getElementById('radar-p2').value;
+            const tableContainer = document.getElementById('radar-stats-table');
+            
+            // Si no hay selección, limpiar gráfico
+            if (!id1 || !id2) {
+                if(tableContainer) tableContainer.innerHTML = '<p class="text-center text-gray-400 italic py-4">Selecciona dos jugadores.</p>';
+                if(radarChart) radarChart.destroy();
+                return;
+            }
+
             const players = getPlayers();
             const matches = getData('matches');
-
             const p1 = players.find(p => p.id === id1);
             const p2 = players.find(p => p.id === id2);
 
-            // Calcular Stats de cada uno
+            // 1. Calcular Estadísticas
             const getStats = (pid) => {
                 let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
                 matches.forEach(m => {
-                    const ps = m.playerStats.find(s => s.playerId === pid);
+                    const ps = m.playerStats.find(s => String(s.playerId) === String(pid));
                     if (ps) {
                         g += ps.goals || 0;
                         a += ps.assists || 0;
                         mins += ps.minutes || 0;
                         matchesCount++;
-                        if(m.mvp === pid) mvp++;
                         if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
                     }
+                    if (String(m.mvp) === String(pid)) mvp++;
                 });
                 return { 
                     goals: g, 
@@ -5506,16 +5496,14 @@
             const s1 = getStats(id1);
             const s2 = getStats(id2);
 
-            // --- NORMALIZACIÓN (Para que el gráfico se vea bien 0-100) ---
-            // Buscamos el "Máximo" del equipo para usarlo de referencia (techo)
-            // Si el máximo goleador lleva 20 goles, 20 goles = 100 puntos.
-            let maxGoals = 1, maxAssists = 1, maxMins = 1;
-            matches.forEach(m => m.playerStats.forEach(ps => {
-                // Cálculo rápido de máximos globales (simplificado)
-                if(ps.goals > 0 && ps.goals * 5 > maxGoals) maxGoals = 15; // Aproximación
-            }));
-            // Ajustamos techos manuales para evitar divisiones por cero o gráficos feos
-            const ceilings = { goals: 20, assists: 15, minutes: matches.length * 90, avg: 10, mvp: 5 };
+            // 2. Normalización (0-100)
+            const ceilings = { 
+                goals: 15,    
+                assists: 10, 
+                minutes: matches.length * 80 || 1000, 
+                avg: 9,       
+                mvp: 5 
+            };
 
             const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
 
@@ -5535,13 +5523,13 @@
                 normalize(s2.mvp, ceilings.mvp)
             ];
 
-            // --- RENDERIZAR GRÁFICO ---
+            // 3. Dibujar Gráfico
             const ctx = document.getElementById('chart-radar-vs').getContext('2d');
             if (radarChart) radarChart.destroy();
 
             const isDark = document.body.classList.contains('dark-mode');
-            const color1 = 'rgba(59, 130, 246,'; // Blue
-            const color2 = 'rgba(239, 68, 68,';  // Red
+            const textColor = isDark ? '#e2e8f0' : '#4b5563';
+            const gridColor = isDark ? '#334155' : '#e5e7eb';
 
             radarChart = new Chart(ctx, {
                 type: 'radar',
@@ -5551,17 +5539,17 @@
                         {
                             label: p1.apodo || p1.apellido,
                             data: data1,
-                            borderColor: color1 + ' 1)',
-                            backgroundColor: color1 + ' 0.2)',
-                            pointBackgroundColor: color1 + ' 1)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
                             borderWidth: 2
                         },
                         {
                             label: p2.apodo || p2.apellido,
                             data: data2,
-                            borderColor: color2 + ' 1)',
-                            backgroundColor: color2 + ' 0.2)',
-                            pointBackgroundColor: color2 + ' 1)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
                             borderWidth: 2
                         }
                     ]
@@ -5571,36 +5559,41 @@
                     maintainAspectRatio: false,
                     scales: {
                         r: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { display: false }, // Ocultar números del eje
-                            grid: { color: isDark ? '#334155' : '#e5e7eb' },
-                            pointLabels: {
-                                font: { size: 12, weight: 'bold' },
-                                color: isDark ? '#f1f5f9' : '#374151'
-                            }
+                            angleLines: { color: gridColor },
+                            grid: { color: gridColor },
+                            pointLabels: { font: { size: 12, weight: 'bold' }, color: textColor },
+                            suggestedMin: 0, suggestedMax: 100, ticks: { display: false }
                         }
-                    }
+                    },
+                    plugins: { legend: { labels: { color: textColor } } }
                 }
             });
 
-            // --- ACTUALIZAR TABLA DE DATOS ---
-            const row = (label, v1, v2) => `
-                <div class="flex justify-between items-center border-b border-gray-200 pb-1 last:border-0">
-                    <span class="font-bold ${v1 > v2 ? 'text-blue-600' : 'text-gray-400'}">${typeof v1 === 'number' && v1 % 1 !== 0 ? v1.toFixed(2) : v1}</span>
-                    <span class="text-xs text-gray-500 uppercase mx-2">${label}</span>
-                    <span class="font-bold ${v2 > v1 ? 'text-red-600' : 'text-gray-400'}">${typeof v2 === 'number' && v2 % 1 !== 0 ? v2.toFixed(2) : v2}</span>
-                </div>
-            `;
+            // 4. Tabla de Datos
+            const row = (label, v1, v2, isFloat=false) => {
+                const val1 = isFloat ? v1.toFixed(2) : v1;
+                const val2 = isFloat ? v2.toFixed(2) : v2;
+                const c1 = Number(val1) > Number(val2) ? 'text-blue-600 font-black' : (Number(val1) === Number(val2) ? 'text-gray-500' : 'text-gray-400');
+                const c2 = Number(val2) > Number(val1) ? 'text-red-600 font-black' : (Number(val2) === Number(val1) ? 'text-gray-500' : 'text-gray-400');
+                
+                return `
+                <div class="flex justify-between items-center border-b border-gray-200 pb-2 last:border-0">
+                    <span class="text-base ${c1}">${val1}</span>
+                    <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold text-center w-24">${label}</span>
+                    <span class="text-base ${c2}">${val2}</span>
+                </div>`;
+            };
             
-            document.getElementById('comparator-stats-table').innerHTML = `
-                ${row('Goles', s1.goals, s2.goals)}
-                ${row('Asistencias', s1.assists, s2.assists)}
-                ${row('Nota Media', s1.avg, s2.avg)}
-                ${row('Minutos', s1.minutes, s2.minutes)}
-                ${row('MVPs', s1.mvp, s2.mvp)}
-                ${row('Partidos', s1.matches, s2.matches)}
-            `;
+            if(tableContainer) {
+                tableContainer.innerHTML = `
+                    ${row('Nota Media', s1.avg, s2.avg, true)}
+                    ${row('Goles', s1.goals, s2.goals)}
+                    ${row('Asistencias', s1.assists, s2.assists)}
+                    ${row('MVPs', s1.mvp, s2.mvp)}
+                    ${row('Minutos', s1.minutes, s2.minutes)}
+                    ${row('Partidos', s1.matches, s2.matches)}
+                `;
+            }
         }
 
         // Global Modal Close Handler
