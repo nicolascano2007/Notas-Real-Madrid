@@ -665,7 +665,7 @@
                         <div class="bg-red-50 rounded-xl border border-red-100 p-4 shadow-sm">
                             <div class="flex items-center gap-2 mb-3 border-b border-red-200 pb-2">
                                 <span class="text-xl">❄️</span>
-                                <h4 class="font-bold text-red-800 text-sm uppercase tracking-wide">Fríos (<6.0)</h4>
+                                <h4 class="font-bold text-red-800 text-sm uppercase tracking-wide">Fríos (&lt; 6.0)</h4>
                             </div>
                             <div id="traffic-light-cold" class="space-y-2 min-h-[100px]">
                                 </div>
@@ -702,15 +702,22 @@
                         <span class="text-amber-600 font-bold">¡Haz esto frecuentemente para no perder datos!</span>
                     </p>
                     
-                    <div class="flex flex-col sm:flex-row gap-4">
+                   <div class="flex flex-col sm:flex-row gap-4">
                         <button onclick="backupData()" class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                            ⬇️ Descargar Copia de Seguridad
+                            ⬇️ Descargar Copia
                         </button>
 
                         <div class="flex-1 relative">
                             <input type="file" id="import-file" accept=".json" class="hidden" onchange="restoreData(this)">
                             <button onclick="document.getElementById('import-file').click()" class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                                 ⬆️ Restaurar Datos
+                            </button>
+                        </div>
+
+                        <div class="flex-1 relative">
+                            <input type="file" id="import-csv" accept=".csv" class="hidden" onchange="importFromCSV(this)">
+                            <button onclick="document.getElementById('import-csv').click()" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                                📊 Importar Excel (CSV)
                             </button>
                         </div>
                     </div>
@@ -6407,6 +6414,201 @@
             if (hotContainer.innerHTML === '') hotContainer.innerHTML = '<p class="text-xs text-emerald-400/50 text-center py-4 italic">Nadie en racha.</p>';
             if (regContainer.innerHTML === '') regContainer.innerHTML = '<p class="text-xs text-amber-400/50 text-center py-4 italic">Sin jugadores estables.</p>';
             if (coldContainer.innerHTML === '') coldContainer.innerHTML = '<p class="text-xs text-red-400/50 text-center py-4 italic">¡Todos rinden bien!</p>';
+        }
+        // ==========================================
+        // IMPORTADOR CSV (NOTAS DESDE EXCEL)
+        // ==========================================
+
+        function importFromCSV(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const text = e.target.result;
+                processCSVData(text);
+                input.value = ''; // Limpiar para poder repetir
+            };
+            
+            reader.readAsText(file);
+        }
+
+        function processCSVData(csvText) {
+            const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                alert("⚠️ El archivo CSV parece estar vacío.");
+                return;
+            }
+
+            const separator = lines[0].includes(';') ? ';' : ',';
+            
+            // 1. LEER CABECERAS
+            const headers = lines[0].split(separator).map(h => h.trim().replace(/"/g, ''));
+            const rivals = headers.slice(1);
+
+            // 2. DETECTAR FECHAS (FILA 2)
+            const row2 = lines[1].split(separator).map(c => c.trim().replace(/"/g, ''));
+            const hasDateRow = row2.slice(1).some(cell => cell.includes('/') || cell.includes('-'));
+
+            let startLine = 1;
+            let csvDates = [];
+
+            if (hasDateRow) {
+                startLine = 2;
+                csvDates = row2.slice(1);
+            } else {
+                if (!confirm("⚠️ No se han detectado fechas en la fila 2. Sin fechas, el sistema NO podrá asociar los partidos al calendario oficial correctamente.\n\n¿Quieres continuar de todos modos (se crearán como nuevos)?")) return;
+            }
+
+            const players = getPlayers();
+            const matches = getData('matches');
+            // IMPORTANTE: Asegurarnos de que tenemos el calendario cargado para comparar
+            // Si calendarEvents está vacío, intentamos usar lo que haya en caché o memoria
+            const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
+
+            let linkedCount = 0;
+            let newCount = 0;
+
+            // 3. ESTRUCTURA TEMPORAL
+            const newMatchesMap = {};
+            
+            rivals.forEach((rivalName, index) => {
+                if(rivalName) {
+                    // A) Calcular fecha del CSV
+                    let csvDateObj = new Date(); // Por defecto hoy
+                    let isValidDate = false;
+
+                    if (hasDateRow && csvDates[index]) {
+                        const dParts = csvDates[index].split(/[\/\-]/);
+                        if (dParts.length === 3) {
+                            // Asumimos DD/MM/YYYY
+                            const day = parseInt(dParts[0]);
+                            const month = parseInt(dParts[1]) - 1; // Meses en JS son 0-11
+                            const year = parseInt(dParts[2]);
+                            
+                            // Crear fecha a mediodía para evitar problemas de zona horaria
+                            csvDateObj = new Date(year, month, day, 12, 0, 0);
+                            isValidDate = true;
+                        }
+                    }
+
+                    // B) BUSCAR EN EL CALENDARIO OFICIAL (SMART LINK) 🔗
+                    let foundEvent = null;
+                    
+                    if (isValidDate && officialEvents.length > 0) {
+                        foundEvent = officialEvents.find(e => {
+                            // 1. Coincidencia de nombre (flexible)
+                            const nameMatch = e.opponent.toLowerCase().includes(rivalName.toLowerCase()) || 
+                                              rivalName.toLowerCase().includes(e.opponent.toLowerCase());
+                            
+                            // 2. Coincidencia de fecha (Margen de 48h)
+                            const diffTime = Math.abs(e.start - csvDateObj);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            
+                            return nameMatch && diffDays <= 2;
+                        });
+                    }
+
+                    // C) Preparar datos base
+                    newMatchesMap[index] = {
+                        opponent: rivalName, // Nombre por defecto (el del CSV)
+                        date: csvDateObj.toISOString().split('T')[0],
+                        linkedEvent: foundEvent, // Guardamos el evento encontrado
+                        playerStats: []
+                    };
+                }
+            });
+
+            // 4. LEER JUGADORES Y NOTAS
+            for (let i = startLine; i < lines.length; i++) {
+                const row = lines[i].split(separator).map(c => c.trim().replace(/"/g, ''));
+                const playerName = row[0];
+                
+                const player = players.find(p => {
+                    const name = p.nombre + " " + p.apellido + " " + (p.apodo || "");
+                    return name.toLowerCase().includes(playerName.toLowerCase());
+                });
+
+                if (player) {
+                    for (let col = 1; col < row.length; col++) {
+                        const noteStr = row[col];
+                        if (noteStr && !isNaN(parseFloat(noteStr.replace(',', '.')))) {
+                            const rating = parseFloat(noteStr.replace(',', '.'));
+                            
+                            if (newMatchesMap[col - 1]) {
+                                newMatchesMap[col - 1].playerStats.push({
+                                    playerId: player.id,
+                                    isStarter: true,
+                                    minutes: 90,
+                                    rating: rating,
+                                    goals: 0, assists: 0, yellowCards: 0, redCards: 0
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 5. CREAR PARTIDOS DEFINITIVOS
+            Object.values(newMatchesMap).forEach(m => {
+                if (m.playerStats.length > 0) {
+                    
+                    let finalMatch = {};
+
+                    if (m.linkedEvent) {
+                        // CASO 1: ASOCIADO AL CALENDARIO (¡Lo ideal!) ✅
+                        linkedCount++;
+                        finalMatch = {
+                            id: generateId(),
+                            calendarEventId: m.linkedEvent.id, // ID oficial
+                            competition: m.linkedEvent.competition || "Liga EA Sports",
+                            roundId: `jornada-${m.linkedEvent.start.getTime()}`, // ID único basado en fecha
+                            round: "Partido Oficial",
+                            date: m.linkedEvent.start.toISOString().split('T')[0], // Usamos la fecha REAL del calendario
+                            opponent: m.linkedEvent.opponent, // Usamos el nombre REAL (ej: "FC Barcelona" en vez de "Barça")
+                            venue: m.linkedEvent.venue,
+                            stadium: m.linkedEvent.location,
+                            result: "0-0", // Pendiente de editar
+                            outcome: "empate", // Pendiente
+                            mvp: calculateAutoMVP(m.playerStats),
+                            playerStats: m.playerStats
+                        };
+                    } else {
+                        // CASO 2: NO ENCONTRADO (Creado desde cero) 🆕
+                        newCount++;
+                        finalMatch = {
+                            id: generateId(),
+                            calendarEventId: "", 
+                            competition: "Liga EA Sports",
+                            roundId: "importado",
+                            round: "Jornada Importada",
+                            date: m.date,
+                            opponent: m.opponent,
+                            venue: "local",
+                            stadium: "Santiago Bernabéu",
+                            result: "0-0",
+                            outcome: "empate",
+                            mvp: calculateAutoMVP(m.playerStats),
+                            playerStats: m.playerStats
+                        };
+                    }
+
+                    // Evitar duplicados: Si ya existe un partido con ese calendarEventId, ¿lo sobrescribimos o avisamos?
+                    // Por simplicidad, lo añadimos, el usuario puede borrar el antiguo si quiere.
+                    matches.push(finalMatch);
+                }
+            });
+
+            saveData('matches', matches);
+            
+            // Recargar interfaz
+            renderMatches();
+            renderStats();
+            renderPrincipal();
+            renderTrafficLight();
+            
+            alert(`✅ Importación finalizada.\n\n🔗 Enlazados al calendario: ${linkedCount}\n🆕 Creados nuevos: ${newCount}\n\nRecuerda editar los resultados (goles) manualmente.`);
         }
 
         // Global Modal Close Handler
