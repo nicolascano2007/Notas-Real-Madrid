@@ -1418,7 +1418,22 @@
                 <!-- SUB-SECTION: ADVANCED -->
                 <div id="stats-advanced" class="hidden fade-in space-y-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500 p-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">Estadísticas Avanzadas</h3>
-                    
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-lg">⚔️ Guerra de Líneas</h4>
+                                <p class="text-xs text-gray-500">Evolución del rendimiento: Defensa vs Medio vs Delantera</p>
+                            </div>
+                            <div class="flex gap-3 text-xs font-bold mt-2 md:mt-0">
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Defensas</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Medios</span>
+                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Delanteros</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-[350px]">
+                            <canvas id="chart-line-wars"></canvas>
+                        </div>
+                    </div>
                     <!-- Home vs Away Comparison -->
                     <div>
                         <h4 class="font-bold text-gray-700 mb-4">Rendimiento: Casa vs Fuera</h4>
@@ -2689,6 +2704,7 @@
         // ==========================================
 
         function renderAdvancedStats() {
+            renderLineWarsChart();
             populateImpactSelect();
             const matches = getData('matches');
             const players = getPlayers();
@@ -6692,6 +6708,132 @@
         function toggleCSVInfo() {
             const modal = document.getElementById('csv-info-modal');
             modal.classList.toggle('hidden');
+        }
+        // ==========================================
+        // GUERRA DE LÍNEAS (LINE WARS)
+        // ==========================================
+        
+        let lineWarsChart = null;
+
+        function renderLineWarsChart() {
+            const ctx = document.getElementById('chart-line-wars');
+            if (!ctx) return;
+
+            const matches = getData('matches').sort((a, b) => new Date(a.date) - new Date(b.date));
+            const players = getPlayers();
+
+            if (matches.length === 0) return;
+
+            // Arrays de datos para el gráfico
+            const labels = [];
+            const dataDef = [];
+            const dataMid = [];
+            const dataFwd = [];
+
+            matches.forEach(m => {
+                // Etiqueta del eje X (Rival)
+                labels.push(m.opponent.substring(0, 3).toUpperCase()); // Ej: BAR, ATL
+
+                // Acumuladores para este partido
+                let sumDef = 0, countDef = 0;
+                let sumMid = 0, countMid = 0;
+                let sumFwd = 0, countFwd = 0;
+
+                m.playerStats.forEach(ps => {
+                    // Solo si jugó y tiene nota
+                    if ((ps.rating || ps.rating === 0) && ps.minutes > 0) {
+                        const p = players.find(pl => pl.id === ps.playerId);
+                        if (p) {
+                            const nota = parseFloat(ps.rating);
+                            
+                            if (p.posicion === 'defensa') {
+                                sumDef += nota; countDef++;
+                            } else if (p.posicion === 'centrocampista') {
+                                sumMid += nota; countMid++;
+                            } else if (p.posicion === 'delantero' || p.posicion === 'extremo') {
+                                // Agrupamos Delanteros y Extremos en "Ataque"
+                                sumFwd += nota; countFwd++;
+                            }
+                        }
+                    }
+                });
+
+                // Calcular medias (si no jugaron, null para romper la línea o 0)
+                dataDef.push(countDef > 0 ? (sumDef / countDef).toFixed(2) : null);
+                dataMid.push(countMid > 0 ? (sumMid / countMid).toFixed(2) : null);
+                dataFwd.push(countFwd > 0 ? (sumFwd / countFwd).toFixed(2) : null);
+            });
+
+            // Destruir gráfico anterior si existe para actualizar
+            if (lineWarsChart) lineWarsChart.destroy();
+
+            const isDark = document.body.classList.contains('dark-mode');
+            const gridColor = isDark ? '#334155' : '#f3f4f6';
+            const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+            lineWarsChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Defensa',
+                            data: dataDef,
+                            borderColor: '#3b82f6', // Azul
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Medio',
+                            data: dataMid,
+                            borderColor: '#10b981', // Esmeralda
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Delantera',
+                            data: dataFwd,
+                            borderColor: '#f43f5e', // Rosa/Rojo
+                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false }, // Usamos nuestra leyenda HTML personalizada
+                        tooltip: {
+                            callbacks: {
+                                title: (context) => matches[context[0].dataIndex].opponent // Nombre completo en tooltip
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 4, // Empezamos en 4 para que se vea más detalle en la parte alta
+                            max: 10,
+                            grid: { color: gridColor },
+                            ticks: { color: textColor }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { size: 10 } }
+                        }
+                    }
+                }
+            });
         }
 
         // Global Modal Close Handler
