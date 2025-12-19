@@ -393,6 +393,53 @@
             z-index: 10;
             border: 1px solid white;
         }
+        /* ESTILOS MVP CARD */
+        .mvp-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+        .mvp-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: #fbbf24;
+        }
+        .mvp-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 6px;
+            background: linear-gradient(90deg, #fbbf24, #d97706);
+        }
+        .mvp-photo-container {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto 10px;
+            position: relative;
+        }
+        .mvp-photo {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: top;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .mvp-crown {
+            position: absolute;
+            top: -15px;
+            right: -10px;
+            font-size: 24px;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -1098,6 +1145,9 @@
                          <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">
                              ⚔️ H2H (Rival)
                          </button>
+                         <button onclick="switchStatsTab('mvp')" id="btn-stats-mvp" class="stats-subtab inactive">
+                             🏆 Muro de la Fama
+                         </button>
                     </div>
                 </div>
                 
@@ -1394,6 +1444,27 @@
                     </div>
                     <div id="h2h-content" class="hidden space-y-6">
                         <!-- Populated by JS -->
+                    </div>
+                </div>
+                <div id="stats-mvp" class="hidden fade-in space-y-6">
+                    <div class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl shadow-lg p-8 text-white text-center mb-8 relative overflow-hidden">
+                        <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                        <h3 class="text-3xl font-black mb-2 relative z-10">🏆 EL MURO DE LA FAMA</h3>
+                        <p class="text-amber-100 text-lg relative z-10">Los héroes de cada jornada</p>
+                    </div>
+
+                    <div class="flex justify-end mb-4">
+                        <select id="mvp-filter-comp" onchange="renderMVPGallery()" class="px-4 py-2 border border-gray-200 rounded-lg bg-white text-sm shadow-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                            <option value="">Todas las competiciones</option>
+                            </select>
+                    </div>
+
+                    <div id="mvp-gallery-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        </div>
+                    
+                    <div id="no-mvps-msg" class="hidden text-center py-12 text-gray-500">
+                        <div class="text-6xl mb-4">🕸️</div>
+                        <p>Aún no hay MVPs registrados. Juega partidos y elige al mejor jugador.</p>
                     </div>
                 </div>
 
@@ -2111,6 +2182,7 @@
             document.getElementById('stats-general').classList.add('hidden');
             document.getElementById('stats-advanced').classList.add('hidden');
             document.getElementById('stats-h2h').classList.add('hidden');
+            document.getElementById('stats-mvp').classList.add('hidden'); // <-- AÑADIR ESTA LÍNEA
 
             document.getElementById(`stats-${tab}`).classList.remove('hidden');
 
@@ -2118,6 +2190,8 @@
                 renderAdvancedStats();
             } else if (tab === 'h2h') {
                 populateH2HOpponents();
+            }else if (tab === 'mvp') { // <-- AÑADIR ESTE BLOQUE
+                renderMVPGallery();
             }
         }
 
@@ -6130,6 +6204,99 @@
             emptyMsg.classList.add('hidden');
             container.classList.remove('hidden');
         }
+        // ==========================================
+        // MVP GALLERY LOGIC
+        // ==========================================
+
+        function renderMVPGallery() {
+            const container = document.getElementById('mvp-gallery-grid');
+            const noData = document.getElementById('no-mvps-msg');
+            const filterComp = document.getElementById('mvp-filter-comp');
+            
+            // 1. Obtener partidos con MVP
+            let matches = getData('matches').filter(m => m.mvp && m.mvp !== '');
+            const players = getPlayers();
+
+            // Llenar filtro si está vacío
+            if (filterComp.options.length <= 1) {
+                const comps = [...new Set(matches.map(m => m.competition))];
+                comps.forEach(c => {
+                    filterComp.innerHTML += `<option value="${c}">${c}</option>`;
+                });
+            }
+
+            // Filtrar
+            if (filterComp.value) {
+                matches = matches.filter(m => m.competition === filterComp.value);
+            }
+
+            // Ordenar: Más recientes primero
+            matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (matches.length === 0) {
+                container.innerHTML = '';
+                noData.classList.remove('hidden');
+                return;
+            }
+
+            noData.classList.add('hidden');
+            
+            container.innerHTML = matches.map(m => {
+                const p = players.find(pl => pl.id === m.mvp);
+                if (!p) return ''; // Si el jugador fue borrado, saltamos
+
+                // Datos del partido
+                const date = new Date(m.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                const resultColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'empate' ? 'text-amber-600' : 'text-red-600');
+                
+                // Stats del jugador en ese partido
+                const stats = m.playerStats.find(ps => ps.playerId === m.mvp);
+                const rating = stats?.rating ? parseFloat(stats.rating).toFixed(1) : '-';
+                const goals = stats?.goals || 0;
+                const assists = stats?.assists || 0;
+
+                // Crear etiquetas de hitos (Gol, Asistencia)
+                let badges = [];
+                if(goals > 0) badges.push(`<span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full font-bold">⚽ ${goals} Goles</span>`);
+                if(assists > 0) badges.push(`<span class="bg-purple-100 text-purple-800 text-[10px] px-2 py-0.5 rounded-full font-bold">👟 ${assists} Asist</span>`);
+                if(rating >= 9) badges.push(`<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">🔥 Masterclass</span>`);
+
+                return `
+                <div class="mvp-card shadow-sm hover:shadow-xl group">
+                    
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center text-xs text-gray-500">
+                        <span>${date} · ${m.competition}</span>
+                        <span class="font-bold ${resultColor} bg-white px-2 py-0.5 rounded border shadow-sm">${m.result}</span>
+                    </div>
+
+                    <div class="p-4 text-center">
+                        <div class="mvp-photo-container">
+                            <div class="mvp-crown">👑</div>
+                            <img src="${p.foto}" class="mvp-photo group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/120?text=${p.dorsal}'">
+                        </div>
+                        
+                        <h4 class="text-lg font-black text-gray-800 leading-tight mb-1">${p.nombre}</h4>
+                        <h5 class="text-sm font-bold text-gray-500 mb-3">${p.apellido}</h5>
+                        
+                        <div class="flex flex-wrap justify-center gap-2 mb-4 min-h-[20px]">
+                            ${badges.join('')}
+                        </div>
+
+                        <div class="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">Contra</div>
+                        <div class="font-bold text-gray-700 text-sm truncate" title="${m.opponent}">${m.opponent}</div>
+                    </div>
+
+                    <div class="bg-slate-800 p-3 flex justify-between items-center mt-auto">
+                        <div class="text-white text-xs opacity-70 font-medium">Valoración</div>
+                        <div class="text-amber-400 font-black text-xl flex items-center gap-1">
+                            ${rating} <span class="text-xs text-gray-400 font-normal">/10</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
