@@ -1281,6 +1281,87 @@
                         </div>
                     </div>
 
+                    <div class="mb-8">
+                        <h4 class="font-bold text-gray-700 text-xl mb-4">🔍 Análisis de Impacto (Efecto Talismán)</h4>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                            
+                            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+                                <label class="text-sm font-bold text-slate-700 whitespace-nowrap">Analizar influencia de:</label>
+                                <select id="impact-player-select" onchange="renderImpactAnalysis()" class="w-full sm:w-64 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white">
+                                    <option value="">Selecciona un jugador...</option>
+                                </select>
+                            </div>
+
+                            <div id="impact-results" class="hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="bg-green-50 rounded-xl p-5 border border-green-100 relative overflow-hidden">
+                                        <div class="absolute top-0 right-0 p-4 opacity-10 text-green-600 text-6xl font-black">ON</div>
+                                        <h5 class="text-green-800 font-bold text-lg mb-4 flex items-center gap-2">✅ Con el jugador</h5>
+                                        
+                                        <div class="space-y-4">
+                                            <div>
+                                                <p class="text-xs text-green-600 uppercase font-bold">Porcentaje de Victorias</p>
+                                                <div class="flex items-end gap-2">
+                                                    <span class="text-3xl font-black text-green-700" id="impact-win-on">0%</span>
+                                                    <span class="text-sm text-green-600 mb-1" id="impact-matches-on">(0 part)</span>
+                                                </div>
+                                                <div class="w-full bg-green-200 h-2 rounded-full mt-1">
+                                                    <div id="bar-win-on" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="text-xs text-green-600 uppercase font-bold">Goles Favor / Part</p>
+                                                    <p class="text-xl font-bold text-green-700" id="impact-gf-on">0.00</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-green-600 uppercase font-bold">Goles Contra / Part</p>
+                                                    <p class="text-xl font-bold text-green-700" id="impact-ga-on">0.00</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 relative overflow-hidden">
+                                        <div class="absolute top-0 right-0 p-4 opacity-10 text-red-600 text-6xl font-black">OFF</div>
+                                        <h5 class="text-red-800 font-bold text-lg mb-4 flex items-center gap-2">❌ Sin el jugador</h5>
+                                        
+                                        <div class="space-y-4">
+                                            <div>
+                                                <p class="text-xs text-red-600 uppercase font-bold">Porcentaje de Victorias</p>
+                                                <div class="flex items-end gap-2">
+                                                    <span class="text-3xl font-black text-red-700" id="impact-win-off">0%</span>
+                                                    <span class="text-sm text-red-600 mb-1" id="impact-matches-off">(0 part)</span>
+                                                </div>
+                                                <div class="w-full bg-red-200 h-2 rounded-full mt-1">
+                                                    <div id="bar-win-off" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <p class="text-xs text-red-600 uppercase font-bold">Goles Favor / Part</p>
+                                                    <p class="text-xl font-bold text-red-700" id="impact-gf-off">0.00</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-xs text-red-600 uppercase font-bold">Goles Contra / Part</p>
+                                                    <p class="text-xl font-bold text-red-700" id="impact-ga-off">0.00</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div id="impact-verdict" class="mt-4 p-3 rounded-lg text-center font-bold text-sm"></div>
+                            </div>
+                            
+                            <div id="impact-empty" class="text-center py-8 text-gray-400 italic">
+                                Selecciona un jugador para ver su impacto en el equipo.
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Monthly Report -->
                     <div>
                         <h4 class="font-bold text-gray-700 mb-4">Reporte Mensual</h4>
@@ -2429,6 +2510,7 @@
         // ==========================================
 
         function renderAdvancedStats() {
+            populateImpactSelect();
             const matches = getData('matches');
             const players = getPlayers();
 
@@ -5952,6 +6034,101 @@
                     }
                 }
             });
+        }
+        // ==========================================
+        // IMPACT ANALYSIS LOGIC
+        // ==========================================
+
+        function populateImpactSelect() {
+            const select = document.getElementById('impact-player-select');
+            if(!select) return;
+            
+            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
+            
+            select.innerHTML = '<option value="">Selecciona un jugador...</option>' + 
+                players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
+        }
+
+        function renderImpactAnalysis() {
+            const playerId = document.getElementById('impact-player-select').value;
+            const container = document.getElementById('impact-results');
+            const emptyMsg = document.getElementById('impact-empty');
+            
+            if (!playerId) {
+                container.classList.add('hidden');
+                emptyMsg.classList.remove('hidden');
+                return;
+            }
+
+            const matches = getData('matches');
+            
+            // Inicializar contadores
+            const stats = {
+                on: { played: 0, wins: 0, gf: 0, ga: 0 },
+                off: { played: 0, wins: 0, gf: 0, ga: 0 }
+            };
+
+            matches.forEach(m => {
+                // Buscar si el jugador participó (jugó al menos 1 minuto)
+                const ps = m.playerStats.find(s => String(s.playerId) === String(playerId));
+                const played = ps && (ps.minutes > 0 || ps.played === true); // Soporte para registros antiguos y nuevos
+
+                const target = played ? stats.on : stats.off;
+                
+                target.played++;
+                if (m.outcome === 'victoria') target.wins++;
+                
+                // Goles
+                const parts = m.result.replace('*','').split('-').map(Number);
+                if (m.venue === 'local') { target.gf += parts[0]; target.ga += parts[1]; }
+                else if (m.venue === 'visitante') { target.gf += parts[1]; target.ga += parts[0]; }
+                else { target.gf += parts[0]; target.ga += parts[1]; }
+            });
+
+            // Cálculos y visualización
+            const calc = (s) => ({
+                winRate: s.played > 0 ? (s.wins / s.played) * 100 : 0,
+                gfPerGame: s.played > 0 ? (s.gf / s.played).toFixed(2) : "0.00",
+                gaPerGame: s.played > 0 ? (s.ga / s.played).toFixed(2) : "0.00"
+            });
+
+            const resOn = calc(stats.on);
+            const resOff = calc(stats.off);
+
+            // Renderizar ON
+            document.getElementById('impact-win-on').textContent = Math.round(resOn.winRate) + '%';
+            document.getElementById('impact-matches-on').textContent = `(${stats.on.played} part)`;
+            document.getElementById('bar-win-on').style.width = resOn.winRate + '%';
+            document.getElementById('impact-gf-on').textContent = resOn.gfPerGame;
+            document.getElementById('impact-ga-on').textContent = resOn.gaPerGame;
+
+            // Renderizar OFF
+            document.getElementById('impact-win-off').textContent = Math.round(resOff.winRate) + '%';
+            document.getElementById('impact-matches-off').textContent = `(${stats.off.played} part)`;
+            document.getElementById('bar-win-off').style.width = resOff.winRate + '%';
+            document.getElementById('impact-gf-off').textContent = resOff.gfPerGame;
+            document.getElementById('impact-ga-off').textContent = resOff.gaPerGame;
+
+            // Veredicto
+            const verdictEl = document.getElementById('impact-verdict');
+            const diff = resOn.winRate - resOff.winRate;
+            
+            if (stats.on.played === 0 || stats.off.played === 0) {
+                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-gray-100 text-gray-500";
+                verdictEl.textContent = "Datos insuficientes para comparar (necesita partidos jugados y no jugados).";
+            } else if (diff >= 10) {
+                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-indigo-100 text-indigo-700 border border-indigo-200";
+                verdictEl.textContent = `💎 TALISMÁN: El equipo gana un ${Math.round(diff)}% más cuando juega.`;
+            } else if (diff <= -10) {
+                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-orange-100 text-orange-700 border border-orange-200";
+                verdictEl.textContent = `📉 El equipo tiene mejores resultados sin este jugador (${Math.round(Math.abs(diff))}% diferencia).`;
+            } else {
+                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-gray-100 text-gray-600 border border-gray-200";
+                verdictEl.textContent = "⚖️ Impacto neutral: El rendimiento del equipo es similar con o sin él.";
+            }
+
+            emptyMsg.classList.add('hidden');
+            container.classList.remove('hidden');
         }
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
