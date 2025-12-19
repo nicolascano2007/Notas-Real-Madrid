@@ -714,11 +714,58 @@
                             </button>
                         </div>
 
-                        <div class="flex-1 relative">
+                       <div class="flex-1 relative flex gap-2">
                             <input type="file" id="import-csv" accept=".csv" class="hidden" onchange="importFromCSV(this)">
-                            <button onclick="document.getElementById('import-csv').click()" class="w-full bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+                            
+                            <button onclick="document.getElementById('import-csv').click()" class="flex-1 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
                                 📊 Importar Excel (CSV)
                             </button>
+
+                            <button onclick="toggleCSVInfo()" class="w-12 flex items-center justify-center bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all shadow-sm" title="Ver formato requerido">
+                                <img src="https://cdn-icons-png.flaticon.com/512/8/8201.png" alt="Info" class="w-6 h-6 opacity-70">
+                            </button>
+
+                            <div id="csv-info-modal" class="hidden absolute bottom-full right-0 mb-2 w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 p-0 overflow-hidden animate-in fade-in zoom-in duration-200">
+                                <div class="bg-slate-800 text-white p-3 flex justify-between items-center">
+                                    <h4 class="font-bold text-sm">📄 Formato Requerido para Excel</h4>
+                                    <button onclick="toggleCSVInfo()" class="text-gray-400 hover:text-white">✕</button>
+                                </div>
+                                <div class="p-4 text-sm text-gray-600">
+                                    <p class="mb-3">Para que la importación funcione correctamente y detecte las fechas, usa esta estructura:</p>
+                                    
+                                    <div class="border border-gray-300 rounded overflow-hidden mb-3">
+                                        <table class="w-full text-xs text-center">
+                                            <tr class="bg-gray-100 font-bold border-b border-gray-300">
+                                                <td class="p-1 border-r"></td>
+                                                <td class="p-1 border-r text-blue-600">Rival A</td>
+                                                <td class="p-1 text-blue-600">Rival B</td>
+                                            </tr>
+                                            <tr class="bg-yellow-50 border-b border-gray-300 font-mono text-[10px]">
+                                                <td class="p-1 border-r font-bold text-gray-400">FECHA -></td>
+                                                <td class="p-1 border-r text-orange-600 font-bold">26/10/2024</td>
+                                                <td class="p-1 text-orange-600 font-bold">03/11/2024</td>
+                                            </tr>
+                                            <tr class="border-b border-gray-100">
+                                                <td class="p-1 border-r font-bold text-left pl-2">Mbappé</td>
+                                                <td class="p-1 border-r">8,5</td>
+                                                <td class="p-1">7</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="p-1 border-r font-bold text-left pl-2">Vini Jr</td>
+                                                <td class="p-1 border-r">9</td>
+                                                <td class="p-1">6,5</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+
+                                    <ul class="list-disc list-inside text-xs space-y-1 text-gray-500">
+                                        <li><b>Fila 1:</b> Nombres de los Rivales.</li>
+                                        <li><b>Fila 2:</b> Fechas (DD/MM/AAAA) <span class="text-orange-600 font-bold">*Importante</span>.</li>
+                                        <li><b>Columna A:</b> Nombres de los Jugadores.</li>
+                                        <li>Guarda el archivo como <b>CSV (delimitado por comas o punto y coma)</b>.</li>
+                                    </ul>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -6609,6 +6656,10 @@
             renderTrafficLight();
             
             alert(`✅ Importación finalizada.\n\n🔗 Enlazados al calendario: ${linkedCount}\n🆕 Creados nuevos: ${newCount}\n\nRecuerda editar los resultados (goles) manualmente.`);
+        }
+        function toggleCSVInfo() {
+            const modal = document.getElementById('csv-info-modal');
+            modal.classList.toggle('hidden');
         }
 
         // Global Modal Close Handler
