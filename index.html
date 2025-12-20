@@ -488,6 +488,7 @@
 
     <!-- APP CONTAINER (Hidden initially) -->
     <div id="app-container" class="hidden bg-gray-100">
+        <!-- Header Real Madrid -->
         <header class="rm-header-gradient text-white shadow-lg">
             <div class="container mx-auto px-4 py-4">
                 <div class="flex items-center justify-between">
@@ -499,7 +500,9 @@
                             <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
                         </div>
                     </div>
-                    
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" ...>
+                        </div>
+
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
@@ -1228,20 +1231,19 @@
                 
                 
                 <!-- SUB-SECTION: GENERAL -->
-                    <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
-            <div class="flex justify-between items-center mb-6 pb-4 border-b">
-                <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
+                     <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                         <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
 
-                <div class="flex gap-2">
-                    <button onclick="exportStats()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
-                        📥 Exportar CSV
-                    </button>
+                    <div class="flex gap-2">
+                  <button onclick="exportStats()" ...>
+                            📥 Exportar CSV
+                         </button>
 
-                    <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
-                        🆚 Comparador VS
-                    </button>
-                </div> 
-            </div>
+                        <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                              🆚 Comparador VS
+                        </button>
+                         </div> </div>
 
                     <!-- Summary Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
@@ -1630,112 +1632,31 @@
     </div>
 
     <!-- EDIT MATCH MODAL -->
-            <div id="edit-match-modal" class="modal-overlay hidden">
-        <div class="modal-content w-full max-w-6xl h-[95vh] flex flex-col p-0 overflow-hidden bg-white rounded-xl shadow-2xl">
+    <div id="edit-match-modal" class="modal fixed inset-0 bg-black/90 z-[5000] items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl overflow-hidden relative">
             
-            <div class="bg-gray-900 text-white p-4 flex justify-between items-center shrink-0 z-10">
-                <h3 class="text-xl font-bold flex items-center gap-2">
-                    📝 Editar Partido <span id="edit-match-id-display" class="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300 font-mono"></span>
+            <div class="flex justify-between items-center p-4 border-b bg-gray-50">
+                <h3 class="text-xl font-black text-gray-800 flex items-center gap-2">
+                    ✏️ Editar Partido
                 </h3>
-                <button onclick="closeEditMatchModal()" class="text-gray-400 hover:text-white transition-colors">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
+                <button onclick="closeEditMatchModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors">✕</button>
             </div>
-
-            <div id="edit-match-content" class="flex-1 overflow-hidden relative bg-gray-50">
-                <form id="edit-match-form" class="h-full flex flex-col">
-                    <input type="hidden" id="edit-match-id">
-                    
-                    <div id="edit-step-lineup" class="flex flex-col h-full p-4">
-                        <div class="mb-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center shrink-0">
-                            <div class="flex items-center gap-3">
-                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Paso 1/2</span>
-                                <span class="text-sm text-gray-600 font-medium">Ajusta la alineación en la pizarra</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <label class="text-xs font-bold text-gray-500 uppercase">Formación:</label>
-                                <select id="edit-formation-select" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-1.5" onchange="updatePitchFormation()">
-                                    <option value="4-3-3">4-3-3</option>
-                                    <option value="4-4-2">4-4-2</option>
-                                    <option value="4-2-3-1">4-2-3-1</option>
-                                    <option value="3-5-2">3-5-2</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
-                            <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-lg select-none">
-                                <div class="pitch-container w-full h-full transform scale-100 origin-top-left">
-                                    <div class="pitch-line-mid"></div>
-                                    <div class="pitch-circle"></div>
-                                    <div class="pitch-box-left"></div>
-                                    <div class="pitch-box-right"></div>
-                                    <div id="edit-pitch-slots-layer" class="w-full h-full absolute inset-0 z-0"></div>
-                                    <div id="edit-pitch-players-layer" class="w-full h-full absolute inset-0 z-10 pointer-events-none"></div>
-                                </div>
-                            </div>
-
-                            <div class="w-full lg:w-72 flex flex-col gap-3 shrink-0 h-48 lg:h-auto">
-                                <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
-                                    <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600 tracking-wider">
-                                        Plantilla Disponible
-                                    </div>
-                                    <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start space-y-1"></div>
-                                </div>
-                                <div class="h-1/3 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 flex flex-col overflow-hidden">
-                                    <div class="bg-blue-100/50 p-1 border-b border-blue-100 text-[10px] font-bold uppercase text-center text-blue-600">
-                                        Banquillo (Suplentes)
-                                    </div>
-                                    <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 flex justify-end shrink-0">
-                            <button type="button" onclick="goToEditStats()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex items-center gap-2">
-                                Siguiente: Datos del Partido ➡️
-                            </button>
-                        </div>
+            
+            <form id="edit-match-form" class="flex flex-col flex-1 overflow-hidden" onsubmit="event.preventDefault();">
+                <input type="hidden" id="edit-match-id">
+                
+                <div id="edit-match-content" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
                     </div>
 
-                    <div id="edit-step-stats" class="hidden flex-col h-full p-4 bg-gray-50">
-                        <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 shrink-0">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Resultado Final</label>
-                                    <input type="text" id="edit-result-val" placeholder="Ej: 2-1" class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-xl font-bold text-center focus:border-blue-500 focus:ring-0">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rival</label>
-                                    <input type="text" id="edit-rival-display" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-600 font-medium">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sede</label>
-                                    <input type="text" id="edit-venue-display" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-600 font-medium">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden min-h-0">
-                            <div class="bg-gray-100 p-3 border-b border-gray-200 flex justify-between items-center">
-                                <span class="font-bold text-gray-700 text-sm">Estadísticas de Jugadores</span>
-                                <span id="edit-imported-badge" class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200"></span>
-                            </div>
-                            <div id="edit-stats-list" class="flex-1 overflow-y-auto p-2 space-y-2">
-                                </div>
-                        </div>
-
-                        <div class="mt-4 pt-2 border-t border-gray-200 flex justify-between items-center shrink-0 gap-4">
-                            <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-bold text-sm flex items-center gap-1 px-4 py-2 rounded hover:bg-gray-100 transition">
-                                ⬅️ Volver a la Pizarra
-                            </button>
-                            <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex justify-center items-center gap-2 text-lg">
-                                💾 GUARDAR CAMBIOS
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
+                <div class="p-4 border-t bg-white flex justify-end gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                    <button type="button" onclick="closeEditMatchModal()" class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" onclick="handleEditMatchSubmit(event)" class="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all">
+                        💾 Guardar Cambios
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -3106,235 +3027,197 @@
         // ==========================================
 
         function renderPrincipal() {
-    const matches = getData('matches');
-    const players = getPlayers();
-    const now = new Date();
+            const matches = getData('matches');
+            const players = getPlayers();
+            const now = new Date();
 
-    // ---------------------------------------------
-    // 1. PRÓXIMO RIVAL (Lógica blindada)
-    // ---------------------------------------------
-    // Aseguramos que calendarEvents exista, si no array vacío
-    const events = (typeof calendarEvents !== 'undefined') ? calendarEvents : [];
-    
-    const futureEvents = events
-        .filter(e => new Date(e.start) > now)
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
-    
-    const nextMatchContainer = document.getElementById('dashboard-next-match');
-    const aiCard = document.getElementById('ai-prediction-card');
-    
-    if (nextMatchContainer) {
-        if (futureEvents.length > 0) {
-            // --- HAY DATOS ---
-            const next = futureEvents[0];
-            const startDate = new Date(next.start);
-            const dateStr = startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-            const timeStr = startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-            const compName = next.possibleCompetition || 'Partido Oficial';
+            // 1. PRÓXIMO RIVAL (Desde Calendario)
+            // Filtramos eventos futuros y ordenamos por fecha
+           // ... (dentro de renderPrincipal) ...
+
+            // 1. PRÓXIMO RIVAL
+            const futureEvents = calendarEvents
+                .filter(e => e.start > now)
+                .sort((a, b) => a.start - b.start);
             
-            nextMatchContainer.innerHTML = `
-                <div class="flex flex-col animate-in fade-in zoom-in duration-300">
-                    <span class="text-2xl font-bold text-slate-800 truncate" title="${next.opponent}">${next.opponent}</span>
-                    <div class="flex items-center gap-2 mt-1">
-                        <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">${compName}</span>
-                        <span class="text-xs text-gray-500">${next.venue === 'local' ? '🏠 Casa' : '✈️ Fuera'}</span>
-                    </div>
-                    <div class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
-                        <span>🕒 ${dateStr} - ${timeStr}</span>
-                    </div>
-                    <p class="text-xs text-gray-400 mt-1 truncate">🏟️ ${next.location || 'Estadio'}</p>
-                </div>
-            `;
+            const nextMatchContainer = document.getElementById('dashboard-next-match');
+            const aiCard = document.getElementById('ai-prediction-card'); // Referencia a la tarjeta IA
             
-            // Mostrar IA
-            if(aiCard) aiCard.classList.remove('hidden');
-            if(typeof renderAIPrediction === 'function') renderAIPrediction(); 
-
-        } else {
-            // --- NO HAY DATOS (O ESTÁ CARGANDO) ---
-            if (events.length === 0) {
-                nextMatchContainer.innerHTML = `
-                    <div class="py-4 text-center calendar-loading">
-                        <div class="text-2xl mb-2">⏳</div>
-                        <p class="text-slate-500 font-medium text-sm">Cargando calendario...</p>
-                    </div>`;
-                if(aiCard) aiCard.classList.add('hidden');
-            } else {
-                nextMatchContainer.innerHTML = `
-                    <div class="py-2">
-                        <p class="text-slate-600 font-medium">No hay partidos próximos.</p>
-                        <p class="text-xs text-gray-400">Fin de temporada o parón.</p>
-                    </div>`;
-                if(aiCard) aiCard.classList.add('hidden');
-            }
-        }
-    }
-
-    // ---------------------------------------------
-    // 2. FORMA DEL EQUIPO (Últimos 5)
-    // ---------------------------------------------
-    const last5Matches = [...matches]
-        .filter(m => m.result && m.result.trim() !== "") // Solo partidos jugados
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 5)
-        .reverse(); // Cronológico (Antiguo -> Nuevo)
-
-    const formContainer = document.getElementById('dashboard-form');
-    if (formContainer) {
-        if (last5Matches.length > 0) {
-            formContainer.innerHTML = last5Matches.map(m => {
-                let color = 'bg-amber-500';
-                let letter = 'E';
-                if (m.outcome === 'victoria') { color = 'bg-green-500'; letter = 'V'; }
-                else if (m.outcome === 'derrota') { color = 'bg-red-500'; letter = 'D'; }
+            if (futureEvents.length > 0) {
+                // --- HAY DATOS: MOSTRAR TODO ---
+                const next = futureEvents[0];
+                const dateStr = next.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+                const timeStr = next.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                const compName = next.possibleCompetition || 'Partido Oficial';
                 
-                return `<div class="${color} text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transform transition hover:scale-110 cursor-default" title="${m.opponent} (${m.result})">${letter}</div>`;
-            }).join('');
-        } else {
-            formContainer.innerHTML = '<span class="text-gray-400 text-sm italic">Sin partidos</span>';
-        }
-    }
-
-    // ---------------------------------------------
-    // 3. RESUMEN TEMPORADA (Contadores)
-    // ---------------------------------------------
-    let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
-    matches.forEach(m => {
-        if (m.outcome === 'victoria') wins++;
-        else if (m.outcome === 'empate') draws++;
-        else losses++;
-        
-        if (m.result && m.result.includes('-')) {
-            const parts = m.result.replace('*','').split('-').map(Number);
-            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
-                else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
-                else { gf += parts[0]; ga += parts[1]; }
-            }
-        }
-    });
-
-    const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    setTxt('dash-wins', wins);
-    setTxt('dash-draws', draws);
-    setTxt('dash-losses', losses);
-    setTxt('dash-gf', gf);
-    setTxt('dash-ga', ga);
-
-    // ---------------------------------------------
-    // 4. ÚLTIMOS 3 RESULTADOS
-    // ---------------------------------------------
-    const last3 = [...matches]
-        .filter(m => m.result && m.result.trim() !== "")
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, 3);
-        
-    const resultsContainer = document.getElementById('dashboard-last-results');
-    
-    if (resultsContainer) {
-        if (last3.length > 0) {
-            resultsContainer.innerHTML = last3.map(m => {
-                const outcomeColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'derrota' ? 'text-red-600' : 'text-amber-600');
-                const outcomeBar = m.outcome === 'victoria' ? 'bg-green-500' : (m.outcome === 'derrota' ? 'bg-red-500' : 'bg-amber-500');
-                
-                return `
-                <div class="px-5 py-3 hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-0 transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-1.5 h-8 rounded-full ${outcomeBar}"></div>
-                        <div>
-                            <p class="font-bold text-gray-800 text-sm">${m.opponent}</p>
-                            <p class="text-xs text-gray-500">${m.competition}</p>
+                nextMatchContainer.innerHTML = `
+                    <div class="flex flex-col animate-in fade-in zoom-in duration-300">
+                        <span class="text-2xl font-bold text-slate-800 truncate" title="${next.opponent}">${next.opponent}</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">${compName}</span>
+                            <span class="text-xs text-gray-500">${next.venue === 'local' ? '🏠 Casa' : '✈️ Fuera'}</span>
                         </div>
+                        <div class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
+                            <span>🕒 ${dateStr} - ${timeStr}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1 truncate">🏟️ ${next.location || 'Estadio'}</p>
                     </div>
-                    <div class="text-right">
-                        <span class="font-bold text-lg ${outcomeColor}">${m.result}</span>
-                        <p class="text-xs text-gray-400">${formatDate(m.date)}</p>
-                    </div>
-                </div>`;
-            }).join('');
-        } else {
-            resultsContainer.innerHTML = '<div class="p-5 text-gray-500 text-sm text-center">No hay partidos registrados aún.</div>';
-        }
-    }
-
-    // ---------------------------------------------
-    // 5. LÍDERES
-    // ---------------------------------------------
-    const stats = {};
-    // Inicializar stats para todos los jugadores
-    players.forEach(p => stats[p.id] = { 
-        name: p.apodo || p.apellido,
-        img: p.foto,
-        goals: 0, 
-        assists: 0, 
-        mvps: 0,
-        totalRating: 0,
-        ratingCount: 0
-    });
-
-    matches.forEach(m => {
-        // Contar MVP
-        if (m.mvp && stats[m.mvp]) stats[m.mvp].mvps++;
-        
-        // Contar Stats individuales
-        m.playerStats.forEach(ps => {
-            if (stats[ps.playerId]) {
-                stats[ps.playerId].goals += (parseInt(ps.goals) || 0);
-                stats[ps.playerId].assists += (parseInt(ps.assists) || 0);
+                `;
                 
-                if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
-                    const r = parseFloat(ps.rating);
-                    if(!isNaN(r) && r > 0) {
-                        stats[ps.playerId].totalRating += r;
-                        stats[ps.playerId].ratingCount++;
-                    }
+                // Mostrar y calcular IA ahora que tenemos datos
+                renderAIPrediction(); 
+
+            } else {
+                // --- NO HAY DATOS AÚN: MOSTRAR CARGANDO ---
+                // Si la lista está vacía, asumimos que está cargando
+                if (calendarEvents.length === 0) {
+                    nextMatchContainer.innerHTML = `
+                        <div class="py-4 text-center calendar-loading">
+                            <div class="text-2xl mb-2">⏳</div>
+                            <p class="text-slate-500 font-medium text-sm">Cargando calendario...</p>
+                        </div>`;
+                    aiCard.classList.add('hidden'); // Ocultar IA mientras carga
+                } else {
+                    // Si la lista NO está vacía pero no hay futuros, es fin de temporada
+                    nextMatchContainer.innerHTML = `
+                        <div class="py-2">
+                            <p class="text-slate-600 font-medium">No hay partidos próximos.</p>
+                            <p class="text-xs text-gray-400">Fin de temporada o parón.</p>
+                        </div>`;
+                    aiCard.classList.add('hidden');
                 }
             }
-        });
-    });
 
-    // Encontrar máximos
-    let topG = { val: -1 }, topA = { val: -1 }, topM = { val: -1 }, topR = { val: -1 };
+            // 2. FORMA DEL EQUIPO (Lógica copiada y adaptada)
+            const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).reverse(); // Orden cronológico para la racha
+            const formContainer = document.getElementById('dashboard-form');
+            
+            if (last5Matches.length > 0) {
+                formContainer.innerHTML = last5Matches.map(m => {
+                    let color = 'bg-gray-400';
+                    let letter = 'E';
+                    if (m.outcome === 'victoria') { color = 'bg-green-500'; letter = 'V'; }
+                    else if (m.outcome === 'derrota') { color = 'bg-red-500'; letter = 'D'; }
+                    
+                    return `<div class="${color} text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm" title="${m.opponent} (${m.result})">${letter}</div>`;
+                }).join('');
+            } else {
+                formContainer.innerHTML = '<span class="text-gray-400 text-sm italic">Sin partidos jugados</span>';
+            }
 
-    Object.values(stats).forEach(s => {
-        const avg = s.ratingCount > 0 ? (s.totalRating / s.ratingCount) : 0;
-        
-        if (s.goals > topG.val) topG = { val: s.goals, ...s };
-        if (s.assists > topA.val) topA = { val: s.assists, ...s };
-        if (s.mvps > topM.val) topM = { val: s.mvps, ...s };
-        if (avg > topR.val && s.ratingCount >= 2) topR = { val: avg, ...s }; // Mínimo 2 partidos
-    });
+            // 3. RESUMEN TEMPORADA
+            let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+            matches.forEach(m => {
+                if (m.outcome === 'victoria') wins++;
+                else if (m.outcome === 'empate') draws++;
+                else losses++;
+                
+                if (m.result && m.result.includes('-')) {
+                    const parts = m.result.replace('*','').split('-').map(Number);
+                    if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
+                    else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
+                    else { gf += parts[0]; ga += parts[1]; }
+                }
+            });
+            document.getElementById('dash-wins').textContent = wins;
+            document.getElementById('dash-draws').textContent = draws;
+            document.getElementById('dash-losses').textContent = losses;
+            document.getElementById('dash-gf').textContent = gf;
+            document.getElementById('dash-ga').textContent = ga;
 
-    const renderLeaderRow = (label, icon, data, isRating = false) => {
-        if (!data.name || data.val <= 0) return '';
-        const valDisplay = isRating ? data.val.toFixed(2) : data.val;
-        return `
-        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-gray-100">${icon}</div>
-                <div>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">${label}</p>
-                    <p class="text-sm font-bold text-slate-800 truncate w-24">${data.name}</p>
-                </div>
-            </div>
-            <span class="text-lg font-bold text-amber-600">${valDisplay}</span>
-        </div>`;
-    };
+            // 4. ÚLTIMOS 3 RESULTADOS
+            const last3 = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+            const resultsContainer = document.getElementById('dashboard-last-results');
+            
+            if (last3.length > 0) {
+                resultsContainer.innerHTML = last3.map(m => {
+                    const outcomeColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'derrota' ? 'text-red-600' : 'text-amber-600');
+                    return `
+                    <div class="px-5 py-3 hover:bg-gray-50 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-1 h-8 rounded-full ${m.outcome === 'victoria' ? 'bg-green-500' : (m.outcome === 'derrota' ? 'bg-red-500' : 'bg-amber-500')}"></div>
+                            <div>
+                                <p class="font-bold text-gray-800 text-sm">${m.opponent}</p>
+                                <p class="text-xs text-gray-500">${m.competition}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-lg ${outcomeColor}">${m.result}</span>
+                            <p class="text-xs text-gray-400">${formatDate(m.date)}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+            } else {
+                resultsContainer.innerHTML = '<div class="p-5 text-gray-500 text-sm text-center">No hay partidos registrados aún.</div>';
+            }
 
-    const leadersContainer = document.getElementById('dashboard-leaders');
-    if (leadersContainer) {
-        const leadersHtml = `
-            ${renderLeaderRow('Goleador', '⚽', topG)}
-            ${renderLeaderRow('Asistente', '👟', topA)}
-            ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
-            ${renderLeaderRow('Más MVPs', '🏆', topM)}
-        `;
-        leadersContainer.innerHTML = leadersHtml.trim() ? leadersHtml : '<p class="text-gray-400 text-xs text-center py-4">Faltan datos para calcular líderes.</p>';
-    }
+            // 5. LÍDERES (Calculados al vuelo)
+            // Estructura para contadores
+            const stats = {};
+            players.forEach(p => stats[p.id] = { 
+                name: p.apodo || p.apellido,
+                img: p.foto,
+                goals: 0, 
+                assists: 0, 
+                mvps: 0,
+                totalRating: 0,
+                ratingCount: 0
+            });
 
-    // Actualizar semáforo si existe la función
-    if(typeof renderTrafficLight === 'function') renderTrafficLight();
-}
+            matches.forEach(m => {
+                if (stats[m.mvp]) stats[m.mvp].mvps++;
+                m.playerStats.forEach(ps => {
+                    if (stats[ps.playerId]) {
+                        stats[ps.playerId].goals += (ps.goals || 0);
+                        stats[ps.playerId].assists += (ps.assists || 0);
+                        if (ps.rating) {
+                            stats[ps.playerId].totalRating += parseFloat(ps.rating);
+                            stats[ps.playerId].ratingCount++;
+                        }
+                    }
+                });
+            });
+
+            // Encontrar máximos
+            let topG = { id: null, val: -1 }, topA = { id: null, val: -1 }, topM = { id: null, val: -1 }, topR = { id: null, val: -1 };
+
+            Object.entries(stats).forEach(([id, s]) => {
+                const avg = s.ratingCount > 0 ? (s.totalRating / s.ratingCount) : 0;
+                
+                if (s.goals > topG.val) topG = { id, val: s.goals, ...s };
+                if (s.assists > topA.val) topA = { id, val: s.assists, ...s };
+                if (s.mvps > topM.val) topM = { id, val: s.mvps, ...s };
+                if (avg > topR.val && s.ratingCount >= 2) topR = { id, val: avg, ...s }; // Mínimo 2 partidos para nota media
+            });
+
+            // Renderizar Líderes
+            const renderLeaderRow = (label, icon, data, isRating = false) => {
+                if (!data.id || data.val <= 0) return '';
+                const valDisplay = isRating ? data.val.toFixed(2) : data.val;
+                return `
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-gray-100">${icon}</div>
+                        <div>
+                            <p class="text-xs font-bold text-gray-500 uppercase">${label}</p>
+                            <p class="text-sm font-bold text-slate-800">${data.name}</p>
+                        </div>
+                    </div>
+                    <span class="text-lg font-bold text-amber-600">${valDisplay}</span>
+                </div>`;
+            };
+
+            const leadersHtml = `
+                ${renderLeaderRow('Goleador', '⚽', topG)}
+                ${renderLeaderRow('Asistente', '👟', topA)}
+                ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
+                ${renderLeaderRow('Más MVPs', '🏆', topM)}
+            `;
+
+            document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
+            renderAIPrediction();
+            renderTrafficLight();
+        }
 
         // ==========================================
         // TAB NAVIGATION
@@ -4931,7 +4814,7 @@
 
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="openMatchModal('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                <button onclick="viewMatchDetails('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                                     👁️ Ver
                                 </button>
                                 <button onclick="editMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
@@ -5039,6 +4922,129 @@
         // Variable global para controlar qué jugadores mostramos en el banquillo al editar
         let editingMatchPlayersPool = null; 
 
+        function editMatch(matchId) {
+            const matches = getData('matches');
+            const match = matches.find(m => m.id === matchId);
+            if (!match) return;
+            
+            // 1. Identificar participantes
+            const players = getPlayers();
+            const participants = [];
+            
+            match.playerStats.forEach(ps => {
+                const p = players.find(pl => pl.id === ps.playerId);
+                if (p) participants.push({ ...p, ...ps });
+            });
+
+            editingMatchPlayersPool = participants.map(p => p.id); 
+
+            // 2. Resetear Pizarra
+            currentPitchPlayers = {}; 
+            currentSubstitutes = [];
+            
+            const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
+            const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
+            
+            // Lógica de colocación (Restaurar o Automático)
+            const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
+            if (hasSavedSlots) {
+                starters.forEach(p => {
+                    if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
+                        currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
+                    } else {
+                        for(let i=0; i<11; i++) {
+                            if(!currentPitchPlayers[`edit-slot-${i}`]) {
+                                currentPitchPlayers[`edit-slot-${i}`] = p.id; break;
+                            }
+                        }
+                    }
+                });
+            } else {
+                const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+                starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
+                starters.forEach((p, index) => { if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id; });
+            }
+            subs.forEach(p => currentSubstitutes.push(p.id));
+
+            // 3. INYECTAR HTML
+            const content = document.getElementById('edit-match-content');
+            document.getElementById('edit-match-id').value = match.id;
+            const savedFormation = match.formation || "4-3-3";
+
+            content.innerHTML = `
+                <div id="edit-step-lineup" class="flex flex-col h-full">
+                    <div class="mb-2 bg-blue-50 p-2 rounded-lg text-sm text-blue-800 flex justify-between items-center">
+                        <span>📋 <b>Paso 1:</b> Confirma la alineación.</span>
+                        <select id="edit-formation-select" class="border rounded px-2 py-1 bg-white text-xs" onchange="updatePitchFormation()">
+                            <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
+                            <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
+                            <option value="4-2-3-1" ${savedFormation === '4-2-3-1' ? 'selected' : ''}>4-2-3-1</option>
+                            <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 h-[450px]"> 
+                        <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
+                            <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
+                                <div class="pitch-line-mid"></div>
+                                <div class="pitch-circle"></div>
+                                <div class="pitch-box-left"></div>
+                                <div class="pitch-box-right"></div>
+                                <div id="edit-pitch-slots-layer"></div>
+                                <div id="edit-pitch-players-layer"></div>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-64 flex flex-col gap-2 h-full">
+                            <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
+                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla</div>
+                                <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
+                            </div>
+                            <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
+                                <div class="bg-blue-100 p-1 border-b text-[10px] font-bold uppercase text-center text-blue-600">Suplentes</div>
+                                <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button type="button" onclick="goToEditStats()" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
+                            Siguiente: Editar Datos ➡️
+                        </button>
+                    </div>
+                </div>
+
+                <div id="edit-step-stats" class="hidden flex flex-col h-full">
+                    <div class="mb-4 bg-amber-50 p-3 rounded-lg text-sm text-amber-800 flex justify-between items-center">
+                        <span>📊 <b>Paso 2:</b> Edita los datos del partido.</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div><label class="text-xs text-gray-500 font-bold">Resultado</label><input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 font-bold text-center text-lg"></div>
+                        <div><label class="text-xs text-gray-500 font-bold">Rival</label><input type="text" value="${match.opponent}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
+                        <div><label class="text-xs text-gray-500 font-bold">Estadio</label><input type="text" value="${match.venue}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
+                    </div>
+
+                    <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
+
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center gap-4">
+                        <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-medium text-sm">
+                            ⬅️ Volver a Pizarra
+                        </button>
+                        <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md transition-all flex justify-center items-center gap-2">
+                            💾 GUARDAR CAMBIOS
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const modal = document.getElementById('edit-match-modal');
+            modal.classList.add('active'); 
+            
+            // Ocultar botón viejo si existía
+            const oldSaveBtn = document.querySelector('#edit-match-modal > .modal-content > .flex.justify-end > button');
+            if(oldSaveBtn) oldSaveBtn.style.display = 'none';
+
+            updatePitchFormation(); 
+            renderBench('edit-');  
+        }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -7407,451 +7413,188 @@
             container.innerHTML = html;
         }
 
+        function handleEditMatchSubmit(e) {
+            if(e) e.preventDefault(); 
+            
+            try { // INICIO DEL BLOQUE SEGURO
+                
+                // console.log("Intentando guardar..."); // Depuración
+
+                if (!currentTeam) throw new Error("No hay equipo seleccionado (currentTeam es null). Recarga la página.");
+
+                const matchId = document.getElementById('edit-match-id').value;
+                const matches = getData('matches');
+                const matchIndex = matches.findIndex(m => m.id === matchId);
+                
+                if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
+
+                // 1. Datos Generales
+                const resultInput = document.getElementById('edit-result-val');
+                const newResult = resultInput ? resultInput.value.trim() : null;
+                if (!newResult) throw new Error("El resultado no puede estar vacío.");
+
+                const formationSelect = document.getElementById('edit-formation-select');
+                const newFormation = formationSelect ? formationSelect.value : "4-3-3";
+
+                // 2. Recoger Stats y Posiciones
+                const statsContainer = document.getElementById('edit-stats-list');
+                if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
+
+                const newPlayerStats = [];
+
+                statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+                    const playerId = row.getAttribute('data-player-id');
+                    const rol = row.getAttribute('data-rol');
+                    const isCoach = rol === 'Entrenador';
+                    const isStarter = rol === 'Titular';
+
+                    // LÓGICA DE POSICIÓN
+                    let savedSlotIdx = null;
+                    if (isStarter) {
+                        // Buscamos manualmente en el objeto currentPitchPlayers
+                        const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+                        if (slotKey) {
+                            const numMatch = slotKey.match(/\d+/);
+                            if (numMatch) savedSlotIdx = parseInt(numMatch[0]);
+                        }
+                    }
+
+                    // Leer inputs
+                    let rating = null;
+                    const ratingInput = row.querySelector('.stat-rating');
+                    if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+
+                    const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
+                    const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
+                    const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
+                    const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
+                    const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
+
+                    newPlayerStats.push({
+                        playerId,
+                        isStarter,
+                        pitchSlot: savedSlotIdx, 
+                        rating,
+                        goals,
+                        assists,
+                        minutes,
+                        yellowCards: yellow,
+                        redCards: red,
+                        played: true
+                    });
+                });
+
+                // 3. Actualizar Objeto
+                const matchToUpdate = matches[matchIndex];
+                matchToUpdate.result = newResult;
+                matchToUpdate.formation = newFormation;
+                matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
+                matchToUpdate.playerStats = newPlayerStats;
+                matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
+
+                // 4. Guardar
+                saveData('matches', matches);
+                
+                if (typeof recalculateCompetitionState === "function") {
+                    recalculateCompetitionState(matchToUpdate.competition);
+                }
+
+                closeEditMatchModal();
+                renderMatches();
+                renderStats(); 
+                renderPrincipal();
+                renderCompetitionStatus();
+                
+                editingMatchPlayersPool = null;
+                
+                alert("✅ GUARDADO CORRECTAMENTE:\n- Datos actualizados\n- Posiciones de pizarra guardadas");
+
+            } catch (error) {
+                console.error(error);
+                alert("❌ ERROR AL GUARDAR:\n" + error.message);
+            }
+        }
+
+        function goToEditStats() {
+            // 1. Recoger jugadores de la pizarra y suplentes
+            const starterIds = Object.values(currentPitchPlayers).filter(id => id);
+            const subIds = currentSubstitutes || []; 
+            const players = getPlayers();
+
+            // 2. Preparar Roster
+            const matchId = document.getElementById('edit-match-id').value;
+            const matches = getData('matches');
+            const match = matches.find(m => m.id === matchId);
+            const isImported = match.isImported === true;
+            
+            const coach = players.find(p => p.posicion === 'entrenador');
+            let roster = [];
+            
+            starterIds.forEach(id => {
+                const p = players.find(pl => pl.id === id);
+                if(p) roster.push({ ...p, rol: 'Titular' });
+            });
+            subIds.forEach(id => {
+                const p = players.find(pl => pl.id === id);
+                if(p && !roster.find(r => r.id === p.id)) {
+                    roster.push({ ...p, rol: 'Suplente' });
+                }
+            });
+            if(coach) roster.push({ ...coach, rol: 'Entrenador' });
+
+            // 3. Pintar Lista (SIN el botón, porque ya está en el HTML)
+            const container = document.getElementById('edit-stats-list');
+            
+            if (roster.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados.</p>';
+            } else {
+                container.innerHTML = roster.map(p => {
+                    const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
+                    
+                    const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
+                    const goalsVal = prevStats ? prevStats.goals : 0;
+                    const assistsVal = prevStats ? prevStats.assists : 0;
+                    const yellowVal = prevStats ? prevStats.yellowCards : 0;
+                    const redVal = prevStats ? prevStats.redCards : 0;
+                    const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 30);
+                    
+                    const isCoach = p.rol === 'Entrenador';
+                    const ratingInputAttr = (isImported && !isCoach) 
+                        ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
+                        : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
+
+                    return `
+                    <div class="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex items-center gap-3" data-player-id="${p.id}" data-rol="${p.rol}">
+                        <div class="w-10 flex flex-col items-center">
+                             <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top shadow-sm">
+                        </div>
+                        <div class="w-24 overflow-hidden">
+                            <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wide">${p.rol}</p>
+                        </div>
+                        <div class="flex-1 grid grid-cols-6 gap-2">
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" placeholder="-" ${ratingInputAttr}></div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Gol</label>${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${goalsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Asis</label>${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${assistsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Min</label>${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${minsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟨</label><input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm font-medium bg-yellow-50" max="2" value="${yellowVal}"></div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟥</label><input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm font-medium bg-red-50" max="1" value="${redVal}"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Cambiar vista
+            document.getElementById('edit-step-lineup').classList.add('hidden');
+            document.getElementById('edit-step-stats').classList.remove('hidden');
+        }
+
         function backToEditLineup() {
             document.getElementById('edit-step-stats').classList.add('hidden');
             document.getElementById('edit-step-lineup').classList.remove('hidden');
             // Ocultar botón Guardar para que no guarden a medias
             document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
         }
-        /* ==========================================================================
-   MÓDULO DE EDICIÓN Y VISUALIZACIÓN DE PARTIDOS (RENOVADO)
-   ========================================================================== */
-
-// Variables globales de estado para la edición
-let editingMatchPlayersPool = null;
-
-// --- 1. FUNCIÓN PARA ABRIR EL EDITOR (CARGA DE DATOS) ---
-function editMatch(matchId) {
-    const matches = getData('matches');
-    const match = matches.find(m => m.id === matchId);
-    if (!match) return;
-
-    // A. Preparar datos visuales
-    const content = document.getElementById('edit-match-content');
-    document.getElementById('edit-match-id').value = match.id;
-    document.getElementById('edit-match-id-display').textContent = match.id;
-    document.getElementById('edit-result-val').value = match.result;
-    document.getElementById('edit-rival-display').value = match.opponent;
-    document.getElementById('edit-venue-display').value = match.venue;
-    
-    // Badge de importado
-    const badge = document.getElementById('edit-imported-badge');
-    if (match.isImported) {
-        badge.textContent = "🔒 Notas Bloqueadas (CSV)";
-        badge.className = "text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200";
-    } else {
-        badge.textContent = "🔓 Edición Total";
-        badge.className = "text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200";
-    }
-
-    // Guardar estado de importación en el formulario para consultarlo luego
-    document.getElementById('edit-match-form').setAttribute('data-is-imported', match.isImported || 'false');
-
-    // B. Identificar jugadores participantes
-    const players = getPlayers();
-    const participants = [];
-    match.playerStats.forEach(ps => {
-        const p = players.find(pl => pl.id === ps.playerId);
-        if (p) participants.push({ ...p, ...ps });
-    });
-    
-    // Guardamos los IDs para el selector
-    editingMatchPlayersPool = participants.map(p => p.id);
-
-    // C. Restaurar Pizarra (LÓGICA CRÍTICA DE POSICIONES)
-    currentPitchPlayers = {}; 
-    currentSubstitutes = [];
-
-    const starters = participants.filter(p => p.isStarter);
-    const subs = participants.filter(p => !p.isStarter);
-
-    // 1. Intentar usar la posición guardada (pitchSlot)
-    const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
-
-    if (hasSavedSlots) {
-        // Restaurar posiciones exactas
-        starters.forEach(p => {
-            if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
-                currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
-            } else {
-                // Si falta slot, buscar el primero libre
-                for(let i=0; i<11; i++) {
-                    if(!currentPitchPlayers[`edit-slot-${i}`]) {
-                        currentPitchPlayers[`edit-slot-${i}`] = p.id; break;
-                    }
-                }
-            }
-        });
-    } else {
-        // Fallback: Ordenar por rol (Portero -> Delantero) y llenar huecos
-        const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-        starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-        starters.forEach((p, index) => {
-            if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
-        });
-    }
-
-    // 2. Llenar banquillo
-    subs.forEach(p => currentSubstitutes.push(p.id));
-
-    // D. Configurar Selector de Formación
-    const formationSelect = document.getElementById('edit-formation-select');
-    if(formationSelect) {
-        formationSelect.value = match.formation || "4-3-3";
-    }
-
-    // E. Mostrar Modal y Paso 1
-    document.getElementById('edit-match-modal').classList.add('active');
-    backToEditLineup(); // Forzar vista paso 1
-
-    // F. Renderizar todo
-    updatePitchFormation(); // Pinta los slots
-    renderBench('edit-');   // Pinta la lista lateral
-    // renderAll() se llama dentro de updatePitchFormation normalmente, si no:
-    setTimeout(renderAll, 50); 
-}
-
-// --- 2. TRANSICIÓN A PASO 2 (STATS) ---
-function goToEditStats() {
-    // A. Recoger alineación actual de la pizarra
-    const starterIds = Object.values(currentPitchPlayers).filter(id => id);
-    const subIds = currentSubstitutes || []; 
-    const players = getPlayers();
-
-    // B. Preparar lista unificada
-    const matchId = document.getElementById('edit-match-id').value;
-    const matches = getData('matches');
-    const match = matches.find(m => m.id === matchId);
-    const isImported = document.getElementById('edit-match-form').getAttribute('data-is-imported') === 'true';
-
-    // Buscar entrenador
-    const coach = players.find(p => p.posicion === 'entrenador');
-    
-    let roster = [];
-    
-    // Titulares
-    starterIds.forEach(id => {
-        const p = players.find(pl => pl.id === id);
-        if(p) roster.push({ ...p, rol: 'Titular' });
-    });
-    // Suplentes
-    subIds.forEach(id => {
-        const p = players.find(pl => pl.id === id);
-        // Evitar duplicados
-        if(p && !roster.find(r => r.id === p.id)) {
-            roster.push({ ...p, rol: 'Suplente' });
-        }
-    });
-    // Entrenador
-    if(coach) roster.push({ ...coach, rol: 'Entrenador' });
-
-    // C. Generar HTML
-    const container = document.getElementById('edit-stats-list');
-    
-    if (roster.length === 0) {
-        container.innerHTML = '<div class="text-center p-8 text-gray-400">No hay jugadores seleccionados en la pizarra</div>';
-    } else {
-        container.innerHTML = roster.map(p => {
-            const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
-            
-            // Valores seguros
-            const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
-            const goalsVal = prevStats ? prevStats.goals : 0;
-            const assistsVal = prevStats ? prevStats.assists : 0;
-            const yellowVal = prevStats ? prevStats.yellowCards : 0;
-            const redVal = prevStats ? prevStats.redCards : 0;
-            const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : (p.rol === 'Suplente' ? 30 : 0));
-            
-            const isCoach = p.rol === 'Entrenador';
-            
-            // Atributos para input de nota (bloqueado si importado)
-            const ratingAttr = (isImported && !isCoach) 
-                ? `readonly class="stat-rating w-full bg-gray-100 text-gray-400 border border-gray-200 rounded text-center font-bold text-sm py-1 cursor-not-allowed"`
-                : `class="stat-rating w-full border border-gray-300 rounded text-center font-bold text-sm py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"`;
-
-            return `
-            <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100 shadow-sm" data-player-id="${p.id}" data-rol="${p.rol}">
-                <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
-                <div class="w-28 shrink-0">
-                    <div class="font-bold text-sm text-gray-800 truncate">${p.apodo || p.apellido}</div>
-                    <div class="text-[10px] uppercase font-bold tracking-wider ${p.rol === 'Titular' ? 'text-green-600' : 'text-blue-500'}">${p.rol}</div>
-                </div>
-                
-                <div class="flex-1 grid grid-cols-6 gap-2">
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Nota</label>
-                        <input type="number" step="0.1" value="${ratingVal}" ${ratingAttr} placeholder="-">
-                    </div>
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Goles</label>
-                        ${isCoach ? '<span class="text-gray-300">-</span>' : `<input type="number" class="stat-goals w-full border border-gray-300 rounded text-center text-sm py-1" value="${goalsVal}">`}
-                    </div>
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Asist</label>
-                        ${isCoach ? '<span class="text-gray-300">-</span>' : `<input type="number" class="stat-assists w-full border border-gray-300 rounded text-center text-sm py-1" value="${assistsVal}">`}
-                    </div>
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Min</label>
-                        ${isCoach ? '<span class="text-gray-300">-</span>' : `<input type="number" class="stat-minutes w-full border border-gray-300 rounded text-center text-sm py-1" value="${minsVal}">`}
-                    </div>
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Ama</label>
-                        <input type="number" class="stat-yellow w-full border border-yellow-200 bg-yellow-50 rounded text-center text-sm py-1" max="2" value="${yellowVal}">
-                    </div>
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Roj</label>
-                        <input type="number" class="stat-red w-full border border-red-200 bg-red-50 rounded text-center text-sm py-1" max="1" value="${redVal}">
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    }
-
-    // D. Cambiar vista
-    document.getElementById('edit-step-lineup').classList.add('hidden');
-    document.getElementById('edit-step-stats').classList.remove('hidden');
-    document.getElementById('edit-step-stats').classList.add('flex');
-}
-
-function backToEditLineup() {
-    document.getElementById('edit-step-stats').classList.add('hidden');
-    document.getElementById('edit-step-stats').classList.remove('flex');
-    document.getElementById('edit-step-lineup').classList.remove('hidden');
-}
-
-// --- 3. GUARDAR CAMBIOS (HANDLE SUBMIT) ---
-function handleEditMatchSubmit(e) {
-    if(e) e.preventDefault();
-    
-    try {
-        if (!currentTeam) throw new Error("Sesión perdida. Recarga la página.");
-
-        const matchId = document.getElementById('edit-match-id').value;
-        const matches = getData('matches');
-        const matchIndex = matches.findIndex(m => m.id === matchId);
-        if (matchIndex === -1) throw new Error("Partido no encontrado.");
-
-        // A. Datos Generales
-        const newResult = document.getElementById('edit-result-val').value.trim();
-        const newFormation = document.getElementById('edit-formation-select').value;
-        if(!newResult) throw new Error("El resultado es obligatorio.");
-
-        // B. Recopilar Stats y POSICIONES (PitchSlot)
-        const newPlayerStats = [];
-        const container = document.getElementById('edit-stats-list');
-        
-        container.querySelectorAll('[data-player-id]').forEach(row => {
-            const playerId = row.getAttribute('data-player-id');
-            const rol = row.getAttribute('data-rol');
-            const isCoach = rol === 'Entrenador';
-            const isStarter = rol === 'Titular';
-            
-            // --- LÓGICA DE POSICIÓN ---
-            let savedSlotIdx = null;
-            if(isStarter) {
-                // Buscar en qué slot visual está este jugador
-                const slotKey = Object.keys(currentPitchPlayers).find(k => currentPitchPlayers[k] === playerId);
-                if(slotKey) {
-                    // Extraer número: "edit-slot-3" -> 3
-                    const parts = slotKey.split('-');
-                    const num = parseInt(parts[parts.length-1]);
-                    if(!isNaN(num)) savedSlotIdx = num;
-                }
-            }
-
-            // --- LECTURA DE VALORES ---
-            const getVal = (cls) => parseInt(row.querySelector(cls)?.value) || 0;
-            
-            let rating = null;
-            const ratingIn = row.querySelector('.stat-rating');
-            if(ratingIn && ratingIn.value !== "") rating = parseFloat(ratingIn.value);
-
-            newPlayerStats.push({
-                playerId,
-                isStarter,
-                pitchSlot: savedSlotIdx, // GUARDAMOS LA POSICIÓN AQUÍ
-                rating,
-                goals: isCoach ? 0 : getVal('.stat-goals'),
-                assists: isCoach ? 0 : getVal('.stat-assists'),
-                minutes: isCoach ? 0 : getVal('.stat-minutes'),
-                yellowCards: getVal('.stat-yellow'),
-                redCards: getVal('.stat-red'),
-                played: true
-            });
-        });
-
-        // C. Actualizar Objeto
-        const match = matches[matchIndex];
-        match.result = newResult;
-        match.formation = newFormation; // Guardamos formación
-        match.outcome = calculateMatchOutcome(newResult, match.venue);
-        match.playerStats = newPlayerStats;
-        match.mvp = calculateAutoMVP(newPlayerStats);
-
-        // D. Persistir
-        saveData('matches', matches);
-        if (typeof recalculateCompetitionState === "function") {
-            recalculateCompetitionState(match.competition);
-        }
-
-        // E. Refrescar UI
-        closeEditMatchModal();
-        renderMatches();
-        renderStats();
-        renderPrincipal();
-        renderCompetitionStatus();
-        
-        editingMatchPlayersPool = null;
-        alert("✅ Partido guardado correctamente");
-
-    } catch (error) {
-        console.error(error);
-        alert("❌ Error: " + error.message);
-    }
-}
-
-            // --- 4. FUNCIÓN PARA VER DETALLES (SOLO LECTURA) ---
-function openMatchModal(matchId) {
-    const matches = getData('matches');
-    const match = matches.find(m => m.id === matchId);
-    if (!match) return;
-
-    // Título del modal
-    const modalTitle = document.querySelector('#match-detail-modal h3');
-    if(modalTitle) modalTitle.innerText = `${match.result} vs ${match.opponent}`;
-    
-    const content = document.getElementById('match-detail-content');
-    
-    // 1. Limpiar pizarra global para visualización
-    currentPitchPlayers = {}; 
-    
-    // 2. Colocar jugadores (Solo Titulares con posición guardada)
-    const players = getPlayers();
-    const subs = [];
-    const starters = [];
-
-    match.playerStats.forEach(ps => {
-        const p = players.find(pl => pl.id === ps.playerId);
-        if(p) {
-            if (ps.isStarter) {
-                starters.push({ ...p, ...ps });
-                // CLAVE: Usar pitchSlot guardado
-                if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
-                    currentPitchPlayers[`slot-${ps.pitchSlot}`] = ps.playerId;
-                }
-            } else {
-                subs.push({ ...p, ...ps });
-            }
-        }
-    });
-
-    // Fallback: Si es un partido antiguo sin posiciones, rellenar ordenado
-    if (Object.keys(currentPitchPlayers).length === 0 && starters.length > 0) {
-        const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-        starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-        starters.forEach((p, i) => { if(i < 11) currentPitchPlayers[`slot-${i}`] = p.id; });
-    }
-
-    // 3. Generar HTML
-    content.innerHTML = `
-        <div class="flex flex-col lg:flex-row gap-6 h-full">
-            <div class="w-full lg:w-1/2 flex flex-col">
-                <div class="bg-gray-100 p-2 rounded-t-xl flex justify-between items-center border-b border-gray-200">
-                    <h4 class="font-bold text-gray-700 text-sm">Once Inicial</h4>
-                    <span class="text-xs bg-white px-2 py-1 rounded border border-gray-300 font-mono">
-                        ${match.formation || "4-3-3"}
-                    </span>
-                </div>
-                <div class="relative bg-gray-800 rounded-b-xl border-4 border-gray-800 overflow-hidden shadow-lg h-[400px]">
-                    <div id="view-pitch-layer" class="w-full h-full relative"></div>
-                </div>
-            </div>
-
-            <div class="w-full lg:w-1/2 space-y-4 overflow-y-auto max-h-[450px] pr-2">
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">
-                    <div class="flex justify-between mb-1"><span class="text-blue-800 font-bold">📅 Fecha:</span> <span>${formatDate(match.date)}</span></div>
-                    <div class="flex justify-between mb-1"><span class="text-blue-800 font-bold">🏆 Competición:</span> <span>${match.competition}</span></div>
-                    <div class="flex justify-between"><span class="text-blue-800 font-bold">🏟️ Estadio:</span> <span>${match.stadium || match.venue}</span></div>
-                </div>
-
-                <div>
-                    <h4 class="font-bold text-gray-700 mb-2">🔄 Cambios y Suplentes</h4>
-                    <div class="space-y-2">
-                        ${subs.length > 0 ? subs.map(s => `
-                            <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
-                                <div class="flex items-center gap-3">
-                                    <img src="${s.foto}" class="w-8 h-8 rounded-full object-cover object-top border border-gray-100">
-                                    <div><p class="text-xs font-bold text-gray-800">${s.apodo || s.apellido}</p><p class="text-[10px] text-gray-500">${s.posicion}</p></div>
-                                </div>
-                                <div class="flex items-center gap-2 text-xs">
-                                    ${s.goals > 0 ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">⚽ ${s.goals}</span>` : ''}
-                                    <div class="text-center pl-2 border-l"><span class="block text-gray-400">Nota</span><span class="font-bold ${getRatingColor(s.rating)}">${s.rating || '-'}</span></div>
-                                    <div class="text-center pl-2 border-l"><span class="block text-gray-400">Min</span><span class="font-bold">${s.minutes}'</span></div>
-                                </div>
-                            </div>
-                        `).join('') : '<div class="text-center text-gray-400 text-sm py-4 italic">No hubo suplentes.</div>'}
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('match-detail-modal').classList.add('active');
-    
-    // Renderizar Pizarra con un pequeño delay para asegurar que el DOM existe
-    setTimeout(() => {
-        renderPitchForView(match.formation || "4-3-3", match.playerStats);
-    }, 50);
-}
-
-// Función auxiliar corregida para pintar la formación
-function renderPitchForView(formation, matchStats) {
-    const container = document.getElementById('view-pitch-layer');
-    if(!container) return;
-    
-    // USAMOS LA VARIABLE CORRECTA: FORMACIONES
-    const config = FORMACIONES[formation] || FORMACIONES["4-3-3"];
-    
-    container.innerHTML = `
-        <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
-            <div class="pitch-line-mid"></div>
-            <div class="pitch-circle"></div>
-            <div class="pitch-box-left"></div>
-            <div class="pitch-box-right"></div>
-        </div>
-    `;
-    
-    config.forEach((pos, index) => {
-        const pId = currentPitchPlayers[`slot-${index}`];
-        if (!pId) return;
-
-        const players = getPlayers();
-        const player = players.find(p => p.id === pId);
-        const stats = matchStats ? matchStats.find(s => s.playerId === pId) : null;
-        const rating = stats ? stats.rating : '-';
-        const goals = stats ? stats.goals : 0;
-
-        if (player) {
-            const div = document.createElement('div');
-            div.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all duration-500';
-            div.style.left = pos.left + '%';
-            div.style.top = pos.top + '%';
-            div.style.width = '12%'; 
-            div.style.height = '15%';
-            div.style.zIndex = '10';
-
-            div.innerHTML = `
-                <div class="relative">
-                    <img src="${player.foto}" class="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover object-top bg-gray-800">
-                    <div class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-sm">${rating || '-'}</div>
-                    ${goals > 0 ? `<div class="absolute -bottom-1 -right-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm">⚽ ${goals}</div>` : ''}
-                </div>
-                <span class="mt-1 text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm truncate max-w-full shadow-sm">${player.apodo || player.apellido}</span>
-            `;
-            container.appendChild(div);
-        }
-    });
-}
 
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
