@@ -4960,25 +4960,28 @@
                 }
             });
 
+            // Guardamos quiénes participan para el filtro del banquillo
             editingMatchPlayersPool = participants.map(p => p.id); 
 
             // 2. Configurar Estado de la Pizarra
             currentPitchPlayers = {}; 
             currentSubstitutes = [];
             
+            // Detección de importación sucia (>11 titulares)
             const starterCount = participants.filter(p => p.isStarter === true || p.isStarter === 'true').length;
             const isMessyImport = starterCount > 11; 
 
             if (isMessyImport) {
-                console.log("Partido sucio: Vaciando pizarra.");
+                console.log("Importación sucia: Vaciando pizarra para corrección manual.");
+                // No asignamos nada a currentPitchPlayers -> Campo Vacío
             } else {
+                // Asignar titulares al campo
                 const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
                 const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
                 
                 const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
                 starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
 
-                // ✅ CLAVE: Usamos 'edit-slot-X' para que coincida con los nuevos IDs
                 starters.forEach((p, index) => {
                     if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
                 });
@@ -4986,8 +4989,7 @@
                 subs.forEach(p => currentSubstitutes.push(p.id));
             }
 
-            // 3. Preparar Modal con IDs ÚNICOS ('edit-')
-            const modal = document.getElementById('edit-match-modal');
+            // 3. Preparar HTML del Modal
             const content = document.getElementById('edit-match-content');
             document.getElementById('edit-match-id').value = match.id;
             
@@ -5016,7 +5018,7 @@
 
                         <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                             <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Disponibles</div>
+                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Disponibles en Archivo</div>
                                 <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
                             </div>
                             <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
@@ -5034,10 +5036,14 @@
                 </div>
             `;
 
-            updatePitchFormation();
-            renderBench();
-            
-            modal.classList.add('active');
+            // ⚠️ CORRECCIÓN CLAVE AQUÍ ⚠️
+            // 1. Primero activamos la clase para que el sistema sepa que estamos editando
+            const modal = document.getElementById('edit-match-modal');
+            modal.classList.add('active'); 
+
+            // 2. Y AHORA pintamos (así detectará el ID 'edit-bench-zone')
+            updatePitchFormation(); 
+            renderBench('edit-');  // Forzamos el prefijo 'edit-' por seguridad
         }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
