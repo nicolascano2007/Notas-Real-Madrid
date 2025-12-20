@@ -500,7 +500,7 @@
                             <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" ...>
+                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()"...>
                         </div>
 
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
@@ -4945,40 +4945,26 @@
         // Variable global para controlar qué jugadores mostramos en el banquillo al editar
         let editingMatchPlayersPool = null; 
 
-        // --- 1. FUNCIÓN PARA ABRIR EL EDITOR (CORREGIDA SIN BOTONES DUPLICADOS) ---
+        /* ==========================================================================
+   MÓDULO DE EDICIÓN (CORREGIDO Y BLINDADO)
+   ========================================================================== */
+
+// --- 1. FUNCIÓN PARA ABRIR EL EDITOR ---
 function editMatch(matchId) {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // A. Preparar datos visuales
+    // A. Preparar contenedor
     const content = document.getElementById('edit-match-content');
-    document.getElementById('edit-match-id').value = match.id;
-    document.getElementById('edit-match-id-display').textContent = match.id;
-    document.getElementById('edit-result-val').value = match.result;
-    document.getElementById('edit-rival-display').value = match.opponent;
-    document.getElementById('edit-venue-display').value = match.venue;
     
-    // Badge de importado
-    const badge = document.getElementById('edit-imported-badge');
-    if (match.isImported) {
-        badge.textContent = "🔒 Notas Bloqueadas (CSV)";
-        badge.className = "text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200";
-    } else {
-        badge.textContent = "🔓 Edición Total";
-        badge.className = "text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200";
-    }
-
-    document.getElementById('edit-match-form').setAttribute('data-is-imported', match.isImported || 'false');
-
-    // B. Identificar jugadores participantes
+    // B. Identificar jugadores
     const players = getPlayers();
     const participants = [];
     match.playerStats.forEach(ps => {
         const p = players.find(pl => pl.id === ps.playerId);
         if (p) participants.push({ ...p, ...ps });
     });
-    
     editingMatchPlayersPool = participants.map(p => p.id);
 
     // C. Restaurar Pizarra
@@ -4989,7 +4975,6 @@ function editMatch(matchId) {
     const subs = participants.filter(p => !p.isStarter);
 
     const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
-
     if (hasSavedSlots) {
         starters.forEach(p => {
             if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
@@ -5009,41 +4994,110 @@ function editMatch(matchId) {
             if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
         });
     }
-
     subs.forEach(p => currentSubstitutes.push(p.id));
 
-    // D. Configurar Selector de Formación
-    const formationSelect = document.getElementById('edit-formation-select');
-    if(formationSelect) {
-        formationSelect.value = match.formation || "4-3-3";
-    }
+    // D. INYECTAR HTML COMPLETO (Esto evita el error de elementos nulos)
+    const savedFormation = match.formation || "4-3-3";
+    const badgeHtml = match.isImported 
+        ? `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200">🔒 Notas Bloqueadas (CSV)</span>`
+        : `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">🔓 Edición Total</span>`;
 
-    // E. INYECTAR HTML LIMPIO (SIN BOTONES AZULES EXTRAÑOS)
-    // Forzamos la estructura HTML interna para evitar residuos de versiones anteriores
-    const stepLineup = document.getElementById('edit-step-lineup');
-    const stepStats = document.getElementById('edit-step-stats');
+    content.innerHTML = `
+        <form id="edit-match-form" class="h-full flex flex-col" data-is-imported="${match.isImported || 'false'}">
+            <input type="hidden" id="edit-match-id" value="${match.id}">
+            
+            <div class="bg-gray-100 p-2 border-b flex justify-between items-center text-xs text-gray-500">
+                <span>ID: ${match.id}</span>
+                ${badgeHtml}
+            </div>
 
-    // Nos aseguramos que el Paso 1 tenga solo el botón Siguiente
-    const nextBtnContainer = stepLineup.querySelector('.flex.justify-end');
-    if(nextBtnContainer) {
-        nextBtnContainer.innerHTML = `
-            <button type="button" onclick="goToEditStats()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg shadow-lg transform transition hover:-translate-y-0.5 flex items-center gap-2">
-                Siguiente: Datos del Partido ➡️
-            </button>
-        `;
-    }
+            <div id="edit-step-lineup" class="flex flex-col h-full p-4">
+                <div class="mb-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center shrink-0">
+                    <div class="flex items-center gap-3">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Paso 1/2</span>
+                        <span class="text-sm text-gray-600 font-medium">Ajusta la alineación</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Formación:</label>
+                        <select id="edit-formation-select" class="bg-gray-50 border border-gray-300 text-sm rounded block p-1.5" onchange="updatePitchFormation()">
+                            <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
+                            <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
+                            <option value="4-2-3-1" ${savedFormation === '4-2-3-1' ? 'selected' : ''}>4-2-3-1</option>
+                            <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
+                        </select>
+                    </div>
+                </div>
 
-    // Nos aseguramos que el Paso 2 tenga solo Volver y Guardar (Verde)
-    // El HTML de este paso ya es estático en el index.html, pero limpiamos por si acaso
-    // (Esta parte ya debería estar bien si copiaste el Bloque 3, pero esto asegura la lógica de datos)
+                <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
+                    <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-lg select-none">
+                        <div class="pitch-container w-full h-full transform scale-100 origin-top-left">
+                            <div class="pitch-line-mid"></div>
+                            <div class="pitch-circle"></div>
+                            <div class="pitch-box-left"></div>
+                            <div class="pitch-box-right"></div>
+                            <div id="edit-pitch-slots-layer" class="w-full h-full absolute inset-0 z-0"></div>
+                            <div id="edit-pitch-players-layer" class="w-full h-full absolute inset-0 z-10 pointer-events-none"></div>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-72 flex flex-col gap-3 shrink-0 h-48 lg:h-auto">
+                        <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+                            <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla Disponible</div>
+                            <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start space-y-1"></div>
+                        </div>
+                        <div class="h-1/3 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 flex flex-col overflow-hidden">
+                            <div class="bg-blue-100/50 p-1 border-b border-blue-100 text-[10px] font-bold uppercase text-center text-blue-600">Banquillo</div>
+                            <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
+                        </div>
+                    </div>
+                </div>
 
-    // F. Mostrar Modal
+                <div class="mt-4 flex justify-end shrink-0">
+                    <button type="button" onclick="goToEditStats()" class="bg-gray-900 hover:bg-gray-800 text-white font-bold py-2 px-6 rounded-lg shadow-lg flex items-center gap-2">
+                        Siguiente: Datos ➡️
+                    </button>
+                </div>
+            </div>
+
+            <div id="edit-step-stats" class="hidden flex-col h-full p-4 bg-gray-50">
+                <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 shrink-0">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Resultado</label>
+                            <input type="text" id="edit-result-val" value="${match.result}" class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-xl font-bold text-center">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rival</label>
+                            <input type="text" value="${match.opponent}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-600 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Sede</label>
+                            <input type="text" value="${match.venue}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-600 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden min-h-0">
+                    <div class="bg-gray-100 p-3 border-b border-gray-200"><span class="font-bold text-gray-700 text-sm">Estadísticas</span></div>
+                    <div id="edit-stats-list" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
+                </div>
+
+                <div class="mt-4 pt-2 border-t border-gray-200 flex justify-between items-center shrink-0 gap-4">
+                    <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-bold text-sm px-4 py-2">⬅️ Volver</button>
+                    <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-lg">
+                        💾 GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </div>
+        </form>
+    `;
+
+    // E. Mostrar Modal
     document.getElementById('edit-match-modal').classList.add('active');
-    backToEditLineup(); 
-
-    updatePitchFormation(); 
-    renderBench('edit-');   
-    setTimeout(renderAll, 50); 
+    
+    // F. Inicializar renderizado
+    updatePitchFormation();
+    renderBench('edit-');
+    setTimeout(renderAll, 50);
 }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
