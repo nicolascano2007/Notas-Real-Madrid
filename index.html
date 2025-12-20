@@ -6972,7 +6972,7 @@
             reader.readAsText(file);
         }
 
-// ==========================================
+        // ==========================================
         // IMPORTADOR CSV ESTRICTO (V5.0)
         // Solo importa si coincide con el Calendario Oficial
         // ==========================================
@@ -6984,9 +6984,10 @@
                 return;
             }
 
+            // Detectar separador automáticamente
             const separator = lines[0].indexOf(';') > -1 ? ';' : ',';
             
-            // Parser de comillas (para decimales "6,50")
+            // Parser robusto de CSV
             const parseCSVRow = (rowText) => {
                 const result = [];
                 let current = '';
@@ -7015,7 +7016,7 @@
                 startLine = 2;
                 csvDates = row2.slice(1);
             } else {
-                alert("⛔ ERROR CRÍTICO: No se detectaron fechas en la fila 2.\n\nPara esta importación estricta, la fecha es OBLIGATORIA para validar contra el calendario oficial.");
+                alert("⛔ ERROR CRÍTICO: No se detectaron fechas en la fila 2.\n\nEl formato debe ser:\nFila 1: Rivales\nFila 2: Fechas\nColumna A: Jugadores");
                 return;
             }
 
@@ -7029,7 +7030,7 @@
 
             const newMatchesMap = {};
             
-            // 3. PREPARAR PARTIDOS (Buscar coincidencias)
+            // 3. PREPARAR PARTIDOS (Buscar coincidencias en Calendario)
             rivals.forEach((rivalName, index) => {
                 if(rivalName) {
                     let csvDateObj = new Date();
@@ -7038,17 +7039,21 @@
 
                     // Parsear fecha del Excel
                     if (hasDateRow && csvDates[index]) {
-                        const dParts = csvDates[index].split(/[\/\-]/);
+                        // Limpiamos la fecha de caracteres raros
+                        const cleanDate = csvDates[index].trim();
+                        const dParts = cleanDate.split(/[\/\-]/);
                         if (dParts.length === 3) {
                             const day = parseInt(dParts[0]);
                             const month = parseInt(dParts[1]) - 1;
-                            const year = parseInt(dParts[2]);
+                            let year = parseInt(dParts[2]);
+                            if (year < 100) year += 2000; // Corrección años cortos (24 -> 2024)
+                            
                             csvDateObj = new Date(year, month, day, 12, 0, 0);
                             isValidDate = true;
                         }
                     }
 
-                    // BUSCAR EN CALENDARIO OFICIAL
+                    // Buscar en calendario oficial
                     let foundEvent = null;
                     if (isValidDate && officialEvents.length > 0) {
                         foundEvent = officialEvents.find(e => {
@@ -7056,24 +7061,26 @@
                                               rivalName.toLowerCase().includes(e.opponent.toLowerCase());
                             const diffTime = Math.abs(e.start - csvDateObj);
                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            return nameMatch && diffDays <= 2; // Margen de 2 días
+                            return nameMatch && diffDays <= 3; // Margen ampliado a 3 días
                         });
                     }
 
                     newMatchesMap[index] = {
                         opponent: rivalName,
                         originalDate: dateStringOriginal,
-                        linkedEvent: foundEvent, // Si es null, no se importará
+                        linkedEvent: foundEvent, 
                         playerStats: []
                     };
                 }
             });
 
-            // 4. LEER NOTAS DE JUGADORES
+            // 4. LEER NOTAS DE JUGADORES (CORREGIDO)
             for (let i = startLine; i < lines.length; i++) {
                 const row = parseCSVRow(lines[i]);
                 const playerName = row[0];
                 
+                if (!playerName) continue;
+
                 const player = players.find(p => {
                     const name = p.nombre + " " + p.apellido + " " + (p.apodo || "");
                     return name.toLowerCase().includes(playerName.toLowerCase());
@@ -7082,19 +7089,29 @@
                 if (player) {
                     for (let col = 1; col < row.length; col++) {
                         let noteStr = row[col];
-                        if (!noteStr) continue;
-                        noteStr = noteStr.replace(',', '.'); // Arreglar decimales
+                        
+                        // Validar si la celda tiene contenido
+                        if (!noteStr || noteStr.trim() === '') continue;
 
-                        if (!isNaN(parseFloat(noteStr))) {
-                            const rating = parseFloat(noteStr);
-                            // Solo añadimos si la columna existe en el mapa
+                        // Limpieza agresiva de la nota: cambia comas por puntos y quita letras
+                        // Ej: "6,5" -> "6.5", "7 -" -> "7"
+                        noteStr = noteStr.replace(',', '.').replace(/[^0-9.]/g, ''); 
+
+                        const rating = parseFloat(noteStr);
+
+                        // Solo añadimos si es un número válido y mayor que 0
+                        if (!isNaN(rating) && rating > 0) {
                             if (newMatchesMap[col - 1]) {
                                 newMatchesMap[col - 1].playerStats.push({
                                     playerId: player.id,
-                                    isStarter: true,
-                                    minutes: 90,
-                                    rating: rating,
-                                    goals: 0, assists: 0, yellowCards: 0, redCards: 0
+                                    isStarter: true, // Asumimos titular si tiene nota
+                                    minutes: 90,     // Minutos por defecto
+                                    rating: rating,  // <--- AQUÍ GUARDAMOS LA NOTA
+                                    goals: 0, 
+                                    assists: 0, 
+                                    yellowCards: 0, 
+                                    redCards: 0,
+                                    played: true
                                 });
                             }
                         }
@@ -7102,11 +7119,10 @@
                 }
             }
 
-            // 5. PROCESAR Y GUARDAR (SOLO SI HAY LINK)
+            // 5. PROCESAR Y GUARDAR
             Object.values(newMatchesMap).forEach(m => {
                 if (m.playerStats.length > 0) {
                     if (m.linkedEvent) {
-                        // ✅ ENCONTRADO EN CALENDARIO -> IMPORTAR
                         linkedCount++;
                         const finalMatch = {
                             id: generateId(),
@@ -7118,15 +7134,14 @@
                             opponent: m.linkedEvent.opponent,
                             venue: m.linkedEvent.venue,
                             stadium: m.linkedEvent.location,
-                            result: "0-0", // Pendiente de editar manualmente
+                            result: "0-0", 
                             outcome: "empate",
-                            isImported: true,
+                            isImported: true, // Marca de importado
                             mvp: calculateAutoMVP(m.playerStats),
                             playerStats: m.playerStats
                         };
                         matches.push(finalMatch);
                     } else {
-                        // ❌ NO ENCONTRADO -> OMITIR Y AVISAR
                         skippedCount++;
                         skippedLog.push(`- ${m.opponent} (${m.originalDate}): No coincide con calendario oficial.`);
                     }
@@ -7140,15 +7155,13 @@
             renderPrincipal();
             renderTrafficLight();
             
-            // INFORME FINAL
-            let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados correctamente.`;
-            
+            let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados con éxito.`;
             if (skippedCount > 0) {
                 msg += `\n\n⚠️ ${skippedCount} partidos OMITIDOS por no encontrarse en el calendario:\n${skippedLog.join('\n')}`;
             }
-            
             alert(msg);
         }
+        
         function toggleCSVInfo() {
             const modal = document.getElementById('csv-info-modal');
             modal.classList.toggle('hidden');
