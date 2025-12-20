@@ -6652,80 +6652,137 @@
                 `;
             }).join('');
         }
-        // ==========================================
-        // TRAFFIC LIGHT (SEMÁFORO DE FORMA)
-        // ==========================================
-
-        function renderTrafficLight() {
-            const hotContainer = document.getElementById('traffic-light-hot');
-            const regContainer = document.getElementById('traffic-light-regular');
-            const coldContainer = document.getElementById('traffic-light-cold');
+       function renderSemaforo() {
+            const matches = getData('matches');
+            const players = getPlayers();
+            const container = document.getElementById('semaforo-content'); // Asegúrate que el ID coincida con tu HTML
             
-            // Limpiar
-            hotContainer.innerHTML = ''; 
-            regContainer.innerHTML = ''; 
-            coldContainer.innerHTML = '';
+            if (!container) return;
 
-            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador');
-            const matches = getData('matches').sort((a, b) => new Date(b.date) - new Date(a.date)); // Ordenar por fecha (recientes primero)
-
-            let categorizedPlayers = [];
-
-            players.forEach(p => {
-                // 1. Buscar sus últimos 3 partidos jugados
-                let playedMatches = [];
-                for (let m of matches) {
-                    const ps = m.playerStats.find(s => s.playerId === p.id);
-                    // Solo cuenta si tuvo nota (jugó)
-                    if (ps && ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                        playedMatches.push(parseFloat(ps.rating));
+            // 1. Calcular Medias
+            const stats = {};
+            matches.forEach(m => {
+                m.playerStats.forEach(ps => {
+                    if (ps.rating !== null && ps.rating > 0) {
+                        if (!stats[ps.playerId]) stats[ps.playerId] = { total: 0, count: 0 };
+                        stats[ps.playerId].total += parseFloat(ps.rating);
+                        stats[ps.playerId].count++;
                     }
-                    if (playedMatches.length === 3) break; // Ya tenemos los 3 últimos
-                }
+                });
+            });
 
-                // 2. Calcular media si ha jugado al menos 1 partido reciente
-                if (playedMatches.length > 0) {
-                    const avg = playedMatches.reduce((a, b) => a + b, 0) / playedMatches.length;
-                    categorizedPlayers.push({ player: p, avg: avg, count: playedMatches.length });
+            const averages = [];
+            Object.keys(stats).forEach(pId => {
+                const p = players.find(pl => pl.id === pId);
+                // Filtramos que tengan al menos 3 partidos jugados para que sea relevante (opcional)
+                if (p && stats[pId].count >= 1) { 
+                    averages.push({
+                        ...p,
+                        avg: (stats[pId].total / stats[pId].count).toFixed(2)
+                    });
                 }
             });
 
-            // 3. Ordenar por nota global
-            categorizedPlayers.sort((a, b) => b.avg - a.avg);
+            // 2. Clasificar
+            averages.sort((a, b) => b.avg - a.avg);
+            
+            // Umbrales (Ajústalos a tu gusto)
+            const green = averages.filter(p => p.avg >= 7);
+            const yellow = averages.filter(p => p.avg >= 5 && p.avg < 7);
+            const red = averages.filter(p => p.avg < 5);
 
-            // 4. Renderizar en columnas
-            if (categorizedPlayers.length === 0) {
-                regContainer.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Sin datos recientes.</p>';
-                return;
+            // 3. Renderizar con colapsado
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    ${renderTrafficList('🔥 Top', 'green', green)}
+                    ${renderTrafficList('⚖️ Promedio', 'yellow', yellow)}
+                    ${renderTrafficList('❄️ Bajos', 'red', red)}
+                </div>
+            `;
+        }
+
+        // --- Función Auxiliar para ocultar/mostrar ---
+        function renderTrafficList(title, colorName, list) {
+            // Colores de encabezado
+            const colors = {
+                'green': 'bg-green-100 text-green-800 border-green-200',
+                'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                'red': 'bg-red-100 text-red-800 border-red-200'
+            };
+            const badgeColor = {
+                'green': 'bg-green-500',
+                'yellow': 'bg-yellow-500',
+                'red': 'bg-red-500'
+            };
+
+            // Separar visibles (Top 3) y ocultos
+            const visible = list.slice(0, 3);
+            const hidden = list.slice(3);
+
+            let html = `
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-full">
+                    <div class="p-3 ${colors[colorName]} font-bold text-center border-b uppercase text-xs tracking-wider">
+                        ${title} (${list.length})
+                    </div>
+                    <div class="p-2 space-y-2">
+            `;
+
+            // Renderizar los primeros 3
+            if (visible.length === 0) {
+                html += `<div class="text-center text-gray-400 text-xs italic py-4">Sin jugadores</div>`;
+            } else {
+                html += visible.map(p => createTrafficCard(p, badgeColor[colorName])).join('');
             }
 
-            categorizedPlayers.forEach(item => {
-                const p = item.player;
-                const avg = item.avg.toFixed(2);
-                
-                // Generar HTML de la "Mini Tarjeta"
-                const cardHtml = `
-                    <div class="flex items-center gap-3 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
-                    <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top border border-gray-200" onerror="this.src='https://via.placeholder.com/32'">
-                        <div class="flex-1 min-w-0">
-                            <p class="text-xs font-bold text-gray-700 truncate">${p.apodo || p.apellido}</p>
-                            <p class="text-[10px] text-gray-400">${item.count} part.</p>
-                        </div>
-                        <span class="font-bold text-sm ${item.avg >= 7.5 ? 'text-emerald-600' : (item.avg < 6 ? 'text-red-600' : 'text-amber-600')}">${avg}</span>
+            // Si hay ocultos, añadir botón y contenedor oculto
+            if (hidden.length > 0) {
+                html += `
+                    <div id="more-${colorName}" class="hidden space-y-2 mt-2 pt-2 border-t border-dashed border-gray-200">
+                        ${hidden.map(p => createTrafficCard(p, badgeColor[colorName])).join('')}
                     </div>
+                    <button onclick="toggleTrafficSection('${colorName}')" id="btn-${colorName}" 
+                        class="w-full mt-2 py-1 text-[10px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded uppercase transition-colors flex items-center justify-center gap-1">
+                        <span>Ver ${hidden.length} más</span> ▼
+                    </button>
                 `;
+            }
 
-                // Clasificar
-                if (item.avg >= 7.5) hotContainer.innerHTML += cardHtml;
-                else if (item.avg < 6.0) coldContainer.innerHTML += cardHtml;
-                else regContainer.innerHTML += cardHtml;
-            });
-
-            // Mensajes vacíos si no hay nadie en una categoría
-            if (hotContainer.innerHTML === '') hotContainer.innerHTML = '<p class="text-xs text-emerald-400/50 text-center py-4 italic">Nadie en racha.</p>';
-            if (regContainer.innerHTML === '') regContainer.innerHTML = '<p class="text-xs text-amber-400/50 text-center py-4 italic">Sin jugadores estables.</p>';
-            if (coldContainer.innerHTML === '') coldContainer.innerHTML = '<p class="text-xs text-red-400/50 text-center py-4 italic">¡Todos rinden bien!</p>';
+            html += `</div></div>`;
+            return html;
         }
+
+        function createTrafficCard(p, colorClass) {
+            return `
+                <div class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100">
+                    <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold truncate text-gray-800">${p.apodo || p.apellido}</p>
+                    </div>
+                    <div class="${colorClass} text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                        ${p.avg}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Función para abrir/cerrar
+        window.toggleTrafficSection = function(colorName) {
+            const content = document.getElementById(`more-${colorName}`);
+            const btn = document.getElementById(`btn-${colorName}`);
+            
+            if (content.classList.contains('hidden')) {
+                // Abrir
+                content.classList.remove('hidden');
+                btn.innerHTML = `<span>Ver menos</span> ▲`;
+            } else {
+                // Cerrar
+                content.classList.add('hidden');
+                // Recalcular cuántos quedan ocultos para el texto
+                // (Truco: contamos los hijos del div oculto)
+                const count = content.children.length;
+                btn.innerHTML = `<span>Ver ${count} más</span> ▼`;
+            }
+        };
         // ==========================================
         // IMPORTADOR CSV (NOTAS DESDE EXCEL)
         // ==========================================
@@ -7281,99 +7338,111 @@
         function goToEditStats() {
             // 1. Validar 11 Titulares
             const starterIds = Object.values(currentPitchPlayers).filter(id => id);
-            if (starterIds.length !== 11) {
-                alert(`⚠️ Tienes ${starterIds.length} titulares en la pizarra. Deben ser 11.`);
-                return;
-            }
+            
+            // Permitimos continuar aunque falten titulares, pero avisamos (opcional)
+            // if (starterIds.length !== 11) { alert(...); return; }
 
             // 2. Preparar Datos
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const match = matches.find(m => m.id === matchId);
-            const isImported = match.isImported === true; // Detectar si viene de Excel
+            const isImported = match.isImported === true;
             
             const players = getPlayers();
-            const subIds = currentSubstitutes;
             
-            // Unificar lista (Solo los que están en pizarra o suplentes)
-            // Entrenador: lo buscamos aparte para añadirlo siempre
+            // AQUI ESTABA LA CLAVE: Asegurarnos de usar currentSubstitutes
+            const subIds = currentSubstitutes || []; 
+            
+            // Unificar lista (Titulares + Suplentes + Entrenador)
             const coach = players.find(p => p.posicion === 'entrenador');
             let roster = [];
             
+            // Añadir Titulares
             starterIds.forEach(id => {
                 const p = players.find(pl => pl.id === id);
                 if(p) roster.push({ ...p, rol: 'Titular' });
             });
+
+            // Añadir Suplentes (Ahora sí aparecerán)
             subIds.forEach(id => {
                 const p = players.find(pl => pl.id === id);
-                if(p) roster.push({ ...p, rol: 'Suplente' });
+                // Evitar duplicados por seguridad (si alguien lo puso de titular y suplente a la vez por error)
+                if(p && !roster.find(r => r.id === p.id)) {
+                    roster.push({ ...p, rol: 'Suplente' });
+                }
             });
+
             if(coach) roster.push({ ...coach, rol: 'Entrenador' });
 
             // 3. Generar HTML de la Lista
             const container = document.getElementById('edit-stats-list');
-            container.innerHTML = roster.map(p => {
-                // Buscar stats actuales del partido para pre-rellenar
-                const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
-                const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
-                const goalsVal = prevStats ? prevStats.goals : 0;
-                const assistsVal = prevStats ? prevStats.assists : 0;
-                const yellowVal = prevStats ? prevStats.yellowCards : 0;
-                const redVal = prevStats ? prevStats.redCards : 0;
-                const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : (p.rol === 'Suplente' ? 30 : 0));
-                
-                const isCoach = p.rol === 'Entrenador';
+            
+            if (roster.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados en la pizarra.</p>';
+            } else {
+                container.innerHTML = roster.map(p => {
+                    // Buscar stats actuales del partido
+                    const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
+                    
+                    // Valores por defecto o previos
+                    const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
+                    const goalsVal = prevStats ? prevStats.goals : 0;
+                    const assistsVal = prevStats ? prevStats.assists : 0;
+                    const yellowVal = prevStats ? prevStats.yellowCards : 0;
+                    const redVal = prevStats ? prevStats.redCards : 0;
+                    // Minutos: Si ya tenía dato usalo, si no: 90 titular, 30 suplente, 0 si no jugó
+                    const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 30);
+                    
+                    const isCoach = p.rol === 'Entrenador';
 
-                // Lógica de Bloqueo de Nota
-                // Si es importado -> readonly y gris
-                const ratingInputAttr = (isImported && !isCoach) 
-                    ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
-                    : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
+                    // Lógica de Bloqueo de Nota (Si es importado = readonly)
+                    const ratingInputAttr = (isImported && !isCoach) 
+                        ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
+                        : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
 
-                return `
-                <div class="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex items-center gap-3" data-player-id="${p.id}" data-rol="${p.rol}">
-                    <div class="w-10">
-                         <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top mx-auto">
-                    </div>
-                    <div class="w-24">
-                        <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
-                        <p class="text-[10px] text-gray-500">${p.rol}</p>
-                    </div>
+                    return `
+                    <div class="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex items-center gap-3" data-player-id="${p.id}" data-rol="${p.rol}">
+                        <div class="w-10 flex flex-col items-center">
+                             <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top shadow-sm">
+                        </div>
+                        <div class="w-24 overflow-hidden">
+                            <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wide">${p.rol}</p>
+                        </div>
 
-                    <div class="flex-1 grid grid-cols-6 gap-2">
-                        <div class="col-span-1">
-                            <label class="text-[9px] uppercase text-gray-400 block text-center">Nota</label>
-                            <input type="number" step="0.1" value="${ratingVal}" ${ratingInputAttr}>
+                        <div class="flex-1 grid grid-cols-6 gap-2">
+                            <div class="col-span-1">
+                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Nota</label>
+                                <input type="number" step="0.1" value="${ratingVal}" placeholder="-" ${ratingInputAttr}>
+                            </div>
+                            <div class="col-span-1">
+                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Gol</label>
+                                ${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${goalsVal}">` : '<div class="text-center text-gray-300">-</div>'}
+                            </div>
+                            <div class="col-span-1">
+                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Asis</label>
+                                ${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${assistsVal}">` : '<div class="text-center text-gray-300">-</div>'}
+                            </div>
+                            <div class="col-span-1">
+                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Min</label>
+                                ${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${minsVal}">` : '<div class="text-center text-gray-300">-</div>'}
+                            </div>
+                            <div class="col-span-1">
+                                 <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟨</label>
+                                 <input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm font-medium bg-yellow-50" max="2" value="${yellowVal}">
+                            </div>
+                             <div class="col-span-1">
+                                 <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟥</label>
+                                 <input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm font-medium bg-red-50" max="1" value="${redVal}">
+                            </div>
                         </div>
-                        <div class="col-span-1">
-                            <label class="text-[9px] uppercase text-gray-400 block text-center">Goles</label>
-                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm" value="${goalsVal}">` : '-'}
-                        </div>
-                        <div class="col-span-1">
-                            <label class="text-[9px] uppercase text-gray-400 block text-center">Asist</label>
-                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm" value="${assistsVal}">` : '-'}
-                        </div>
-                        <div class="col-span-1">
-                            <label class="text-[9px] uppercase text-gray-400 block text-center">Min</label>
-                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm" value="${minsVal}">` : '-'}
-                        </div>
-                        <div class="col-span-1">
-                             <label class="text-[9px] uppercase text-gray-400 block text-center">🟨</label>
-                             <input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm" max="2" value="${yellowVal}">
-                        </div>
-                         <div class="col-span-1">
-                             <label class="text-[9px] uppercase text-gray-400 block text-center">🟥</label>
-                             <input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm" max="1" value="${redVal}">
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+                    </div>`;
+                }).join('');
+            }
 
             // 4. Cambiar de Vista
             document.getElementById('edit-step-lineup').classList.add('hidden');
             document.getElementById('edit-step-stats').classList.remove('hidden');
-            
-            // Mostrar botón Guardar ahora
             document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.remove('hidden');
         }
 
