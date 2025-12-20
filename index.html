@@ -4935,19 +4935,29 @@
         }
         
             // --- 1. FUNCIÓN EDITAR PARTIDO (CORRECCIÓN CSV: SOBRANTES AL BANQUILLO) ---
-function editMatch(matchId) {
+            function editMatch(matchId) {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // 1. Ocultar botón azul antiguo si existe
+    // 1. Ocultar botón azul antiguo si existe (limpieza visual)
     const formContainer = document.getElementById('edit-match-form');
     if (formContainer && formContainer.parentElement) {
         const oldFooter = formContainer.parentElement.querySelector('.flex.justify-end.p-4');
         if (oldFooter) oldFooter.style.display = 'none';
     }
 
-    // 2. Preparar datos
+    // --- CORRECCIÓN CLAVE 1: ASIGNAR EL ID Y ATRIBUTOS AL FORMULARIO YA EXISTENTE ---
+    const idInput = document.getElementById('edit-match-id');
+    if (idInput) idInput.value = match.id;
+
+    const existingForm = document.getElementById('edit-match-form');
+    if (existingForm) {
+        existingForm.setAttribute('data-is-imported', match.isImported || 'false');
+    }
+    // --------------------------------------------------------------------------------
+
+    // 2. Preparar datos de jugadores
     const players = getPlayers();
     const participants = [];
     match.playerStats.forEach(ps => {
@@ -4971,7 +4981,6 @@ function editMatch(matchId) {
             if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
                 currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
             } else {
-                // Si no tiene slot guardado, buscar hueco
                 let placed = false;
                 for(let i=0; i<11; i++) {
                     if(!currentPitchPlayers[`edit-slot-${i}`]) {
@@ -4980,29 +4989,23 @@ function editMatch(matchId) {
                         break;
                     }
                 }
-                // Si no cabe (ya hay 11), lo mandamos a suplentes
                 if (!placed) currentSubstitutes.push(p.id);
             }
         });
     } else {
-        // Orden automático (CASO CSV)
+        // Orden automático (Fallback)
         const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
         starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
         
         starters.forEach((p, index) => { 
             if (index < 11) {
-                // Los 11 primeros al campo
                 currentPitchPlayers[`edit-slot-${index}`] = p.id; 
             } else {
-                // ✅ CORRECCIÓN CLAVE: 
-                // Si hay más de 11 titulares (común en importación CSV),
-                // los mandamos a la lista de suplentes para que no desaparezcan.
                 currentSubstitutes.push(p.id);
             }
         });
     }
     
-    // Añadir los que ya eran suplentes de base
     subs.forEach(p => {
         if (!currentSubstitutes.includes(p.id)) {
             currentSubstitutes.push(p.id);
@@ -5017,10 +5020,10 @@ function editMatch(matchId) {
         ? `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200">🔒 CSV</span>`
         : `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">🔓 Edición</span>`;
 
+    // --- CORRECCIÓN CLAVE 2: ELIMINAMOS LA ETIQUETA <form> E <input hidden> DE AQUÍ ---
+    // (Porque ya están en el HTML principal envolviendo a este div)
     content.innerHTML = `
-        <form id="edit-match-form" class="h-full flex flex-col" data-is-imported="${match.isImported || 'false'}">
-            <input type="hidden" id="edit-match-id" value="${match.id}">
-            
+        <div class="h-full flex flex-col">
             <div class="bg-gray-100 p-2 border-b flex justify-between items-center text-xs text-gray-500 shadow-sm z-10">
                 <span class="font-mono font-bold text-gray-700">EDITANDO ID: ${match.id}</span>
                 ${badgeHtml}
@@ -5104,13 +5107,13 @@ function editMatch(matchId) {
                     </button>
                 </div>
             </div>
-        </form>
+        </div>
     `;
 
     document.getElementById('edit-match-modal').classList.add('active');
     updatePitchFormation();
     renderBench('edit-');
-    renderAll();
+    setTimeout(renderAll, 50);
 }
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
