@@ -4830,6 +4830,7 @@
             }).join('');
         }
         
+        // --- FUNCIÓN CORREGIDA PARA VER DETALLES (SOLO LECTURA) ---
         function viewMatchDetails(matchId) {
             const matches = getData('matches');
             const players = getPlayers();
@@ -4842,36 +4843,56 @@
             
             title.textContent = `vs ${match.opponent} (${match.result})`;
             
-            // Separar Titulares y Suplentes
-            const starters = [];
+            // 1. Preparar mapa de la Pizarra (Slot -> Jugador)
+            // Esto asegura que cada jugador salga EXACTAMENTE donde lo pusiste
+            const pitchMap = {};
             const subs = [];
             
+            // Fallback: Si es un partido antiguo sin slots guardados, recolectamos titulares para ordenarlos después
+            let fallbackStarters = [];
+
             match.playerStats.forEach(ps => {
                 const p = players.find(pl => pl.id === ps.playerId);
                 if (p) {
-                    const data = { ...p, ...ps }; // Datos combinados
+                    const data = { ...p, ...ps }; 
                     if (ps.isStarter === true || ps.isStarter === 'true') {
-                        starters.push(data);
+                        // Si tiene posición guardada (pitchSlot), la usamos.
+                        if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
+                            pitchMap[ps.pitchSlot] = data;
+                        } else {
+                            fallbackStarters.push(data);
+                        }
                     } else if (p.posicion !== 'entrenador') {
                         subs.push(data);
                     }
                 }
             });
 
-            // HTML Estructura
+            // Si no hay ningún slot guardado (partidos viejos), rellenamos 0-10 por orden de posición
+            if (Object.keys(pitchMap).length === 0 && fallbackStarters.length > 0) {
+                const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+                fallbackStarters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
+                fallbackStarters.forEach((p, i) => { if(i < 11) pitchMap[i] = p; });
+            }
+
+            // 2. Generar HTML
             content.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-6">
                     <div class="w-full lg:w-1/2">
-                        <h4 class="font-bold text-gray-700 mb-2 text-center">Once Inicial</h4>
-                        <div id="read-only-pitch-${match.id}" class="w-full rounded-xl overflow-hidden shadow-lg border-2 border-slate-200"></div>
+                        <div class="bg-gray-100 p-2 rounded-t-xl flex justify-between items-center border-b border-gray-200">
+                            <h4 class="font-bold text-gray-700 text-sm">Once Inicial</h4>
+                            <span class="text-xs bg-white px-2 py-1 rounded border border-gray-300 font-mono">
+                                ${match.formation || "4-3-3"}
+                            </span>
+                        </div>
+                        <div id="read-only-pitch-${match.id}" class="w-full rounded-b-xl overflow-hidden shadow-lg border-2 border-slate-200 bg-gray-800 relative h-[350px]"></div>
                     </div>
 
                     <div class="w-full lg:w-1/2 space-y-6">
-                        
                         <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
                             <div class="flex justify-between mb-1"><span>📅 Fecha:</span> <span class="font-bold">${formatDate(match.date)}</span></div>
                             <div class="flex justify-between mb-1"><span>🏆 Competición:</span> <span class="font-bold">${match.competition}</span></div>
-                            <div class="flex justify-between"><span>🏟️ Estadio:</span> <span class="font-bold">${match.stadium}</span></div>
+                            <div class="flex justify-between"><span>🏟️ Estadio:</span> <span class="font-bold">${match.stadium || match.venue}</span></div>
                         </div>
 
                         <div>
@@ -4896,8 +4917,10 @@
                 </div>
             `;
             
-            // Renderizar la pizarra después de inyectar el HTML
-            setTimeout(() => renderReadOnlyPitch(`read-only-pitch-${match.id}`, starters), 50);
+            // Renderizar la pizarra visualmente con delay para asegurar que el DOM existe
+            setTimeout(() => {
+                renderReadOnlyPitch(`read-only-pitch-${match.id}`, pitchMap, match.formation || '4-3-3');
+            }, 50);
             
             modal.classList.add('active');
         }
@@ -7372,33 +7395,27 @@
         // ==========================================
         // HELPER: Pizarra de Solo Lectura (Detalles)
         // ==========================================
-        function renderReadOnlyPitch(containerId, starters) {
+        function renderReadOnlyPitch(containerId, pitchMap, formation) {
             const container = document.getElementById(containerId);
-            const formation = '4-3-3'; // Por defecto para visualizar
-            const coords = FORMACIONES[formation];
-            
-            // Ordenar titulares: Portero, Defensas, Medios, Delanteros
-            // Esto es una aproximación visual ya que no guardamos la coordenada exacta
-            const sortedStarters = [...starters].sort((a, b) => {
-                const order = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-                return (order[a.posicion] || 5) - (order[b.posicion] || 5);
-            });
+            if (!container) return;
 
-            // Pintar fondo
+            const coords = FORMACIONES[formation] || FORMACIONES['4-3-3'];
+
             let html = `
-                <div class="pitch-container" style="height: 350px; cursor: default;">
+                <div class="pitch-container" style="height: 100%; width: 100%; cursor: default; position: relative;">
                     <div class="pitch-line-mid"></div>
                     <div class="pitch-circle"></div>
                     <div class="pitch-box-left"></div>
                     <div class="pitch-box-right"></div>
             `;
 
-            // Pintar Jugadores
             coords.forEach((pos, index) => {
-                const player = sortedStarters[index];
+                // Buscamos directamente en el mapa por el índice del slot
+                const player = pitchMap[index];
+                
                 if (player) {
                     html += `
-                        <div class="player-token" style="top: ${pos.top}%; left: ${pos.left}%; transform: translate(-50%, -50%) scale(0.9); border-color: #fbbf24;">
+                        <div class="player-token" style="top: ${pos.top}%; left: ${pos.left}%; transform: translate(-50%, -50%) scale(0.9); border-color: #fbbf24; position: absolute;">
                             <img src="${player.foto}" style="object-position: top !important;" onerror="this.src='https://via.placeholder.com/40'">
                             <div class="player-token-name bg-slate-800 text-white">${player.apodo || player.apellido}</div>
                             <div class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-bold px-1 rounded-full border border-white">
