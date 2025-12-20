@@ -488,7 +488,6 @@
 
     <!-- APP CONTAINER (Hidden initially) -->
     <div id="app-container" class="hidden bg-gray-100">
-        <!-- Header Real Madrid -->
         <header class="rm-header-gradient text-white shadow-lg">
             <div class="container mx-auto px-4 py-4">
                 <div class="flex items-center justify-between">
@@ -500,9 +499,7 @@
                             <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" ...>
-                        </div>
-
+                    
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
@@ -1231,19 +1228,20 @@
                 
                 
                 <!-- SUB-SECTION: GENERAL -->
-                     <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b">
-                         <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
+                    <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
 
-                    <div class="flex gap-2">
-                  <button onclick="exportStats()" ...>
-                            📥 Exportar CSV
-                         </button>
+                <div class="flex gap-2">
+                    <button onclick="exportStats()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                        📥 Exportar CSV
+                    </button>
 
-                        <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
-                              🆚 Comparador VS
-                        </button>
-                         </div> </div>
+                    <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
+                        🆚 Comparador VS
+                    </button>
+                </div> 
+            </div>
 
                     <!-- Summary Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4 mb-8">
@@ -3108,197 +3106,235 @@
         // ==========================================
 
         function renderPrincipal() {
-            const matches = getData('matches');
-            const players = getPlayers();
-            const now = new Date();
+    const matches = getData('matches');
+    const players = getPlayers();
+    const now = new Date();
 
-            // 1. PRÓXIMO RIVAL (Desde Calendario)
-            // Filtramos eventos futuros y ordenamos por fecha
-           // ... (dentro de renderPrincipal) ...
-
-            // 1. PRÓXIMO RIVAL
-            const futureEvents = calendarEvents
-                .filter(e => e.start > now)
-                .sort((a, b) => a.start - b.start);
+    // ---------------------------------------------
+    // 1. PRÓXIMO RIVAL (Lógica blindada)
+    // ---------------------------------------------
+    // Aseguramos que calendarEvents exista, si no array vacío
+    const events = (typeof calendarEvents !== 'undefined') ? calendarEvents : [];
+    
+    const futureEvents = events
+        .filter(e => new Date(e.start) > now)
+        .sort((a, b) => new Date(a.start) - new Date(b.start));
+    
+    const nextMatchContainer = document.getElementById('dashboard-next-match');
+    const aiCard = document.getElementById('ai-prediction-card');
+    
+    if (nextMatchContainer) {
+        if (futureEvents.length > 0) {
+            // --- HAY DATOS ---
+            const next = futureEvents[0];
+            const startDate = new Date(next.start);
+            const dateStr = startDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+            const timeStr = startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const compName = next.possibleCompetition || 'Partido Oficial';
             
-            const nextMatchContainer = document.getElementById('dashboard-next-match');
-            const aiCard = document.getElementById('ai-prediction-card'); // Referencia a la tarjeta IA
-            
-            if (futureEvents.length > 0) {
-                // --- HAY DATOS: MOSTRAR TODO ---
-                const next = futureEvents[0];
-                const dateStr = next.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-                const timeStr = next.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                const compName = next.possibleCompetition || 'Partido Oficial';
-                
-                nextMatchContainer.innerHTML = `
-                    <div class="flex flex-col animate-in fade-in zoom-in duration-300">
-                        <span class="text-2xl font-bold text-slate-800 truncate" title="${next.opponent}">${next.opponent}</span>
-                        <div class="flex items-center gap-2 mt-1">
-                            <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">${compName}</span>
-                            <span class="text-xs text-gray-500">${next.venue === 'local' ? '🏠 Casa' : '✈️ Fuera'}</span>
-                        </div>
-                        <div class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
-                            <span>🕒 ${dateStr} - ${timeStr}</span>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-1 truncate">🏟️ ${next.location || 'Estadio'}</p>
+            nextMatchContainer.innerHTML = `
+                <div class="flex flex-col animate-in fade-in zoom-in duration-300">
+                    <span class="text-2xl font-bold text-slate-800 truncate" title="${next.opponent}">${next.opponent}</span>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded">${compName}</span>
+                        <span class="text-xs text-gray-500">${next.venue === 'local' ? '🏠 Casa' : '✈️ Fuera'}</span>
                     </div>
-                `;
-                
-                // Mostrar y calcular IA ahora que tenemos datos
-                renderAIPrediction(); 
-
-            } else {
-                // --- NO HAY DATOS AÚN: MOSTRAR CARGANDO ---
-                // Si la lista está vacía, asumimos que está cargando
-                if (calendarEvents.length === 0) {
-                    nextMatchContainer.innerHTML = `
-                        <div class="py-4 text-center calendar-loading">
-                            <div class="text-2xl mb-2">⏳</div>
-                            <p class="text-slate-500 font-medium text-sm">Cargando calendario...</p>
-                        </div>`;
-                    aiCard.classList.add('hidden'); // Ocultar IA mientras carga
-                } else {
-                    // Si la lista NO está vacía pero no hay futuros, es fin de temporada
-                    nextMatchContainer.innerHTML = `
-                        <div class="py-2">
-                            <p class="text-slate-600 font-medium">No hay partidos próximos.</p>
-                            <p class="text-xs text-gray-400">Fin de temporada o parón.</p>
-                        </div>`;
-                    aiCard.classList.add('hidden');
-                }
-            }
-
-            // 2. FORMA DEL EQUIPO (Lógica copiada y adaptada)
-            const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5).reverse(); // Orden cronológico para la racha
-            const formContainer = document.getElementById('dashboard-form');
-            
-            if (last5Matches.length > 0) {
-                formContainer.innerHTML = last5Matches.map(m => {
-                    let color = 'bg-gray-400';
-                    let letter = 'E';
-                    if (m.outcome === 'victoria') { color = 'bg-green-500'; letter = 'V'; }
-                    else if (m.outcome === 'derrota') { color = 'bg-red-500'; letter = 'D'; }
-                    
-                    return `<div class="${color} text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm" title="${m.opponent} (${m.result})">${letter}</div>`;
-                }).join('');
-            } else {
-                formContainer.innerHTML = '<span class="text-gray-400 text-sm italic">Sin partidos jugados</span>';
-            }
-
-            // 3. RESUMEN TEMPORADA
-            let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
-            matches.forEach(m => {
-                if (m.outcome === 'victoria') wins++;
-                else if (m.outcome === 'empate') draws++;
-                else losses++;
-                
-                if (m.result && m.result.includes('-')) {
-                    const parts = m.result.replace('*','').split('-').map(Number);
-                    if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
-                    else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
-                    else { gf += parts[0]; ga += parts[1]; }
-                }
-            });
-            document.getElementById('dash-wins').textContent = wins;
-            document.getElementById('dash-draws').textContent = draws;
-            document.getElementById('dash-losses').textContent = losses;
-            document.getElementById('dash-gf').textContent = gf;
-            document.getElementById('dash-ga').textContent = ga;
-
-            // 4. ÚLTIMOS 3 RESULTADOS
-            const last3 = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
-            const resultsContainer = document.getElementById('dashboard-last-results');
-            
-            if (last3.length > 0) {
-                resultsContainer.innerHTML = last3.map(m => {
-                    const outcomeColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'derrota' ? 'text-red-600' : 'text-amber-600');
-                    return `
-                    <div class="px-5 py-3 hover:bg-gray-50 flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-1 h-8 rounded-full ${m.outcome === 'victoria' ? 'bg-green-500' : (m.outcome === 'derrota' ? 'bg-red-500' : 'bg-amber-500')}"></div>
-                            <div>
-                                <p class="font-bold text-gray-800 text-sm">${m.opponent}</p>
-                                <p class="text-xs text-gray-500">${m.competition}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <span class="font-bold text-lg ${outcomeColor}">${m.result}</span>
-                            <p class="text-xs text-gray-400">${formatDate(m.date)}</p>
-                        </div>
-                    </div>`;
-                }).join('');
-            } else {
-                resultsContainer.innerHTML = '<div class="p-5 text-gray-500 text-sm text-center">No hay partidos registrados aún.</div>';
-            }
-
-            // 5. LÍDERES (Calculados al vuelo)
-            // Estructura para contadores
-            const stats = {};
-            players.forEach(p => stats[p.id] = { 
-                name: p.apodo || p.apellido,
-                img: p.foto,
-                goals: 0, 
-                assists: 0, 
-                mvps: 0,
-                totalRating: 0,
-                ratingCount: 0
-            });
-
-            matches.forEach(m => {
-                if (stats[m.mvp]) stats[m.mvp].mvps++;
-                m.playerStats.forEach(ps => {
-                    if (stats[ps.playerId]) {
-                        stats[ps.playerId].goals += (ps.goals || 0);
-                        stats[ps.playerId].assists += (ps.assists || 0);
-                        if (ps.rating) {
-                            stats[ps.playerId].totalRating += parseFloat(ps.rating);
-                            stats[ps.playerId].ratingCount++;
-                        }
-                    }
-                });
-            });
-
-            // Encontrar máximos
-            let topG = { id: null, val: -1 }, topA = { id: null, val: -1 }, topM = { id: null, val: -1 }, topR = { id: null, val: -1 };
-
-            Object.entries(stats).forEach(([id, s]) => {
-                const avg = s.ratingCount > 0 ? (s.totalRating / s.ratingCount) : 0;
-                
-                if (s.goals > topG.val) topG = { id, val: s.goals, ...s };
-                if (s.assists > topA.val) topA = { id, val: s.assists, ...s };
-                if (s.mvps > topM.val) topM = { id, val: s.mvps, ...s };
-                if (avg > topR.val && s.ratingCount >= 2) topR = { id, val: avg, ...s }; // Mínimo 2 partidos para nota media
-            });
-
-            // Renderizar Líderes
-            const renderLeaderRow = (label, icon, data, isRating = false) => {
-                if (!data.id || data.val <= 0) return '';
-                const valDisplay = isRating ? data.val.toFixed(2) : data.val;
-                return `
-                <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-gray-100">${icon}</div>
-                        <div>
-                            <p class="text-xs font-bold text-gray-500 uppercase">${label}</p>
-                            <p class="text-sm font-bold text-slate-800">${data.name}</p>
-                        </div>
+                    <div class="mt-3 flex items-center gap-2 text-sm font-medium text-slate-600">
+                        <span>🕒 ${dateStr} - ${timeStr}</span>
                     </div>
-                    <span class="text-lg font-bold text-amber-600">${valDisplay}</span>
-                </div>`;
-            };
-
-            const leadersHtml = `
-                ${renderLeaderRow('Goleador', '⚽', topG)}
-                ${renderLeaderRow('Asistente', '👟', topA)}
-                ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
-                ${renderLeaderRow('Más MVPs', '🏆', topM)}
+                    <p class="text-xs text-gray-400 mt-1 truncate">🏟️ ${next.location || 'Estadio'}</p>
+                </div>
             `;
+            
+            // Mostrar IA
+            if(aiCard) aiCard.classList.remove('hidden');
+            if(typeof renderAIPrediction === 'function') renderAIPrediction(); 
 
-            document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
-            renderAIPrediction();
-            renderTrafficLight();
+        } else {
+            // --- NO HAY DATOS (O ESTÁ CARGANDO) ---
+            if (events.length === 0) {
+                nextMatchContainer.innerHTML = `
+                    <div class="py-4 text-center calendar-loading">
+                        <div class="text-2xl mb-2">⏳</div>
+                        <p class="text-slate-500 font-medium text-sm">Cargando calendario...</p>
+                    </div>`;
+                if(aiCard) aiCard.classList.add('hidden');
+            } else {
+                nextMatchContainer.innerHTML = `
+                    <div class="py-2">
+                        <p class="text-slate-600 font-medium">No hay partidos próximos.</p>
+                        <p class="text-xs text-gray-400">Fin de temporada o parón.</p>
+                    </div>`;
+                if(aiCard) aiCard.classList.add('hidden');
+            }
         }
+    }
+
+    // ---------------------------------------------
+    // 2. FORMA DEL EQUIPO (Últimos 5)
+    // ---------------------------------------------
+    const last5Matches = [...matches]
+        .filter(m => m.result && m.result.trim() !== "") // Solo partidos jugados
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 5)
+        .reverse(); // Cronológico (Antiguo -> Nuevo)
+
+    const formContainer = document.getElementById('dashboard-form');
+    if (formContainer) {
+        if (last5Matches.length > 0) {
+            formContainer.innerHTML = last5Matches.map(m => {
+                let color = 'bg-amber-500';
+                let letter = 'E';
+                if (m.outcome === 'victoria') { color = 'bg-green-500'; letter = 'V'; }
+                else if (m.outcome === 'derrota') { color = 'bg-red-500'; letter = 'D'; }
+                
+                return `<div class="${color} text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-sm transform transition hover:scale-110 cursor-default" title="${m.opponent} (${m.result})">${letter}</div>`;
+            }).join('');
+        } else {
+            formContainer.innerHTML = '<span class="text-gray-400 text-sm italic">Sin partidos</span>';
+        }
+    }
+
+    // ---------------------------------------------
+    // 3. RESUMEN TEMPORADA (Contadores)
+    // ---------------------------------------------
+    let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
+    matches.forEach(m => {
+        if (m.outcome === 'victoria') wins++;
+        else if (m.outcome === 'empate') draws++;
+        else losses++;
+        
+        if (m.result && m.result.includes('-')) {
+            const parts = m.result.replace('*','').split('-').map(Number);
+            if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                if (m.venue === 'local') { gf += parts[0]; ga += parts[1]; }
+                else if (m.venue === 'visitante') { gf += parts[1]; ga += parts[0]; }
+                else { gf += parts[0]; ga += parts[1]; }
+            }
+        }
+    });
+
+    const setTxt = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    setTxt('dash-wins', wins);
+    setTxt('dash-draws', draws);
+    setTxt('dash-losses', losses);
+    setTxt('dash-gf', gf);
+    setTxt('dash-ga', ga);
+
+    // ---------------------------------------------
+    // 4. ÚLTIMOS 3 RESULTADOS
+    // ---------------------------------------------
+    const last3 = [...matches]
+        .filter(m => m.result && m.result.trim() !== "")
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, 3);
+        
+    const resultsContainer = document.getElementById('dashboard-last-results');
+    
+    if (resultsContainer) {
+        if (last3.length > 0) {
+            resultsContainer.innerHTML = last3.map(m => {
+                const outcomeColor = m.outcome === 'victoria' ? 'text-green-600' : (m.outcome === 'derrota' ? 'text-red-600' : 'text-amber-600');
+                const outcomeBar = m.outcome === 'victoria' ? 'bg-green-500' : (m.outcome === 'derrota' ? 'bg-red-500' : 'bg-amber-500');
+                
+                return `
+                <div class="px-5 py-3 hover:bg-gray-50 flex items-center justify-between border-b border-gray-100 last:border-0 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="w-1.5 h-8 rounded-full ${outcomeBar}"></div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">${m.opponent}</p>
+                            <p class="text-xs text-gray-500">${m.competition}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-lg ${outcomeColor}">${m.result}</span>
+                        <p class="text-xs text-gray-400">${formatDate(m.date)}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            resultsContainer.innerHTML = '<div class="p-5 text-gray-500 text-sm text-center">No hay partidos registrados aún.</div>';
+        }
+    }
+
+    // ---------------------------------------------
+    // 5. LÍDERES
+    // ---------------------------------------------
+    const stats = {};
+    // Inicializar stats para todos los jugadores
+    players.forEach(p => stats[p.id] = { 
+        name: p.apodo || p.apellido,
+        img: p.foto,
+        goals: 0, 
+        assists: 0, 
+        mvps: 0,
+        totalRating: 0,
+        ratingCount: 0
+    });
+
+    matches.forEach(m => {
+        // Contar MVP
+        if (m.mvp && stats[m.mvp]) stats[m.mvp].mvps++;
+        
+        // Contar Stats individuales
+        m.playerStats.forEach(ps => {
+            if (stats[ps.playerId]) {
+                stats[ps.playerId].goals += (parseInt(ps.goals) || 0);
+                stats[ps.playerId].assists += (parseInt(ps.assists) || 0);
+                
+                if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
+                    const r = parseFloat(ps.rating);
+                    if(!isNaN(r) && r > 0) {
+                        stats[ps.playerId].totalRating += r;
+                        stats[ps.playerId].ratingCount++;
+                    }
+                }
+            }
+        });
+    });
+
+    // Encontrar máximos
+    let topG = { val: -1 }, topA = { val: -1 }, topM = { val: -1 }, topR = { val: -1 };
+
+    Object.values(stats).forEach(s => {
+        const avg = s.ratingCount > 0 ? (s.totalRating / s.ratingCount) : 0;
+        
+        if (s.goals > topG.val) topG = { val: s.goals, ...s };
+        if (s.assists > topA.val) topA = { val: s.assists, ...s };
+        if (s.mvps > topM.val) topM = { val: s.mvps, ...s };
+        if (avg > topR.val && s.ratingCount >= 2) topR = { val: avg, ...s }; // Mínimo 2 partidos
+    });
+
+    const renderLeaderRow = (label, icon, data, isRating = false) => {
+        if (!data.name || data.val <= 0) return '';
+        const valDisplay = isRating ? data.val.toFixed(2) : data.val;
+        return `
+        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100 hover:bg-gray-100 transition">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-lg shadow-sm border border-gray-100">${icon}</div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">${label}</p>
+                    <p class="text-sm font-bold text-slate-800 truncate w-24">${data.name}</p>
+                </div>
+            </div>
+            <span class="text-lg font-bold text-amber-600">${valDisplay}</span>
+        </div>`;
+    };
+
+    const leadersContainer = document.getElementById('dashboard-leaders');
+    if (leadersContainer) {
+        const leadersHtml = `
+            ${renderLeaderRow('Goleador', '⚽', topG)}
+            ${renderLeaderRow('Asistente', '👟', topA)}
+            ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
+            ${renderLeaderRow('Más MVPs', '🏆', topM)}
+        `;
+        leadersContainer.innerHTML = leadersHtml.trim() ? leadersHtml : '<p class="text-gray-400 text-xs text-center py-4">Faltan datos para calcular líderes.</p>';
+    }
+
+    // Actualizar semáforo si existe la función
+    if(typeof renderTrafficLight === 'function') renderTrafficLight();
+}
 
         // ==========================================
         // TAB NAVIGATION
@@ -7673,36 +7709,33 @@ function handleEditMatchSubmit(e) {
         alert("❌ Error: " + error.message);
     }
 }
-        // --- 4. FUNCIÓN PARA VER DETALLES (SOLO LECTURA) ---
+
+            // --- 4. FUNCIÓN PARA VER DETALLES (SOLO LECTURA) ---
 function openMatchModal(matchId) {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // Llenar datos cabecera
+    // Título del modal
     const modalTitle = document.querySelector('#match-detail-modal h3');
     if(modalTitle) modalTitle.innerText = `${match.result} vs ${match.opponent}`;
     
-    // Si tienes elementos específicos para fecha/estadio en el modal, úsalos. 
-    // Si no, generamos el contenido dinámicamente:
-    
     const content = document.getElementById('match-detail-content');
     
-    // 1. Preparar Pizarra de Visualización
-    // IMPORTANTE: Usamos variable local o limpiamos la global para no mezclar
+    // 1. Limpiar pizarra global para visualización
     currentPitchPlayers = {}; 
     
-    // 2. Colocar jugadores (Solo Titulares en Pizarra)
+    // 2. Colocar jugadores (Solo Titulares con posición guardada)
     const players = getPlayers();
-    const starters = [];
     const subs = [];
+    const starters = [];
 
     match.playerStats.forEach(ps => {
         const p = players.find(pl => pl.id === ps.playerId);
         if(p) {
             if (ps.isStarter) {
                 starters.push({ ...p, ...ps });
-                // Recuperar posición guardada
+                // CLAVE: Usar pitchSlot guardado
                 if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
                     currentPitchPlayers[`slot-${ps.pitchSlot}`] = ps.playerId;
                 }
@@ -7712,17 +7745,14 @@ function openMatchModal(matchId) {
         }
     });
 
-    // Fallback: Si es un partido antiguo sin posiciones guardadas, autocompletar
+    // Fallback: Si es un partido antiguo sin posiciones, rellenar ordenado
     if (Object.keys(currentPitchPlayers).length === 0 && starters.length > 0) {
-        // Orden simple para rellenar
         const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
         starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-        starters.forEach((p, i) => {
-            if(i < 11) currentPitchPlayers[`slot-${i}`] = p.id;
-        });
+        starters.forEach((p, i) => { if(i < 11) currentPitchPlayers[`slot-${i}`] = p.id; });
     }
 
-    // 3. Generar HTML del Modal
+    // 3. Generar HTML
     content.innerHTML = `
         <div class="flex flex-col lg:flex-row gap-6 h-full">
             <div class="w-full lg:w-1/2 flex flex-col">
@@ -7738,60 +7768,37 @@ function openMatchModal(matchId) {
             </div>
 
             <div class="w-full lg:w-1/2 space-y-4 overflow-y-auto max-h-[450px] pr-2">
-                
                 <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">
-                    <div class="flex justify-between mb-2">
-                        <span class="text-blue-800 font-bold">📅 Fecha:</span> 
-                        <span>${formatDate(match.date)}</span>
-                    </div>
-                    <div class="flex justify-between mb-2">
-                        <span class="text-blue-800 font-bold">🏆 Competición:</span> 
-                        <span>${match.competition}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-blue-800 font-bold">🏟️ Estadio:</span> 
-                        <span>${match.stadium || match.venue}</span>
-                    </div>
+                    <div class="flex justify-between mb-1"><span class="text-blue-800 font-bold">📅 Fecha:</span> <span>${formatDate(match.date)}</span></div>
+                    <div class="flex justify-between mb-1"><span class="text-blue-800 font-bold">🏆 Competición:</span> <span>${match.competition}</span></div>
+                    <div class="flex justify-between"><span class="text-blue-800 font-bold">🏟️ Estadio:</span> <span>${match.stadium || match.venue}</span></div>
                 </div>
 
                 <div>
-                    <h4 class="font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <span>🔄</span> Cambios y Suplentes
-                    </h4>
+                    <h4 class="font-bold text-gray-700 mb-2">🔄 Cambios y Suplentes</h4>
                     <div class="space-y-2">
                         ${subs.length > 0 ? subs.map(s => `
                             <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
                                 <div class="flex items-center gap-3">
                                     <img src="${s.foto}" class="w-8 h-8 rounded-full object-cover object-top border border-gray-100">
-                                    <div>
-                                        <p class="text-xs font-bold text-gray-800">${s.apodo || s.apellido}</p>
-                                        <p class="text-[10px] text-gray-500">${s.posicion}</p>
-                                    </div>
+                                    <div><p class="text-xs font-bold text-gray-800">${s.apodo || s.apellido}</p><p class="text-[10px] text-gray-500">${s.posicion}</p></div>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    ${s.goals > 0 ? `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">⚽ ${s.goals}</span>` : ''}
-                                    ${s.assists > 0 ? `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">👟 ${s.assists}</span>` : ''}
-                                    <div class="text-center">
-                                        <span class="block text-[10px] text-gray-400 uppercase">Nota</span>
-                                        <span class="font-bold text-sm ${getRatingColor(s.rating)}">${s.rating || '-'}</span>
-                                    </div>
-                                    <div class="text-center pl-2 border-l border-gray-100">
-                                        <span class="block text-[10px] text-gray-400 uppercase">Min</span>
-                                        <span class="font-bold text-xs text-gray-600">${s.minutes}'</span>
-                                    </div>
+                                <div class="flex items-center gap-2 text-xs">
+                                    ${s.goals > 0 ? `<span class="bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded">⚽ ${s.goals}</span>` : ''}
+                                    <div class="text-center pl-2 border-l"><span class="block text-gray-400">Nota</span><span class="font-bold ${getRatingColor(s.rating)}">${s.rating || '-'}</span></div>
+                                    <div class="text-center pl-2 border-l"><span class="block text-gray-400">Min</span><span class="font-bold">${s.minutes}'</span></div>
                                 </div>
                             </div>
-                        `).join('') : '<div class="text-center text-gray-400 text-sm py-4 italic">No hubo suplentes o cambios registrados.</div>'}
+                        `).join('') : '<div class="text-center text-gray-400 text-sm py-4 italic">No hubo suplentes.</div>'}
                     </div>
                 </div>
             </div>
         </div>
     `;
 
-    // 4. Mostrar Modal y Renderizar Campo
     document.getElementById('match-detail-modal').classList.add('active');
     
-    // Esperar a que el DOM se actualice para pintar el campo
+    // Renderizar Pizarra con un pequeño delay para asegurar que el DOM existe
     setTimeout(() => {
         renderPitchForView(match.formation || "4-3-3", match.playerStats);
     }, 50);
@@ -7802,10 +7809,9 @@ function renderPitchForView(formation, matchStats) {
     const container = document.getElementById('view-pitch-layer');
     if(!container) return;
     
-    // CORRECCIÓN 1: Usar la variable correcta FORMACIONES
+    // USAMOS LA VARIABLE CORRECTA: FORMACIONES
     const config = FORMACIONES[formation] || FORMACIONES["4-3-3"];
     
-    // Pintar fondo del campo (Líneas)
     container.innerHTML = `
         <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
             <div class="pitch-line-mid"></div>
@@ -7815,15 +7821,12 @@ function renderPitchForView(formation, matchStats) {
         </div>
     `;
     
-    // Pintar jugadores
     config.forEach((pos, index) => {
         const pId = currentPitchPlayers[`slot-${index}`];
         if (!pId) return;
 
         const players = getPlayers();
         const player = players.find(p => p.id === pId);
-        
-        // Buscar stats de este partido específico
         const stats = matchStats ? matchStats.find(s => s.playerId === pId) : null;
         const rating = stats ? stats.rating : '-';
         const goals = stats ? stats.goals : 0;
@@ -7833,28 +7836,17 @@ function renderPitchForView(formation, matchStats) {
             div.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all duration-500';
             div.style.left = pos.left + '%';
             div.style.top = pos.top + '%';
-            div.style.width = '60px'; 
-            div.style.height = '60px';
+            div.style.width = '12%'; 
+            div.style.height = '15%';
             div.style.zIndex = '10';
 
-            // CORRECCIÓN 2: HTML directo sin llamar a funciones externas inexistentes
             div.innerHTML = `
                 <div class="relative">
                     <img src="${player.foto}" class="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover object-top bg-gray-800">
-                    
-                    <div class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-sm">
-                        ${rating || '-'}
-                    </div>
-
-                    ${goals > 0 ? `
-                    <div class="absolute -bottom-1 -right-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-0.5">
-                        ⚽ ${goals}
-                    </div>` : ''}
+                    <div class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-sm">${rating || '-'}</div>
+                    ${goals > 0 ? `<div class="absolute -bottom-1 -right-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm">⚽ ${goals}</div>` : ''}
                 </div>
-                
-                <span class="mt-1 text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm truncate max-w-full shadow-sm">
-                    ${player.apodo || player.apellido}
-                </span>
+                <span class="mt-1 text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm truncate max-w-full shadow-sm">${player.apodo || player.apellido}</span>
             `;
             container.appendChild(div);
         }
