@@ -4895,7 +4895,7 @@
 
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="viewMatchDetails('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                                <button onclick="openMatchModal('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
                                     👁️ Ver
                                 </button>
                                 <button onclick="editMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
@@ -7673,89 +7673,191 @@ function handleEditMatchSubmit(e) {
         alert("❌ Error: " + error.message);
     }
 }
-// Función para VER detalles del partido (solo lectura)
+        // --- 4. FUNCIÓN PARA VER DETALLES (SOLO LECTURA) ---
 function openMatchModal(matchId) {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // Llenar datos cabecera...
-    document.getElementById('modal-match-result').innerText = `${match.result} vs ${match.opponent}`;
-    document.getElementById('modal-match-venue').innerText = `${match.venue} - ${match.date || ''}`;
-
+    // Llenar datos cabecera
+    const modalTitle = document.querySelector('#match-detail-modal h3');
+    if(modalTitle) modalTitle.innerText = `${match.result} vs ${match.opponent}`;
+    
+    // Si tienes elementos específicos para fecha/estadio en el modal, úsalos. 
+    // Si no, generamos el contenido dinámicamente:
+    
+    const content = document.getElementById('match-detail-content');
+    
     // 1. Preparar Pizarra de Visualización
-    // IMPORTANTE: Limpiamos la variable global para que renderAll use solo estos datos
+    // IMPORTANTE: Usamos variable local o limpiamos la global para no mezclar
     currentPitchPlayers = {}; 
     
-    // Configurar la formación correcta en la vista
-    // Asumimos que tienes una variable global o función para setear la formación visual
-    // Si tu renderPitch usa una variable global para la formación, actúala aquí:
-    currentFormation = match.formation || "4-3-3"; 
-    
-    // (Opcional) Si tienes un dropdown en la vista de ver, actualízalo:
-    // const viewSelect = document.getElementById('view-formation-select');
-    // if(viewSelect) viewSelect.value = currentFormation;
-
-    // 2. Colocar jugadores
+    // 2. Colocar jugadores (Solo Titulares en Pizarra)
     const players = getPlayers();
-    
+    const starters = [];
+    const subs = [];
+
     match.playerStats.forEach(ps => {
-        if (ps.isStarter) {
-            // Usamos el slot guardado si existe
-            if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
-                // Ojo: En la vista de 'Ver', los slots suelen tener otro ID (ej: 'slot-0' vs 'edit-slot-0')
-                // Asegúrate de usar el prefijo que use tu HTML de visualización. 
-                // Si usas el mismo renderAll, suele esperar claves sin prefijo o con prefijo dinámico.
-                // Asumiremos que para VER usas ids tipo 'slot-0', 'slot-1'...
-                currentPitchPlayers[`slot-${ps.pitchSlot}`] = ps.playerId;
+        const p = players.find(pl => pl.id === ps.playerId);
+        if(p) {
+            if (ps.isStarter) {
+                starters.push({ ...p, ...ps });
+                // Recuperar posición guardada
+                if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
+                    currentPitchPlayers[`slot-${ps.pitchSlot}`] = ps.playerId;
+                }
             } else {
-                // Fallback antiguo si no hay slot guardado
-                // (Lógica simplificada, mejor guardar y editar el partido una vez para arreglarlo)
+                subs.push({ ...p, ...ps });
             }
         }
     });
 
-    // 3. Renderizar
-    document.getElementById('match-modal').classList.add('active');
+    // Fallback: Si es un partido antiguo sin posiciones guardadas, autocompletar
+    if (Object.keys(currentPitchPlayers).length === 0 && starters.length > 0) {
+        // Orden simple para rellenar
+        const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+        starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
+        starters.forEach((p, i) => {
+            if(i < 11) currentPitchPlayers[`slot-${i}`] = p.id;
+        });
+    }
+
+    // 3. Generar HTML del Modal
+    content.innerHTML = `
+        <div class="flex flex-col lg:flex-row gap-6 h-full">
+            <div class="w-full lg:w-1/2 flex flex-col">
+                <div class="bg-gray-100 p-2 rounded-t-xl flex justify-between items-center border-b border-gray-200">
+                    <h4 class="font-bold text-gray-700 text-sm">Once Inicial</h4>
+                    <span class="text-xs bg-white px-2 py-1 rounded border border-gray-300 font-mono">
+                        ${match.formation || "4-3-3"}
+                    </span>
+                </div>
+                <div class="relative bg-gray-800 rounded-b-xl border-4 border-gray-800 overflow-hidden shadow-lg h-[400px]">
+                    <div id="view-pitch-layer" class="w-full h-full relative"></div>
+                </div>
+            </div>
+
+            <div class="w-full lg:w-1/2 space-y-4 overflow-y-auto max-h-[450px] pr-2">
+                
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm shadow-sm">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-blue-800 font-bold">📅 Fecha:</span> 
+                        <span>${formatDate(match.date)}</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-blue-800 font-bold">🏆 Competición:</span> 
+                        <span>${match.competition}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-blue-800 font-bold">🏟️ Estadio:</span> 
+                        <span>${match.stadium || match.venue}</span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-gray-700 mb-2 flex items-center gap-2">
+                        <span>🔄</span> Cambios y Suplentes
+                    </h4>
+                    <div class="space-y-2">
+                        ${subs.length > 0 ? subs.map(s => `
+                            <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
+                                <div class="flex items-center gap-3">
+                                    <img src="${s.foto}" class="w-8 h-8 rounded-full object-cover object-top border border-gray-100">
+                                    <div>
+                                        <p class="text-xs font-bold text-gray-800">${s.apodo || s.apellido}</p>
+                                        <p class="text-[10px] text-gray-500">${s.posicion}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    ${s.goals > 0 ? `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">⚽ ${s.goals}</span>` : ''}
+                                    ${s.assists > 0 ? `<span class="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">👟 ${s.assists}</span>` : ''}
+                                    <div class="text-center">
+                                        <span class="block text-[10px] text-gray-400 uppercase">Nota</span>
+                                        <span class="font-bold text-sm ${getRatingColor(s.rating)}">${s.rating || '-'}</span>
+                                    </div>
+                                    <div class="text-center pl-2 border-l border-gray-100">
+                                        <span class="block text-[10px] text-gray-400 uppercase">Min</span>
+                                        <span class="font-bold text-xs text-gray-600">${s.minutes}'</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('') : '<div class="text-center text-gray-400 text-sm py-4 italic">No hubo suplentes o cambios registrados.</div>'}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 4. Mostrar Modal y Renderizar Campo
+    document.getElementById('match-detail-modal').classList.add('active');
     
-    // Llamamos a renderAll() o renderPitch() específico para la vista
-    // Debes asegurarte de llamar a la función que pinta los slots 'slot-0', 'slot-1'...
-    renderPitchForView(match.formation); // Función auxiliar recomendada abajo
-    renderMatchStats(match); // Tu función existente de tabla de stats
+    // Esperar a que el DOM se actualice para pintar el campo
+    setTimeout(() => {
+        renderPitchForView(match.formation || "4-3-3", match.playerStats);
+    }, 50);
 }
 
-// Función auxiliar para pintar la formación en el modo VER
-function renderPitchForView(formation = "4-3-3") {
-    const container = document.getElementById('pitch-slots-layer'); // ID del contenedor en el modal de VER
+// Función auxiliar corregida para pintar la formación
+function renderPitchForView(formation, matchStats) {
+    const container = document.getElementById('view-pitch-layer');
     if(!container) return;
     
-    const config = formationConfigs[formation] || formationConfigs["4-3-3"];
-    container.innerHTML = '';
+    // CORRECCIÓN 1: Usar la variable correcta FORMACIONES
+    const config = FORMACIONES[formation] || FORMACIONES["4-3-3"];
     
+    // Pintar fondo del campo (Líneas)
+    container.innerHTML = `
+        <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
+            <div class="pitch-line-mid"></div>
+            <div class="pitch-circle"></div>
+            <div class="pitch-box-left"></div>
+            <div class="pitch-box-right"></div>
+        </div>
+    `;
+    
+    // Pintar jugadores
     config.forEach((pos, index) => {
         const pId = currentPitchPlayers[`slot-${index}`];
-        const player = getPlayers().find(p => p.id === pId);
-        
-        // Crear el HTML del jugador en el campo (Solo lectura)
-        const playerHtml = player ? `
-            <div class="flex flex-col items-center justify-center w-full h-full">
-                 <img src="${player.foto}" class="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover">
-                 <span class="mt-1 text-[10px] font-bold text-white bg-black/50 px-2 rounded backdrop-blur-sm truncate max-w-full">
-                    ${player.apodo || player.apellido}
-                 </span>
-                 <div class="flex gap-1 mt-0.5">
-                    ${matchStatsBadge(player.id)} </div>
-            </div>
-        ` : '';
+        if (!pId) return;
 
-        const div = document.createElement('div');
-        div.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 flex justify-center items-center transition-all duration-500';
-        div.style.left = pos.left;
-        div.style.top = pos.top;
-        div.style.width = '12%'; 
-        div.style.height = '15%';
-        div.innerHTML = playerHtml;
-        container.appendChild(div);
+        const players = getPlayers();
+        const player = players.find(p => p.id === pId);
+        
+        // Buscar stats de este partido específico
+        const stats = matchStats ? matchStats.find(s => s.playerId === pId) : null;
+        const rating = stats ? stats.rating : '-';
+        const goals = stats ? stats.goals : 0;
+
+        if (player) {
+            const div = document.createElement('div');
+            div.className = 'absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center transition-all duration-500';
+            div.style.left = pos.left + '%';
+            div.style.top = pos.top + '%';
+            div.style.width = '60px'; 
+            div.style.height = '60px';
+            div.style.zIndex = '10';
+
+            // CORRECCIÓN 2: HTML directo sin llamar a funciones externas inexistentes
+            div.innerHTML = `
+                <div class="relative">
+                    <img src="${player.foto}" class="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover object-top bg-gray-800">
+                    
+                    <div class="absolute -top-2 -right-2 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-white shadow-sm">
+                        ${rating || '-'}
+                    </div>
+
+                    ${goals > 0 ? `
+                    <div class="absolute -bottom-1 -right-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm flex items-center gap-0.5">
+                        ⚽ ${goals}
+                    </div>` : ''}
+                </div>
+                
+                <span class="mt-1 text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm truncate max-w-full shadow-sm">
+                    ${player.apodo || player.apellido}
+                </span>
+            `;
+            container.appendChild(div);
+        }
     });
 }
 
