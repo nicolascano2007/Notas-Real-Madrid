@@ -1648,14 +1648,6 @@
                 <div id="edit-match-content" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
                     </div>
 
-                <div class="p-4 border-t bg-white flex justify-end gap-3 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                    <button type="button" onclick="closeEditMatchModal()" class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors">
-                        Cancelar
-                    </button>
-                    <button type="button" onclick="handleEditMatchSubmit(event)" class="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all">
-                        💾 Guardar Cambios
-                    </button>
-                </div>
             </form>
         </div>
     </div>
@@ -4941,134 +4933,185 @@
             renderMatches();
             renderCalendar(); 
         }
+        
+            // --- 1. FUNCIÓN EDITAR PARTIDO (CORRECCIÓN CSV: SOBRANTES AL BANQUILLO) ---
+function editMatch(matchId) {
+    const matches = getData('matches');
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
 
-        // Variable global para controlar qué jugadores mostramos en el banquillo al editar
-        let editingMatchPlayersPool = null; 
+    // 1. Ocultar botón azul antiguo si existe
+    const formContainer = document.getElementById('edit-match-form');
+    if (formContainer && formContainer.parentElement) {
+        const oldFooter = formContainer.parentElement.querySelector('.flex.justify-end.p-4');
+        if (oldFooter) oldFooter.style.display = 'none';
+    }
 
-        function editMatch(matchId) {
-            const matches = getData('matches');
-            const match = matches.find(m => m.id === matchId);
-            if (!match) return;
-            
-            // 1. Identificar participantes
-            const players = getPlayers();
-            const participants = [];
-            
-            match.playerStats.forEach(ps => {
-                const p = players.find(pl => pl.id === ps.playerId);
-                if (p) participants.push({ ...p, ...ps });
-            });
+    // 2. Preparar datos
+    const players = getPlayers();
+    const participants = [];
+    match.playerStats.forEach(ps => {
+        const p = players.find(pl => pl.id === ps.playerId);
+        if (p) participants.push({ ...p, ...ps });
+    });
+    editingMatchPlayersPool = participants.map(p => p.id);
 
-            editingMatchPlayersPool = participants.map(p => p.id); 
+    // 3. Restaurar Pizarra
+    currentPitchPlayers = {}; 
+    currentSubstitutes = [];
 
-            // 2. Resetear Pizarra
-            currentPitchPlayers = {}; 
-            currentSubstitutes = [];
-            
-            const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
-            const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
-            
-            // Lógica de colocación (Restaurar o Automático)
-            const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
-            if (hasSavedSlots) {
-                starters.forEach(p => {
-                    if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
-                        currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
-                    } else {
-                        for(let i=0; i<11; i++) {
-                            if(!currentPitchPlayers[`edit-slot-${i}`]) {
-                                currentPitchPlayers[`edit-slot-${i}`] = p.id; break;
-                            }
-                        }
-                    }
-                });
+    const starters = participants.filter(p => p.isStarter);
+    const subs = participants.filter(p => !p.isStarter);
+
+    // Intentar usar posición guardada
+    const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
+    
+    if (hasSavedSlots) {
+        starters.forEach(p => {
+            if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
+                currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
             } else {
-                const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-                starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-                starters.forEach((p, index) => { if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id; });
+                // Si no tiene slot guardado, buscar hueco
+                let placed = false;
+                for(let i=0; i<11; i++) {
+                    if(!currentPitchPlayers[`edit-slot-${i}`]) {
+                        currentPitchPlayers[`edit-slot-${i}`] = p.id; 
+                        placed = true;
+                        break;
+                    }
+                }
+                // Si no cabe (ya hay 11), lo mandamos a suplentes
+                if (!placed) currentSubstitutes.push(p.id);
             }
-            subs.forEach(p => currentSubstitutes.push(p.id));
-
-            // 3. INYECTAR HTML
-            const content = document.getElementById('edit-match-content');
-            document.getElementById('edit-match-id').value = match.id;
-            const savedFormation = match.formation || "4-3-3";
-
-            content.innerHTML = `
-                <div id="edit-step-lineup" class="flex flex-col h-full">
-                    <div class="mb-2 bg-blue-50 p-2 rounded-lg text-sm text-blue-800 flex justify-between items-center">
-                        <span>📋 <b>Paso 1:</b> Confirma la alineación.</span>
-                        <select id="edit-formation-select" class="border rounded px-2 py-1 bg-white text-xs" onchange="updatePitchFormation()">
-                            <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
-                            <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
-                            <option value="4-2-3-1" ${savedFormation === '4-2-3-1' ? 'selected' : ''}>4-2-3-1</option>
-                            <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
-                        </select>
-                    </div>
-                    <div class="flex flex-col md:flex-row gap-4 h-[450px]"> 
-                        <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
-                            <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
-                                <div class="pitch-line-mid"></div>
-                                <div class="pitch-circle"></div>
-                                <div class="pitch-box-left"></div>
-                                <div class="pitch-box-right"></div>
-                                <div id="edit-pitch-slots-layer"></div>
-                                <div id="edit-pitch-players-layer"></div>
-                            </div>
-                        </div>
-                        <div class="w-full md:w-64 flex flex-col gap-2 h-full">
-                            <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla</div>
-                                <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
-                            </div>
-                            <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
-                                <div class="bg-blue-100 p-1 border-b text-[10px] font-bold uppercase text-center text-blue-600">Suplentes</div>
-                                <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex justify-end">
-                        <button type="button" onclick="goToEditStats()" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
-                            Siguiente: Editar Datos ➡️
-                        </button>
-                    </div>
-                </div>
-
-                <div id="edit-step-stats" class="hidden flex flex-col h-full">
-                    <div class="mb-4 bg-amber-50 p-3 rounded-lg text-sm text-amber-800 flex justify-between items-center">
-                        <span>📊 <b>Paso 2:</b> Edita los datos del partido.</span>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-4 mb-4">
-                        <div><label class="text-xs text-gray-500 font-bold">Resultado</label><input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 font-bold text-center text-lg"></div>
-                        <div><label class="text-xs text-gray-500 font-bold">Rival</label><input type="text" value="${match.opponent}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
-                        <div><label class="text-xs text-gray-500 font-bold">Estadio</label><input type="text" value="${match.venue}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
-                    </div>
-
-                    <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
-
-                    <div class="mt-4 pt-4 border-t flex justify-between items-center gap-4">
-                        <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-medium text-sm">
-                            ⬅️ Volver a Pizarra
-                        </button>
-                        <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md transition-all flex justify-center items-center gap-2">
-                            💾 GUARDAR CAMBIOS
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            const modal = document.getElementById('edit-match-modal');
-            modal.classList.add('active'); 
-            
-            // Ocultar botón viejo si existía
-            const oldSaveBtn = document.querySelector('#edit-match-modal > .modal-content > .flex.justify-end > button');
-            if(oldSaveBtn) oldSaveBtn.style.display = 'none';
-
-            updatePitchFormation(); 
-            renderBench('edit-');  
+        });
+    } else {
+        // Orden automático (CASO CSV)
+        const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+        starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
+        
+        starters.forEach((p, index) => { 
+            if (index < 11) {
+                // Los 11 primeros al campo
+                currentPitchPlayers[`edit-slot-${index}`] = p.id; 
+            } else {
+                // ✅ CORRECCIÓN CLAVE: 
+                // Si hay más de 11 titulares (común en importación CSV),
+                // los mandamos a la lista de suplentes para que no desaparezcan.
+                currentSubstitutes.push(p.id);
+            }
+        });
+    }
+    
+    // Añadir los que ya eran suplentes de base
+    subs.forEach(p => {
+        if (!currentSubstitutes.includes(p.id)) {
+            currentSubstitutes.push(p.id);
         }
+    });
 
+    // 4. INYECTAR HTML
+    const content = document.getElementById('edit-match-content');
+    const savedFormation = match.formation || "4-3-3";
+    
+    const badgeHtml = match.isImported 
+        ? `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200">🔒 CSV</span>`
+        : `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">🔓 Edición</span>`;
+
+    content.innerHTML = `
+        <form id="edit-match-form" class="h-full flex flex-col" data-is-imported="${match.isImported || 'false'}">
+            <input type="hidden" id="edit-match-id" value="${match.id}">
+            
+            <div class="bg-gray-100 p-2 border-b flex justify-between items-center text-xs text-gray-500 shadow-sm z-10">
+                <span class="font-mono font-bold text-gray-700">EDITANDO ID: ${match.id}</span>
+                ${badgeHtml}
+            </div>
+
+            <div id="edit-step-lineup" class="flex flex-col h-full p-4 overflow-hidden">
+                <div class="mb-3 bg-white p-2 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">1</span>
+                        <span class="text-sm font-bold text-gray-700">Alineación</span>
+                    </div>
+                    <select id="edit-formation-select" class="bg-gray-50 border border-gray-300 text-sm rounded p-1" onchange="updatePitchFormation()">
+                        <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
+                        <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
+                        <option value="4-2-3-1" ${savedFormation === '4-2-3-1' ? 'selected' : ''}>4-2-3-1</option>
+                        <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
+                    <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-lg select-none">
+                        <div class="pitch-container w-full h-full transform scale-100 origin-top-left">
+                            <div class="pitch-line-mid"></div>
+                            <div class="pitch-circle"></div>
+                            <div class="pitch-box-left"></div>
+                            <div class="pitch-box-right"></div>
+                            <div id="edit-pitch-slots-layer" class="w-full h-full absolute inset-0 z-0"></div>
+                            <div id="edit-pitch-players-layer" class="w-full h-full absolute inset-0 z-10 pointer-events-none"></div>
+                        </div>
+                    </div>
+                    <div class="w-full lg:w-64 flex flex-col gap-2 shrink-0 h-48 lg:h-auto">
+                        <div class="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col overflow-hidden">
+                            <div class="bg-gray-100 p-2 border-b text-[10px] font-bold uppercase text-center text-gray-500">Plantilla</div>
+                            <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start space-y-1"></div>
+                        </div>
+                        <div class="h-1/3 bg-blue-50 rounded-xl border-2 border-dashed border-blue-200 flex flex-col overflow-hidden">
+                            <div class="bg-blue-100 p-1 border-b border-blue-200 text-[10px] font-bold uppercase text-center text-blue-600">Suplentes</div>
+                            <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex justify-end shrink-0">
+                    <button type="button" onclick="goToEditStats()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg flex items-center gap-2 transition-all">
+                        Siguiente: Datos ➡️
+                    </button>
+                </div>
+            </div>
+
+            <div id="edit-step-stats" class="hidden flex-col h-full p-4 bg-gray-50">
+                <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 shrink-0">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Resultado</label>
+                            <input type="text" id="edit-result-val" value="${match.result}" class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-xl font-bold text-center text-slate-800">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Rival</label>
+                            <input type="text" value="${match.opponent}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Sede</label>
+                            <input type="text" value="${match.venue}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 font-medium">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden min-h-0">
+                    <div class="bg-gray-50 p-2 border-b border-gray-200 flex justify-between items-center px-4">
+                        <span class="font-bold text-gray-700 text-xs uppercase tracking-wide">Estadísticas Individuales</span>
+                    </div>
+                    <div id="edit-stats-list" class="flex-1 overflow-y-auto p-2 space-y-2"></div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-gray-200 flex justify-between items-center shrink-0 gap-4">
+                    <button type="button" onclick="backToEditLineup()" class="text-slate-500 hover:text-slate-800 font-bold text-sm px-4">
+                        ⬅️ Volver
+                    </button>
+                    <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-lg transition-all transform hover:-translate-y-0.5">
+                        💾 GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </div>
+        </form>
+    `;
+
+    document.getElementById('edit-match-modal').classList.add('active');
+    updatePitchFormation();
+    renderBench('edit-');
+    renderAll();
+}
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -7540,6 +7583,11 @@
         }
 
         function goToEditStats() {
+            const statsList = document.getElementById('edit-stats-list');
+    if (!statsList) {
+        console.error('edit-stats-list no existe todavía');
+        return;
+    }
             // 1. Recoger jugadores de la pizarra y suplentes
             const starterIds = Object.values(currentPitchPlayers).filter(id => id);
             const subIds = currentSubstitutes || []; 
