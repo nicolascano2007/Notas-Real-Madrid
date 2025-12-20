@@ -7193,7 +7193,7 @@
             html += '</div>';
             container.innerHTML = html;
         }
-        function handleEditMatchSubmit(e) {
+function handleEditMatchSubmit(e) {
             if(e) e.preventDefault(); // Prevenir cualquier comportamiento por defecto
 
             const matchId = document.getElementById('edit-match-id').value;
@@ -7209,7 +7209,6 @@
             const newResult = document.getElementById('edit-result-val').value;
             
             // 2. Identificar Roles (Prefijo 'edit-')
-            // Importante: asegurarnos de leer de currentPitchPlayers que ahora tiene claves 'edit-slot-X'
             const starterIds = Object.values(currentPitchPlayers).filter(id => id); 
             const subIds = currentSubstitutes.filter(id => id); 
 
@@ -7221,6 +7220,7 @@
                 const prevStats = matchToUpdate.playerStats.find(ps => ps.playerId === pId);
                 const isStarterNow = starterIds.includes(pId);
 
+                // Si ya tenía stats, las mantenemos, si no, valores por defecto
                 let stats = {
                     playerId: pId,
                     isStarter: isStarterNow,
@@ -7234,21 +7234,35 @@
                 newPlayerStats.push(stats);
             });
 
+            // 3. Actualizar datos del partido
             matchToUpdate.result = newResult;
+            
+            // IMPORTANTE: Recalcular si es Victoria/Derrota basado en el nuevo resultado editado
+            matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
+            
             matchToUpdate.playerStats = newPlayerStats;
             matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
 
+            // Guardamos
             saveData('matches', matches);
-            recalculateAllStats();
+            
+            // --- CORRECCIÓN DEL ERROR ---
+            // Eliminamos la llamada a recalculateAllStats() que no existía.
+            // En su lugar, recalculamos el estado de la competición (por si la edición cambia una eliminación)
+            recalculateCompetitionState(matchToUpdate.competition);
 
             closeEditMatchModal();
+            
+            // 4. Refrescar todas las vistas afectadas
             renderMatches();
             renderStats(); 
+            renderPrincipal();        // Actualiza el dashboard (goles a favor, victorias, etc.)
+            renderCompetitionStatus(); // Actualiza si la competición está activa o eliminada
             
             editingMatchPlayersPool = null;
             
             // Notificación simple
-            alert("✅ Alineación guardada correctamente");
+            alert("✅ Partido editado correctamente");
         }
 
         // Global Modal Close Handler
