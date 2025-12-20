@@ -4948,54 +4948,44 @@
             const match = matches.find(m => m.id === matchId);
             if (!match) return;
             
-            // 1. Identificar jugadores participantes
+            // 1. Identificar participantes
             const players = getPlayers();
             const participants = [];
             
             match.playerStats.forEach(ps => {
                 const p = players.find(pl => pl.id === ps.playerId);
-                if (p) {
-                    participants.push({ ...p, ...ps });
-                }
+                if (p) participants.push({ ...p, ...ps });
             });
 
-            // Guardamos quiénes participan para el filtro del banquillo
             editingMatchPlayersPool = participants.map(p => p.id); 
 
-            // 2. Configurar Estado de la Pizarra
+            // 2. Resetear Pizarra
             currentPitchPlayers = {}; 
             currentSubstitutes = [];
             
-            // Detección de importación sucia (>11 titulares)
-            const starterCount = participants.filter(p => p.isStarter === true || p.isStarter === 'true').length;
-            const isMessyImport = starterCount > 11; 
+            // Lógica para colocar jugadores en la pizarra visualmente
+            const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
+            const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
+            
+            const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+            starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
 
-            if (isMessyImport) {
-                console.log("Importación sucia: Vaciando pizarra para corrección manual.");
-                // No asignamos nada a currentPitchPlayers -> Campo Vacío
-            } else {
-                // Asignar titulares al campo
-                const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
-                const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
-                
-                const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-                starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
+            starters.forEach((p, index) => {
+                if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
+            });
+            subs.forEach(p => currentSubstitutes.push(p.id));
 
-                starters.forEach((p, index) => {
-                    if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
-                });
-                
-                subs.forEach(p => currentSubstitutes.push(p.id));
-            }
-
-            // 3. Preparar HTML del Modal
+            // 3. INYECTAR HTML CON 2 PASOS
             const content = document.getElementById('edit-match-content');
             document.getElementById('edit-match-id').value = match.id;
             
+            // Guardamos si es importado en un atributo data del formulario para leerlo luego
+            document.getElementById('edit-match-form').setAttribute('data-is-imported', match.isImported || 'false');
+
             content.innerHTML = `
-                <div class="flex flex-col h-full">
-                    <div class="mb-4 bg-blue-50 p-3 rounded-lg text-sm text-blue-800 flex justify-between items-center">
-                        <span>✏️ Arrastra o haz clic para colocar a los jugadores.</span>
+                <div id="edit-step-lineup" class="flex flex-col h-full">
+                    <div class="mb-2 bg-blue-50 p-2 rounded-lg text-sm text-blue-800 flex justify-between items-center">
+                        <span>📋 <b>Paso 1:</b> Confirma la alineación en la pizarra.</span>
                         <select id="edit-formation-select" class="border rounded px-2 py-1 bg-white text-xs" onchange="updatePitchFormation()">
                             <option value="4-3-3">4-3-3</option>
                             <option value="4-4-2">4-4-2</option>
@@ -5003,7 +4993,7 @@
                         </select>
                     </div>
 
-                    <div class="flex flex-col md:flex-row gap-4 h-[500px]"> 
+                    <div class="flex flex-col md:flex-row gap-4 h-[450px]"> 
                         <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
                             <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
                                 <div class="pitch-line-mid"></div>
@@ -5017,7 +5007,7 @@
 
                         <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                             <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Disponibles en Archivo</div>
+                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla del Partido</div>
                                 <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
                             </div>
                             <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
@@ -5027,22 +5017,46 @@
                         </div>
                     </div>
                     
-                    <div class="mt-4 grid grid-cols-3 gap-4 border-t pt-4">
-                        <div><label class="text-xs text-gray-500">Resultado</label><input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 font-bold"></div>
-                        <div><label class="text-xs text-gray-500">Rival</label><input type="text" value="${match.opponent}" readonly class="w-full border rounded px-2 py-1 bg-gray-100"></div>
-                        <div><label class="text-xs text-gray-500">Estadio</label><input type="text" value="${match.venue}" readonly class="w-full border rounded px-2 py-1 bg-gray-100"></div>
+                    <div class="mt-4 flex justify-end">
+                        <button type="button" onclick="goToEditStats()" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
+                            Siguiente: Editar Datos ➡️
+                        </button>
                     </div>
+                </div>
+
+                <div id="edit-step-stats" class="hidden flex flex-col h-full">
+                    <div class="mb-4 bg-amber-50 p-3 rounded-lg text-sm text-amber-800 flex justify-between items-center">
+                        <span>📊 <b>Paso 2:</b> Edita los datos del partido.</span>
+                        <span class="text-xs bg-white px-2 py-1 rounded border border-amber-200">
+                            ${match.isImported ? '🔒 Notas bloqueadas (Excel)' : '🔓 Edición completa (Web)'}
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-4 mb-4">
+                        <div><label class="text-xs text-gray-500 font-bold">Resultado</label><input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 font-bold text-center text-lg"></div>
+                        <div><label class="text-xs text-gray-500 font-bold">Rival</label><input type="text" value="${match.opponent}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
+                        <div><label class="text-xs text-gray-500 font-bold">Estadio</label><input type="text" value="${match.venue}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
+                    </div>
+
+                    <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                        </div>
+
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                        <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-medium text-sm">
+                            ⬅️ Volver a Pizarra
+                        </button>
+                        </div>
                 </div>
             `;
 
-            // ⚠️ CORRECCIÓN CLAVE AQUÍ ⚠️
-            // 1. Primero activamos la clase para que el sistema sepa que estamos editando
             const modal = document.getElementById('edit-match-modal');
             modal.classList.add('active'); 
+            
+            // Ocultar botón de guardar global inicialmente
+            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
 
-            // 2. Y AHORA pintamos (así detectará el ID 'edit-bench-zone')
             updatePitchFormation(); 
-            renderBench('edit-');  // Forzamos el prefijo 'edit-' por seguridad
+            renderBench('edit-');  
         }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
@@ -6879,6 +6893,7 @@
                             stadium: m.linkedEvent.location,
                             result: "0-0", // Pendiente de editar manualmente
                             outcome: "empate",
+                            isImported: true,
                             mvp: calculateAutoMVP(m.playerStats),
                             playerStats: m.playerStats
                         };
@@ -7193,76 +7208,180 @@
             html += '</div>';
             container.innerHTML = html;
         }
-function handleEditMatchSubmit(e) {
-            if(e) e.preventDefault(); // Prevenir cualquier comportamiento por defecto
+        function handleEditMatchSubmit(e) {
+            if(e) e.preventDefault(); 
+            if (!currentTeam) { alert("Error crítico de sesión. Recarga."); return; }
 
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const matchIndex = matches.findIndex(m => m.id === matchId);
+            if (matchIndex === -1) return;
 
-            if (matchIndex === -1) {
-                alert("Error: No se encuentra el partido.");
-                return;
-            }
+            // Recoger resultado
+            const resultInput = document.getElementById('edit-result-val');
+            const newResult = resultInput ? resultInput.value.trim() : null;
+            if (!newResult) { alert("El resultado es obligatorio."); return; }
 
-            // 1. Recoger datos
-            const newResult = document.getElementById('edit-result-val').value;
-            
-            // 2. Identificar Roles (Prefijo 'edit-')
-            const starterIds = Object.values(currentPitchPlayers).filter(id => id); 
-            const subIds = currentSubstitutes.filter(id => id); 
-
-            const matchToUpdate = matches[matchIndex];
+            // Recoger Stats del contenedor nuevo (#edit-stats-list)
+            const statsContainer = document.getElementById('edit-stats-list');
             const newPlayerStats = [];
-            const allParticipantIds = [...new Set([...starterIds, ...subIds])];
 
-            allParticipantIds.forEach(pId => {
-                const prevStats = matchToUpdate.playerStats.find(ps => ps.playerId === pId);
-                const isStarterNow = starterIds.includes(pId);
+            statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+                const playerId = row.getAttribute('data-player-id');
+                const rol = row.getAttribute('data-rol');
+                const isCoach = rol === 'Entrenador';
+                const isStarter = rol === 'Titular';
 
-                // Si ya tenía stats, las mantenemos, si no, valores por defecto
-                let stats = {
-                    playerId: pId,
-                    isStarter: isStarterNow,
-                    rating: prevStats ? prevStats.rating : 6, 
-                    goals: prevStats ? prevStats.goals : 0,
-                    assists: prevStats ? prevStats.assists : 0,
-                    yellowCards: prevStats ? prevStats.yellowCards : 0,
-                    redCards: prevStats ? prevStats.redCards : 0,
-                    minutes: prevStats ? prevStats.minutes : (isStarterNow ? 90 : 30)
-                };
-                newPlayerStats.push(stats);
+                // Leer inputs
+                // Nota: usamos querySelector dentro de 'row'
+                let rating = null;
+                const ratingInput = row.querySelector('.stat-rating');
+                if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+
+                const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
+                const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
+                const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
+                const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
+                const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
+
+                newPlayerStats.push({
+                    playerId,
+                    isStarter,
+                    rating,
+                    goals,
+                    assists,
+                    minutes,
+                    yellowCards: yellow,
+                    redCards: red,
+                    played: true
+                });
             });
 
-            // 3. Actualizar datos del partido
+            // Guardar
+            const matchToUpdate = matches[matchIndex];
             matchToUpdate.result = newResult;
-            
-            // IMPORTANTE: Recalcular si es Victoria/Derrota basado en el nuevo resultado editado
             matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
-            
             matchToUpdate.playerStats = newPlayerStats;
             matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
 
-            // Guardamos
             saveData('matches', matches);
-            
-            // --- CORRECCIÓN DEL ERROR ---
-            // Eliminamos la llamada a recalculateAllStats() que no existía.
-            // En su lugar, recalculamos el estado de la competición (por si la edición cambia una eliminación)
-            recalculateCompetitionState(matchToUpdate.competition);
+            if (typeof recalculateCompetitionState === "function") {
+                 recalculateCompetitionState(matchToUpdate.competition);
+            }
 
             closeEditMatchModal();
-            
-            // 4. Refrescar todas las vistas afectadas
             renderMatches();
             renderStats(); 
-            renderPrincipal();        // Actualiza el dashboard (goles a favor, victorias, etc.)
-            renderCompetitionStatus(); // Actualiza si la competición está activa o eliminada
+            renderPrincipal();
+            renderCompetitionStatus();
             
             editingMatchPlayersPool = null;
+            alert("✅ Partido actualizado.");
+        }
+        function goToEditStats() {
+            // 1. Validar 11 Titulares
+            const starterIds = Object.values(currentPitchPlayers).filter(id => id);
+            if (starterIds.length !== 11) {
+                alert(`⚠️ Tienes ${starterIds.length} titulares en la pizarra. Deben ser 11.`);
+                return;
+            }
+
+            // 2. Preparar Datos
+            const matchId = document.getElementById('edit-match-id').value;
+            const matches = getData('matches');
+            const match = matches.find(m => m.id === matchId);
+            const isImported = match.isImported === true; // Detectar si viene de Excel
             
-            // Notificación simple
-            alert("✅ Partido editado correctamente");
+            const players = getPlayers();
+            const subIds = currentSubstitutes;
+            
+            // Unificar lista (Solo los que están en pizarra o suplentes)
+            // Entrenador: lo buscamos aparte para añadirlo siempre
+            const coach = players.find(p => p.posicion === 'entrenador');
+            let roster = [];
+            
+            starterIds.forEach(id => {
+                const p = players.find(pl => pl.id === id);
+                if(p) roster.push({ ...p, rol: 'Titular' });
+            });
+            subIds.forEach(id => {
+                const p = players.find(pl => pl.id === id);
+                if(p) roster.push({ ...p, rol: 'Suplente' });
+            });
+            if(coach) roster.push({ ...coach, rol: 'Entrenador' });
+
+            // 3. Generar HTML de la Lista
+            const container = document.getElementById('edit-stats-list');
+            container.innerHTML = roster.map(p => {
+                // Buscar stats actuales del partido para pre-rellenar
+                const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
+                const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
+                const goalsVal = prevStats ? prevStats.goals : 0;
+                const assistsVal = prevStats ? prevStats.assists : 0;
+                const yellowVal = prevStats ? prevStats.yellowCards : 0;
+                const redVal = prevStats ? prevStats.redCards : 0;
+                const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : (p.rol === 'Suplente' ? 30 : 0));
+                
+                const isCoach = p.rol === 'Entrenador';
+
+                // Lógica de Bloqueo de Nota
+                // Si es importado -> readonly y gris
+                const ratingInputAttr = (isImported && !isCoach) 
+                    ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
+                    : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
+
+                return `
+                <div class="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex items-center gap-3" data-player-id="${p.id}" data-rol="${p.rol}">
+                    <div class="w-10">
+                         <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top mx-auto">
+                    </div>
+                    <div class="w-24">
+                        <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
+                        <p class="text-[10px] text-gray-500">${p.rol}</p>
+                    </div>
+
+                    <div class="flex-1 grid grid-cols-6 gap-2">
+                        <div class="col-span-1">
+                            <label class="text-[9px] uppercase text-gray-400 block text-center">Nota</label>
+                            <input type="number" step="0.1" value="${ratingVal}" ${ratingInputAttr}>
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[9px] uppercase text-gray-400 block text-center">Goles</label>
+                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm" value="${goalsVal}">` : '-'}
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[9px] uppercase text-gray-400 block text-center">Asist</label>
+                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm" value="${assistsVal}">` : '-'}
+                        </div>
+                        <div class="col-span-1">
+                            <label class="text-[9px] uppercase text-gray-400 block text-center">Min</label>
+                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm" value="${minsVal}">` : '-'}
+                        </div>
+                        <div class="col-span-1">
+                             <label class="text-[9px] uppercase text-gray-400 block text-center">🟨</label>
+                             <input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm" max="2" value="${yellowVal}">
+                        </div>
+                         <div class="col-span-1">
+                             <label class="text-[9px] uppercase text-gray-400 block text-center">🟥</label>
+                             <input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm" max="1" value="${redVal}">
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // 4. Cambiar de Vista
+            document.getElementById('edit-step-lineup').classList.add('hidden');
+            document.getElementById('edit-step-stats').classList.remove('hidden');
+            
+            // Mostrar botón Guardar ahora
+            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.remove('hidden');
+        }
+
+        function backToEditLineup() {
+            document.getElementById('edit-step-stats').classList.add('hidden');
+            document.getElementById('edit-step-lineup').classList.remove('hidden');
+            // Ocultar botón Guardar para que no guarden a medias
+            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
         }
 
         // Global Modal Close Handler
