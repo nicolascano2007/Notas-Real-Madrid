@@ -5497,14 +5497,30 @@
             searchInput.value = ''; // Limpiar buscador
             list.innerHTML = ''; // Limpiar lista
 
-            // 1. Obtener todos los jugadores disponibles
-            // (Todos los activos - Los que ya están en OTROS huecos del campo)
-            const allPlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
+            // 1. DEFINIR EL ORIGEN DE LOS JUGADORES (LA CORRECCIÓN)
+            let sourcePlayers = [];
+
+            // ¿Estamos en modo edición y hay una lista restringida (Excel)?
+            if (editingMatchPlayersPool && editingMatchPlayersPool.length > 0) {
+                // MODO EDICIÓN: Usamos SOLO los jugadores del partido original (Excel)
+                const all = getPlayers();
+                sourcePlayers = all.filter(p => {
+                    // Comparamos IDs convirtiendo a String por seguridad
+                    return editingMatchPlayersPool.some(poolId => String(poolId) === String(p.id)) && p.posicion !== 'entrenador';
+                });
+            } else {
+                // MODO REGISTRO NUEVO: Usamos todos los activos de la plantilla
+                sourcePlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
+            }
+
+            // 2. FILTRAR DISPONIBILIDAD (Ya en campo vs Libre)
             const playersOnPitchIds = Object.values(currentPitchPlayers);
             const currentPlayerInThisSlot = currentPitchPlayers[slotId];
 
-            // Filtramos: Mostramos al que ya está en este hueco (para verlo marcado) + los que están en banquillo/reserva
-            const availablePlayers = allPlayers.filter(p => {
+            // Filtramos:
+            // - Que NO esté ya en otro hueco del campo
+            // - O que sea EL MISMO que ya está en este hueco (para marcarlo)
+            const availablePlayers = sourcePlayers.filter(p => {
                 const isOnPitch = playersOnPitchIds.includes(p.id);
                 const isThisSlot = p.id === currentPlayerInThisSlot;
                 return !isOnPitch || isThisSlot;
@@ -5513,9 +5529,9 @@
             // Ordenar por dorsal
             availablePlayers.sort((a, b) => a.dorsal - b.dorsal);
 
-            // 2. Generar HTML
+            // 3. Generar HTML
             if (availablePlayers.length === 0) {
-                list.innerHTML = '<div class="p-4 text-center text-gray-500">No hay jugadores disponibles.</div>';
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">No hay más jugadores disponibles en este partido.</div>';
             } else {
                 list.innerHTML = availablePlayers.map(p => {
                     const isSelected = p.id === currentPlayerInThisSlot;
@@ -5523,7 +5539,7 @@
                     
                     return `
                     <div onclick="selectPlayerForSlot('${p.id}')" class="selector-item cursor-pointer flex items-center gap-3 p-2 rounded-lg border ${badgeColor} transition-all">
-                        <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200">
+                        <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200" onerror="this.src='https://via.placeholder.com/40'">
                         <div class="flex-1">
                             <p class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</p>
                             <p class="text-xs text-gray-500">${capitalizeFirst(p.posicion)} #${p.dorsal}</p>
@@ -5535,7 +5551,8 @@
             }
 
             modal.classList.add('active');
-            searchInput.focus();
+            // Enfocar el buscador un poco después para dar tiempo a la animación
+            setTimeout(() => searchInput.focus(), 100);
         }
 
         function closePlayerSelector() {
