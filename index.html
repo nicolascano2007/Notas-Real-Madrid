@@ -1663,7 +1663,7 @@
                 <button onclick="closeEditMatchModal()" class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors">✕</button>
             </div>
             
-            <form id="edit-match-form" onsubmit="handleEditMatchSubmit(event)" class="flex flex-col flex-1 overflow-hidden">
+            <form id="edit-match-form" class="flex flex-col flex-1 overflow-hidden" onsubmit="event.preventDefault();">
                 <input type="hidden" id="edit-match-id">
                 
                 <div id="edit-match-content" class="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-50">
@@ -1673,7 +1673,7 @@
                     <button type="button" onclick="closeEditMatchModal()" class="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all">
+                    <button type="button" onclick="handleEditMatchSubmit(event)" class="px-8 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all">
                         💾 Guardar Cambios
                     </button>
                 </div>
@@ -1729,9 +1729,10 @@
                 <button onclick="closePlayerSelector()" class="text-gray-400 hover:text-white text-xl font-bold">✕</button>
             </div>
             
-            <div class="p-3 bg-gray-50 border-b">
+           <div class="p-3 bg-gray-50 border-b">
                 <input type="text" id="player-selector-search" 
                        onkeyup="filterSelectorList()" 
+                       onkeydown="handleSelectorKey(event)"
                        placeholder="🔍 Buscar jugador (ej: Rocío, Vini...)" 
                        class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800">
             </div>
@@ -1828,7 +1829,7 @@
             { id: "pf14", nombre: "María", apellido: "Méndez", apodo: "María Méndez", posicion: "defensa", rol: "CT", dorsal: 14, nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf15", nombre: "Sheila", apellido: "García", apodo: "Sheila", posicion: "defensa", rol: "LD", dorsal: 15, nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf21", nombre: "Sara", apellido: "Holmgaard", apodo: "Holmgaard", posicion: "defensa", rol: "LI", dorsal: 21, nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Andersson", posicion: "defensa", rol: "CT", dorsal: 22, nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Bella Andersson", posicion: "defensa", rol: "CT", dorsal: 22, nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", apodo: "Lakrar", posicion: "defensa", rol: "CT", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf27", nombre: "Noemí", apellido: "Bejarano", apodo: "Noe", posicion: "defensa", rol: "LD", dorsal: 27, nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
             { id: "pf29", nombre: "Silvia", apellido: "Cristobal", apodo: "Silvi", posicion: "defensa", rol: "CT", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
@@ -1839,7 +1840,7 @@
             { id: "pf8", nombre: "Sara", apellido: "Däbritz", apodo: "Däbritz", posicion: "centrocampista", rol: "MC", dorsal: 8, nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf10", nombre: "Caroline", apellido: "Weir", apodo: "Weir", posicion: "centrocampista", rol: "MC", dorsal: 10, nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", apodo: "Angeldahl", posicion: "centrocampista", rol: "MC", dorsal: 16, nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17, nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Hanna Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17, nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf28", nombre: "Irune", apellido: "Dorado", apodo: "Irune", posicion: "centrocampista", rol: "MCD", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
@@ -1847,14 +1848,14 @@
             { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5, nacionalidad: "España", fechaNacimiento: "2007-06-18", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7, nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9, nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Redondo", posicion: "delantero", rol: "DC", dorsal: 11, nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11, nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf18", nombre: "Linda", apellido: "Caicedo", apodo: "Linda Caicedo", posicion: "extremo", rol: "EI", dorsal: 18, nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf19", nombre: "Eva", apellido: "Navarro", apodo: "Eva Navarro", posicion: "extremo", rol: "ED", dorsal: 19, nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf20", nombre: "Naomie", apellido: "Feller", apodo: "Feller", posicion: "extremo", rol: "ED", dorsal: 20, nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf24", nombre: "Lotte", apellido: "Keukelaar", apodo: "Keukelaar", posicion: "extremo", rol: "ED", dorsal: 24, nacionalidad: "Países Bajos", fechaNacimiento: "2005-09-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/KEUKELAAR_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
             { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "extremo", rol: "EI", dorsal: 38, nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://www.realmadrid.com/es-ES/futbol/cantera-masculina/castilla/david-jimenez-corredor" }
-        ];
+            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=420" }
+            ];
         // Coordenadas para la Pizarra Táctica (top%, left%)
         // El portero siempre es el índice 0.
         // Coordenadas Horizontal: Portero a la Izquierda (Left ~5%)
@@ -5482,11 +5483,10 @@
             renderTacticalBoard(prefix);
             renderBench(prefix);
         }
-        // ==========================================
-        // SELECTOR DE JUGADORES (CLICK & PICK)
-        // ==========================================
 
-        let currentSelectorSlot = null; // Guarda qué hueco estamos editando
+        // ==========================================
+        // SELECTOR DE JUGADORES (MEJORADO)
+        // ==========================================
 
         function openPlayerSelector(slotId) {
             currentSelectorSlot = slotId;
@@ -5494,51 +5494,43 @@
             const list = document.getElementById('player-selector-list');
             const searchInput = document.getElementById('player-selector-search');
             
-            searchInput.value = ''; // Limpiar buscador
-            list.innerHTML = ''; // Limpiar lista
+            searchInput.value = ''; 
+            list.innerHTML = ''; 
 
-            // 1. DEFINIR EL ORIGEN DE LOS JUGADORES (LA CORRECCIÓN)
+            // 1. ORIGEN DE DATOS (Igual que antes)
             let sourcePlayers = [];
-
-            // ¿Estamos en modo edición y hay una lista restringida (Excel)?
             if (editingMatchPlayersPool && editingMatchPlayersPool.length > 0) {
-                // MODO EDICIÓN: Usamos SOLO los jugadores del partido original (Excel)
                 const all = getPlayers();
                 sourcePlayers = all.filter(p => {
-                    // Comparamos IDs convirtiendo a String por seguridad
                     return editingMatchPlayersPool.some(poolId => String(poolId) === String(p.id)) && p.posicion !== 'entrenador';
                 });
             } else {
-                // MODO REGISTRO NUEVO: Usamos todos los activos de la plantilla
                 sourcePlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
             }
 
-            // 2. FILTRAR DISPONIBILIDAD (Ya en campo vs Libre)
+            // 2. FILTRAR
             const playersOnPitchIds = Object.values(currentPitchPlayers);
             const currentPlayerInThisSlot = currentPitchPlayers[slotId];
 
-            // Filtramos:
-            // - Que NO esté ya en otro hueco del campo
-            // - O que sea EL MISMO que ya está en este hueco (para marcarlo)
             const availablePlayers = sourcePlayers.filter(p => {
                 const isOnPitch = playersOnPitchIds.includes(p.id);
                 const isThisSlot = p.id === currentPlayerInThisSlot;
                 return !isOnPitch || isThisSlot;
             });
 
-            // Ordenar por dorsal
             availablePlayers.sort((a, b) => a.dorsal - b.dorsal);
 
-            // 3. Generar HTML
+            // 3. GENERAR HTML (Con data-player-id para el Enter)
             if (availablePlayers.length === 0) {
-                list.innerHTML = '<div class="p-4 text-center text-gray-500">No hay más jugadores disponibles en este partido.</div>';
+                list.innerHTML = '<div class="p-4 text-center text-gray-500">No hay más jugadores disponibles.</div>';
             } else {
                 list.innerHTML = availablePlayers.map(p => {
                     const isSelected = p.id === currentPlayerInThisSlot;
                     const badgeColor = isSelected ? 'bg-green-100 border-green-300' : 'bg-white hover:bg-blue-50 border-gray-100';
                     
+                    // AÑADIDO: data-player-id="${p.id}" en el div principal
                     return `
-                    <div onclick="selectPlayerForSlot('${p.id}')" class="selector-item cursor-pointer flex items-center gap-3 p-2 rounded-lg border ${badgeColor} transition-all">
+                    <div data-player-id="${p.id}" onclick="selectPlayerForSlot('${p.id}')" class="selector-item cursor-pointer flex items-center gap-3 p-2 rounded-lg border ${badgeColor} transition-all">
                         <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover object-top border border-gray-200" onerror="this.src='https://via.placeholder.com/40'">
                         <div class="flex-1">
                             <p class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</p>
@@ -5551,8 +5543,24 @@
             }
 
             modal.classList.add('active');
-            // Enfocar el buscador un poco después para dar tiempo a la animación
             setTimeout(() => searchInput.focus(), 100);
+        }
+
+        // ✅ NUEVA FUNCIÓN PARA LA TECLA ENTER
+        function handleSelectorKey(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Buscar todos los elementos visibles (los que coinciden con la búsqueda)
+                const visibleItems = Array.from(document.querySelectorAll('.selector-item:not(.hidden)'));
+
+                if (visibleItems.length > 0) {
+                    // Seleccionar el primero de la lista
+                    const firstId = visibleItems[0].getAttribute('data-player-id');
+                    if (firstId) {
+                        selectPlayerForSlot(firstId);
+                    }
+                }
+            }
         }
 
         function closePlayerSelector() {
@@ -7186,82 +7194,61 @@
             container.innerHTML = html;
         }
         function handleEditMatchSubmit(e) {
-            e.preventDefault(); // Evitar recarga de página
+            if(e) e.preventDefault(); // Prevenir cualquier comportamiento por defecto
 
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const matchIndex = matches.findIndex(m => m.id === matchId);
 
-            if (matchIndex === -1) return;
+            if (matchIndex === -1) {
+                alert("Error: No se encuentra el partido.");
+                return;
+            }
 
-            // 1. Recoger datos generales
+            // 1. Recoger datos
             const newResult = document.getElementById('edit-result-val').value;
             
-            // 2. Identificar Roles según la Pizarra Visual
-            // Aquí es donde ocurre la magia: leemos quién está dónde
-            const starterIds = Object.values(currentPitchPlayers).filter(id => id); // IDs en el campo
-            const subIds = currentSubstitutes.filter(id => id); // IDs en el banquillo
+            // 2. Identificar Roles (Prefijo 'edit-')
+            // Importante: asegurarnos de leer de currentPitchPlayers que ahora tiene claves 'edit-slot-X'
+            const starterIds = Object.values(currentPitchPlayers).filter(id => id); 
+            const subIds = currentSubstitutes.filter(id => id); 
 
-            // 3. Reconstruir PlayerStats
             const matchToUpdate = matches[matchIndex];
             const newPlayerStats = [];
-
-            // Lista de todos los jugadores involucrados (Titulares + Suplentes)
             const allParticipantIds = [...new Set([...starterIds, ...subIds])];
 
             allParticipantIds.forEach(pId => {
-                // Buscamos sus datos previos (nota del Excel, goles, etc.) para MANTENERLOS
                 const prevStats = matchToUpdate.playerStats.find(ps => ps.playerId === pId);
-
-                // Determinar si es titular AHORA (según tu pizarra)
                 const isStarterNow = starterIds.includes(pId);
 
-                // Construir objeto de estadísticas
                 let stats = {
                     playerId: pId,
-                    isStarter: isStarterNow, // ✅ ESTO CORRIGE LA IMPORTACIÓN
-                    
-                    // Mantenemos los datos numéricos que ya existían (del Excel o registro previo)
+                    isStarter: isStarterNow,
                     rating: prevStats ? prevStats.rating : 6, 
                     goals: prevStats ? prevStats.goals : 0,
                     assists: prevStats ? prevStats.assists : 0,
                     yellowCards: prevStats ? prevStats.yellowCards : 0,
                     redCards: prevStats ? prevStats.redCards : 0,
-                    
-                    // Ajuste inteligente de minutos si no estaban definidos
                     minutes: prevStats ? prevStats.minutes : (isStarterNow ? 90 : 30)
                 };
-
                 newPlayerStats.push(stats);
             });
 
-            // 4. Guardar cambios en el objeto partido
             matchToUpdate.result = newResult;
             matchToUpdate.playerStats = newPlayerStats;
-            
-            // Recalcular MVP automáticamente con la nueva configuración
             matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
 
-            // 5. Guardar en memoria y refrescar
             saveData('matches', matches);
-            
-            // Recalcular estadísticas globales de la temporada
             recalculateAllStats();
 
-            // Cerrar y avisar
             closeEditMatchModal();
             renderMatches();
-            renderStats(); // Para actualizar gráficas
+            renderStats(); 
             
-            // Limpiar variables globales de edición
             editingMatchPlayersPool = null;
             
-            // Feedback visual
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-xl shadow-2xl z-50 animate-bounce';
-            toast.innerHTML = '✅ <b>Alineación Corregida</b><br><span class="text-sm">Se han guardado los titulares y suplentes.</span>';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            // Notificación simple
+            alert("✅ Alineación guardada correctamente");
         }
 
         // Global Modal Close Handler
