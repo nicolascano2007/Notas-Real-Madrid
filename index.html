@@ -4945,50 +4945,36 @@
             const starters = participants.filter(p => p.isStarter === true || p.isStarter === 'true' && p.posicion !== 'entrenador');
             const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
             
-            // --- LÓGICA DE COLOCACIÓN ---
-            // Verificamos si hay al menos un jugador con posición guardada
+            // Lógica de colocación (Restaurar o Automático)
             const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
-
             if (hasSavedSlots) {
-                // MODO: Restaurar diseño exacto
                 starters.forEach(p => {
                     if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
-                        // Usamos prefijo 'edit-' para que coincida con el HTML
                         currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
                     } else {
-                        // Fallback: Si alguno perdió el slot, buscar hueco libre
                         for(let i=0; i<11; i++) {
                             if(!currentPitchPlayers[`edit-slot-${i}`]) {
-                                currentPitchPlayers[`edit-slot-${i}`] = p.id;
-                                break;
+                                currentPitchPlayers[`edit-slot-${i}`] = p.id; break;
                             }
                         }
                     }
                 });
             } else {
-                // MODO: Automático (Fallback para partidos antiguos)
                 const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
                 starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-
-                starters.forEach((p, index) => {
-                    if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id;
-                });
+                starters.forEach((p, index) => { if (index < 11) currentPitchPlayers[`edit-slot-${index}`] = p.id; });
             }
-
             subs.forEach(p => currentSubstitutes.push(p.id));
 
             // 3. INYECTAR HTML
             const content = document.getElementById('edit-match-content');
             document.getElementById('edit-match-id').value = match.id;
-            document.getElementById('edit-match-form').setAttribute('data-is-imported', match.isImported || 'false');
-
-            // Recuperar formación guardada o usar defecto
             const savedFormation = match.formation || "4-3-3";
 
             content.innerHTML = `
                 <div id="edit-step-lineup" class="flex flex-col h-full">
                     <div class="mb-2 bg-blue-50 p-2 rounded-lg text-sm text-blue-800 flex justify-between items-center">
-                        <span>📋 <b>Paso 1:</b> Confirma la alineación en la pizarra.</span>
+                        <span>📋 <b>Paso 1:</b> Confirma la alineación.</span>
                         <select id="edit-formation-select" class="border rounded px-2 py-1 bg-white text-xs" onchange="updatePitchFormation()">
                             <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
                             <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
@@ -4996,7 +4982,6 @@
                             <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
                         </select>
                     </div>
-
                     <div class="flex flex-col md:flex-row gap-4 h-[450px]"> 
                         <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
                             <div class="pitch-container w-full h-full" style="margin: 0; border: none; border-radius: 0;">
@@ -5008,7 +4993,6 @@
                                 <div id="edit-pitch-players-layer"></div>
                             </div>
                         </div>
-
                         <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                             <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
                                 <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla</div>
@@ -5020,7 +5004,6 @@
                             </div>
                         </div>
                     </div>
-                    
                     <div class="mt-4 flex justify-end">
                         <button type="button" onclick="goToEditStats()" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold shadow-lg hover:bg-slate-700 transition-all flex items-center gap-2">
                             Siguiente: Editar Datos ➡️
@@ -5031,9 +5014,6 @@
                 <div id="edit-step-stats" class="hidden flex flex-col h-full">
                     <div class="mb-4 bg-amber-50 p-3 rounded-lg text-sm text-amber-800 flex justify-between items-center">
                         <span>📊 <b>Paso 2:</b> Edita los datos del partido.</span>
-                        <span class="text-xs bg-white px-2 py-1 rounded border border-amber-200">
-                            ${match.isImported ? '🔒 Notas bloqueadas' : '🔓 Edición completa'}
-                        </span>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4 mb-4">
@@ -5044,9 +5024,12 @@
 
                     <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
 
-                    <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                    <div class="mt-4 pt-4 border-t flex justify-between items-center gap-4">
                         <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-medium text-sm">
                             ⬅️ Volver a Pizarra
+                        </button>
+                        <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md transition-all flex justify-center items-center gap-2">
+                            💾 GUARDAR CAMBIOS
                         </button>
                     </div>
                 </div>
@@ -5055,12 +5038,12 @@
             const modal = document.getElementById('edit-match-modal');
             modal.classList.add('active'); 
             
-            // Ocultar botón Guardar global (se muestra en el paso 2)
-            const oldSaveBtn = document.querySelector('#edit-match-modal button[onclick*="handleEditMatchSubmit"]');
-            if(oldSaveBtn) oldSaveBtn.style.display = 'none'; // Lo ocultamos forzosamente
-            // 4. Renderizar Pizarra
-            updatePitchFormation(); // Esto leerá 'edit-formation-select' y pintará los slots
-            renderBench('edit-');   // Esto pintará el banquillo
+            // Ocultar botón viejo si existía
+            const oldSaveBtn = document.querySelector('#edit-match-modal > .modal-content > .flex.justify-end > button');
+            if(oldSaveBtn) oldSaveBtn.style.display = 'none';
+
+            updatePitchFormation(); 
+            renderBench('edit-');  
         }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
@@ -7533,19 +7516,17 @@
         }
 
         function goToEditStats() {
-            // 1. Validar alineación
+            // 1. Recoger jugadores de la pizarra y suplentes
             const starterIds = Object.values(currentPitchPlayers).filter(id => id);
-            
-            // 2. Preparar datos
+            const subIds = currentSubstitutes || []; 
+            const players = getPlayers();
+
+            // 2. Preparar Roster
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const match = matches.find(m => m.id === matchId);
             const isImported = match.isImported === true;
             
-            const players = getPlayers();
-            const subIds = currentSubstitutes || []; 
-            
-            // Unificar lista
             const coach = players.find(p => p.posicion === 'entrenador');
             let roster = [];
             
@@ -7561,13 +7542,13 @@
             });
             if(coach) roster.push({ ...coach, rol: 'Entrenador' });
 
-            // 3. Generar HTML
+            // 3. Pintar Lista (SIN el botón, porque ya está en el HTML)
             const container = document.getElementById('edit-stats-list');
             
             if (roster.length === 0) {
                 container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados.</p>';
             } else {
-                let htmlRows = roster.map(p => {
+                container.innerHTML = roster.map(p => {
                     const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
                     
                     const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
@@ -7601,16 +7582,6 @@
                         </div>
                     </div>`;
                 }).join('');
-
-                // AÑADIMOS EL BOTÓN DE GUARDAR AL FINAL DE LA LISTA
-                htmlRows += `
-                    <div class="mt-6 mb-2 pt-4 border-t border-gray-200">
-                        <button type="button" onclick="handleEditMatchSubmit(event)" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md transition-all flex justify-center items-center gap-2">
-                            💾 GUARDAR TODOS LOS CAMBIOS
-                        </button>
-                    </div>
-                `;
-                container.innerHTML = htmlRows;
             }
 
             // Cambiar vista
