@@ -4946,16 +4946,17 @@
             const subs = participants.filter(p => (p.isStarter === false || p.isStarter === 'false') && p.posicion !== 'entrenador');
             
             // --- LÓGICA DE COLOCACIÓN ---
-            // Comprobamos si tenemos datos de posición guardados (propiedad pitchSlot)
+            // Verificamos si hay al menos un jugador con posición guardada
             const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
 
             if (hasSavedSlots) {
                 // MODO: Restaurar diseño exacto
                 starters.forEach(p => {
                     if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
+                        // Usamos prefijo 'edit-' para que coincida con el HTML
                         currentPitchPlayers[`edit-slot-${p.pitchSlot}`] = p.id;
                     } else {
-                        // Si alguno perdió el slot, lo buscamos hueco libre (raro)
+                        // Fallback: Si alguno perdió el slot, buscar hueco libre
                         for(let i=0; i<11; i++) {
                             if(!currentPitchPlayers[`edit-slot-${i}`]) {
                                 currentPitchPlayers[`edit-slot-${i}`] = p.id;
@@ -4981,7 +4982,7 @@
             document.getElementById('edit-match-id').value = match.id;
             document.getElementById('edit-match-form').setAttribute('data-is-imported', match.isImported || 'false');
 
-            // Determinar formación guardada o defecto
+            // Recuperar formación guardada o usar defecto
             const savedFormation = match.formation || "4-3-3";
 
             content.innerHTML = `
@@ -4992,6 +4993,7 @@
                             <option value="4-3-3" ${savedFormation === '4-3-3' ? 'selected' : ''}>4-3-3</option>
                             <option value="4-4-2" ${savedFormation === '4-4-2' ? 'selected' : ''}>4-4-2</option>
                             <option value="4-2-3-1" ${savedFormation === '4-2-3-1' ? 'selected' : ''}>4-2-3-1</option>
+                            <option value="3-5-2" ${savedFormation === '3-5-2' ? 'selected' : ''}>3-5-2</option>
                         </select>
                     </div>
 
@@ -5009,11 +5011,11 @@
 
                         <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                             <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla del Partido</div>
+                                <div class="bg-gray-100 p-2 border-b text-xs font-bold uppercase text-center text-gray-600">Plantilla</div>
                                 <div id="edit-bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start"></div>
                             </div>
                             <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
-                                <div class="bg-blue-100 p-1 border-b text-[10px] font-bold uppercase text-center text-blue-600">Suplentes Confirmados</div>
+                                <div class="bg-blue-100 p-1 border-b text-[10px] font-bold uppercase text-center text-blue-600">Suplentes</div>
                                 <div id="edit-subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start"></div>
                             </div>
                         </div>
@@ -5030,7 +5032,7 @@
                     <div class="mb-4 bg-amber-50 p-3 rounded-lg text-sm text-amber-800 flex justify-between items-center">
                         <span>📊 <b>Paso 2:</b> Edita los datos del partido.</span>
                         <span class="text-xs bg-white px-2 py-1 rounded border border-amber-200">
-                            ${match.isImported ? '🔒 Notas bloqueadas (Excel)' : '🔓 Edición completa (Web)'}
+                            ${match.isImported ? '🔒 Notas bloqueadas' : '🔓 Edición completa'}
                         </span>
                     </div>
 
@@ -5040,8 +5042,7 @@
                         <div><label class="text-xs text-gray-500 font-bold">Estadio</label><input type="text" value="${match.venue}" readonly class="w-full border rounded px-2 py-1 bg-gray-100 text-gray-500"></div>
                     </div>
 
-                    <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
-                        </div>
+                    <div id="edit-stats-list" class="flex-1 overflow-y-auto space-y-2 pr-2"></div>
 
                     <div class="mt-4 pt-4 border-t flex justify-between items-center">
                         <button type="button" onclick="backToEditLineup()" class="text-gray-500 hover:text-gray-800 font-medium text-sm">
@@ -5053,11 +5054,13 @@
 
             const modal = document.getElementById('edit-match-modal');
             modal.classList.add('active'); 
-            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
-
-            // Forzar actualización de la formación visual
-            updatePitchFormation(); 
-            renderBench('edit-');  
+            
+            // Ocultar botón Guardar global (se muestra en el paso 2)
+            const oldSaveBtn = document.querySelector('#edit-match-modal button[onclick*="handleEditMatchSubmit"]');
+            if(oldSaveBtn) oldSaveBtn.style.display = 'none'; // Lo ocultamos forzosamente
+            // 4. Renderizar Pizarra
+            updatePitchFormation(); // Esto leerá 'edit-formation-select' y pintará los slots
+            renderBench('edit-');   // Esto pintará el banquillo
         }
 
         document.getElementById('edit-match-form').addEventListener('submit', function(e) {
@@ -7426,153 +7429,155 @@
             html += '</div>';
             container.innerHTML = html;
         }
+
         function handleEditMatchSubmit(e) {
             if(e) e.preventDefault(); 
-            if (!currentTeam) { alert("Error crítico de sesión. Recarga."); return; }
+            
+            try { // INICIO DEL BLOQUE SEGURO
+                
+                // console.log("Intentando guardar..."); // Depuración
 
-            const matchId = document.getElementById('edit-match-id').value;
-            const matches = getData('matches');
-            const matchIndex = matches.findIndex(m => m.id === matchId);
-            if (matchIndex === -1) return;
+                if (!currentTeam) throw new Error("No hay equipo seleccionado (currentTeam es null). Recarga la página.");
 
-            // Recoger resultado
-            const resultInput = document.getElementById('edit-result-val');
-            const newResult = resultInput ? resultInput.value.trim() : null;
-            if (!newResult) { alert("El resultado es obligatorio."); return; }
+                const matchId = document.getElementById('edit-match-id').value;
+                const matches = getData('matches');
+                const matchIndex = matches.findIndex(m => m.id === matchId);
+                
+                if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
 
-            // NUEVO: Recoger Formación
-            const formationSelect = document.getElementById('edit-formation-select');
-            const newFormation = formationSelect ? formationSelect.value : "4-3-3";
+                // 1. Datos Generales
+                const resultInput = document.getElementById('edit-result-val');
+                const newResult = resultInput ? resultInput.value.trim() : null;
+                if (!newResult) throw new Error("El resultado no puede estar vacío.");
 
-            // Recoger Stats
-            const statsContainer = document.getElementById('edit-stats-list');
-            const newPlayerStats = [];
+                const formationSelect = document.getElementById('edit-formation-select');
+                const newFormation = formationSelect ? formationSelect.value : "4-3-3";
 
-            statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
-                const playerId = row.getAttribute('data-player-id');
-                const rol = row.getAttribute('data-rol');
-                const isCoach = rol === 'Entrenador';
-                const isStarter = rol === 'Titular';
+                // 2. Recoger Stats y Posiciones
+                const statsContainer = document.getElementById('edit-stats-list');
+                if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
 
-                // NUEVO: Detectar en qué Slot visual estaba (para los titulares)
-                let savedSlotIdx = null;
-                if (isStarter) {
-                    // Buscamos en el objeto de la pizarra qué clave (ej: "edit-slot-4") tiene este ID
-                    const slotKey = Object.keys(currentPitchPlayers).find(k => currentPitchPlayers[k] === playerId);
-                    if (slotKey) {
-                        // Extraemos el número (0, 1, 2...)
-                        savedSlotIdx = parseInt(slotKey.replace('edit-slot-', ''));
+                const newPlayerStats = [];
+
+                statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+                    const playerId = row.getAttribute('data-player-id');
+                    const rol = row.getAttribute('data-rol');
+                    const isCoach = rol === 'Entrenador';
+                    const isStarter = rol === 'Titular';
+
+                    // LÓGICA DE POSICIÓN
+                    let savedSlotIdx = null;
+                    if (isStarter) {
+                        // Buscamos manualmente en el objeto currentPitchPlayers
+                        const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+                        if (slotKey) {
+                            const numMatch = slotKey.match(/\d+/);
+                            if (numMatch) savedSlotIdx = parseInt(numMatch[0]);
+                        }
                     }
+
+                    // Leer inputs
+                    let rating = null;
+                    const ratingInput = row.querySelector('.stat-rating');
+                    if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+
+                    const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
+                    const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
+                    const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
+                    const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
+                    const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
+
+                    newPlayerStats.push({
+                        playerId,
+                        isStarter,
+                        pitchSlot: savedSlotIdx, 
+                        rating,
+                        goals,
+                        assists,
+                        minutes,
+                        yellowCards: yellow,
+                        redCards: red,
+                        played: true
+                    });
+                });
+
+                // 3. Actualizar Objeto
+                const matchToUpdate = matches[matchIndex];
+                matchToUpdate.result = newResult;
+                matchToUpdate.formation = newFormation;
+                matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
+                matchToUpdate.playerStats = newPlayerStats;
+                matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
+
+                // 4. Guardar
+                saveData('matches', matches);
+                
+                if (typeof recalculateCompetitionState === "function") {
+                    recalculateCompetitionState(matchToUpdate.competition);
                 }
 
-                // Leer inputs numéricos
-                let rating = null;
-                const ratingInput = row.querySelector('.stat-rating');
-                if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+                closeEditMatchModal();
+                renderMatches();
+                renderStats(); 
+                renderPrincipal();
+                renderCompetitionStatus();
+                
+                editingMatchPlayersPool = null;
+                
+                alert("✅ GUARDADO CORRECTAMENTE:\n- Datos actualizados\n- Posiciones de pizarra guardadas");
 
-                const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
-                const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
-                const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
-                const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
-                const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
-
-                newPlayerStats.push({
-                    playerId,
-                    isStarter,
-                    pitchSlot: savedSlotIdx, // <--- Guardamos la posición visual
-                    rating,
-                    goals,
-                    assists,
-                    minutes,
-                    yellowCards: yellow,
-                    redCards: red,
-                    played: true
-                });
-            });
-
-            // Guardar en objeto partido
-            const matchToUpdate = matches[matchIndex];
-            matchToUpdate.result = newResult;
-            matchToUpdate.formation = newFormation; // <--- Guardamos formación
-            matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
-            matchToUpdate.playerStats = newPlayerStats;
-            matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
-
-            saveData('matches', matches);
-            if (typeof recalculateCompetitionState === "function") {
-                 recalculateCompetitionState(matchToUpdate.competition);
+            } catch (error) {
+                console.error(error);
+                alert("❌ ERROR AL GUARDAR:\n" + error.message);
             }
-
-            closeEditMatchModal();
-            renderMatches();
-            renderStats(); 
-            renderPrincipal();
-            renderCompetitionStatus();
-            
-            editingMatchPlayersPool = null;
-            alert("✅ Partido y alineación guardados.");
         }
+
         function goToEditStats() {
-            // 1. Validar 11 Titulares
+            // 1. Validar alineación
             const starterIds = Object.values(currentPitchPlayers).filter(id => id);
             
-            // Permitimos continuar aunque falten titulares, pero avisamos (opcional)
-            // if (starterIds.length !== 11) { alert(...); return; }
-
-            // 2. Preparar Datos
+            // 2. Preparar datos
             const matchId = document.getElementById('edit-match-id').value;
             const matches = getData('matches');
             const match = matches.find(m => m.id === matchId);
             const isImported = match.isImported === true;
             
             const players = getPlayers();
-            
-            // AQUI ESTABA LA CLAVE: Asegurarnos de usar currentSubstitutes
             const subIds = currentSubstitutes || []; 
             
-            // Unificar lista (Titulares + Suplentes + Entrenador)
+            // Unificar lista
             const coach = players.find(p => p.posicion === 'entrenador');
             let roster = [];
             
-            // Añadir Titulares
             starterIds.forEach(id => {
                 const p = players.find(pl => pl.id === id);
                 if(p) roster.push({ ...p, rol: 'Titular' });
             });
-
-            // Añadir Suplentes (Ahora sí aparecerán)
             subIds.forEach(id => {
                 const p = players.find(pl => pl.id === id);
-                // Evitar duplicados por seguridad (si alguien lo puso de titular y suplente a la vez por error)
                 if(p && !roster.find(r => r.id === p.id)) {
                     roster.push({ ...p, rol: 'Suplente' });
                 }
             });
-
             if(coach) roster.push({ ...coach, rol: 'Entrenador' });
 
-            // 3. Generar HTML de la Lista
+            // 3. Generar HTML
             const container = document.getElementById('edit-stats-list');
             
             if (roster.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados en la pizarra.</p>';
+                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados.</p>';
             } else {
-                container.innerHTML = roster.map(p => {
-                    // Buscar stats actuales del partido
+                let htmlRows = roster.map(p => {
                     const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
                     
-                    // Valores por defecto o previos
                     const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
                     const goalsVal = prevStats ? prevStats.goals : 0;
                     const assistsVal = prevStats ? prevStats.assists : 0;
                     const yellowVal = prevStats ? prevStats.yellowCards : 0;
                     const redVal = prevStats ? prevStats.redCards : 0;
-                    // Minutos: Si ya tenía dato usalo, si no: 90 titular, 30 suplente, 0 si no jugó
                     const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 30);
                     
                     const isCoach = p.rol === 'Entrenador';
-
-                    // Lógica de Bloqueo de Nota (Si es importado = readonly)
                     const ratingInputAttr = (isImported && !isCoach) 
                         ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
                         : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
@@ -7586,41 +7591,31 @@
                             <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
                             <p class="text-[10px] text-gray-500 uppercase tracking-wide">${p.rol}</p>
                         </div>
-
                         <div class="flex-1 grid grid-cols-6 gap-2">
-                            <div class="col-span-1">
-                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Nota</label>
-                                <input type="number" step="0.1" value="${ratingVal}" placeholder="-" ${ratingInputAttr}>
-                            </div>
-                            <div class="col-span-1">
-                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Gol</label>
-                                ${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${goalsVal}">` : '<div class="text-center text-gray-300">-</div>'}
-                            </div>
-                            <div class="col-span-1">
-                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Asis</label>
-                                ${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${assistsVal}">` : '<div class="text-center text-gray-300">-</div>'}
-                            </div>
-                            <div class="col-span-1">
-                                <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Min</label>
-                                ${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${minsVal}">` : '<div class="text-center text-gray-300">-</div>'}
-                            </div>
-                            <div class="col-span-1">
-                                 <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟨</label>
-                                 <input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm font-medium bg-yellow-50" max="2" value="${yellowVal}">
-                            </div>
-                             <div class="col-span-1">
-                                 <label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟥</label>
-                                 <input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm font-medium bg-red-50" max="1" value="${redVal}">
-                            </div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" placeholder="-" ${ratingInputAttr}></div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Gol</label>${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${goalsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Asis</label>${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${assistsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Min</label>${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${minsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟨</label><input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm font-medium bg-yellow-50" max="2" value="${yellowVal}"></div>
+                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟥</label><input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm font-medium bg-red-50" max="1" value="${redVal}"></div>
                         </div>
                     </div>`;
                 }).join('');
+
+                // AÑADIMOS EL BOTÓN DE GUARDAR AL FINAL DE LA LISTA
+                htmlRows += `
+                    <div class="mt-6 mb-2 pt-4 border-t border-gray-200">
+                        <button type="button" onclick="handleEditMatchSubmit(event)" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-md transition-all flex justify-center items-center gap-2">
+                            💾 GUARDAR TODOS LOS CAMBIOS
+                        </button>
+                    </div>
+                `;
+                container.innerHTML = htmlRows;
             }
 
-            // 4. Cambiar de Vista
+            // Cambiar vista
             document.getElementById('edit-step-lineup').classList.add('hidden');
             document.getElementById('edit-step-stats').classList.remove('hidden');
-            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.remove('hidden');
         }
 
         function backToEditLineup() {
