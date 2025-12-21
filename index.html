@@ -7023,7 +7023,7 @@
         // Solo importa si coincide con el Calendario Oficial
         // ==========================================
 
-        function processCSVData(csvText) {
+            function processCSVData(csvText) {
             const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
             if (lines.length < 2) {
                 alert("⚠️ El archivo CSV parece estar vacío.");
@@ -7050,9 +7050,8 @@
             // 1. LEER CABECERAS
             const rivals = parseCSVRow(lines[0]).slice(1);
 
-            // 2. DETECTAR FECHAS (Lógica original restaurada)
+            // 2. DETECTAR FECHAS
             const row2 = parseCSVRow(lines[1]);
-            // Detectamos si la fila 2 tiene pinta de ser fechas (contiene / o -)
             const hasDateRow = row2.slice(1).some(cell => cell.includes('/') || cell.includes('-'));
 
             let startLine = 1;
@@ -7062,11 +7061,16 @@
                 startLine = 2;
                 csvDates = row2.slice(1);
             }
-            // (Eliminado el bloque 'else { alert... }' que bloqueaba la importación)
 
             const players = getPlayers();
-            const matches = getData('matches');
+            const matches = getData('matches'); // Partidos ya guardados en DB
             const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
+
+            // SETS DE CONTROL PARA EVITAR DUPLICADOS
+            // 1. IDs que ya están guardados en la web (para no sobrescribir)
+            const registeredEventIds = new Set(matches.map(m => m.calendarEventId));
+            // 2. IDs que acabamos de asignar en esta importación (para evitar duplicados en el mismo CSV)
+            const sessionEventIds = new Set();
 
             let linkedCount = 0;
             let skippedCount = 0;
@@ -7074,21 +7078,20 @@
 
             const newMatchesMap = {};
             
-            // 3. PREPARAR PARTIDOS
+            // 3. PREPARAR PARTIDOS Y VINCULAR
             rivals.forEach((rivalName, index) => {
                 if(rivalName) {
                     let csvDateObj = new Date();
                     let dateStringOriginal = csvDates[index] || "Sin fecha";
                     let isValidDate = false;
 
-                    // Lógica de fecha original (sin corrección forzada de años)
+                    // Parsear fecha
                     if (hasDateRow && csvDates[index]) {
                         const dParts = csvDates[index].split(/[\/\-]/);
                         if (dParts.length === 3) {
                             const day = parseInt(dParts[0]);
                             const month = parseInt(dParts[1]) - 1;
                             const year = parseInt(dParts[2]);
-                            // create date a las 12:00 para evitar problemas de timezone
                             csvDateObj = new Date(year, month, day, 12, 0, 0);
                             isValidDate = true;
                         }
@@ -7096,26 +7099,49 @@
 
                     // Buscar en calendario oficial
                     let foundEvent = null;
+                    let skipReason = null;
+
                     if (isValidDate && officialEvents.length > 0) {
                         foundEvent = officialEvents.find(e => {
                             const nameMatch = e.opponent.toLowerCase().includes(rivalName.toLowerCase()) || 
                                               rivalName.toLowerCase().includes(e.opponent.toLowerCase());
                             const diffTime = Math.abs(e.start - csvDateObj);
                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            return nameMatch && diffDays <= 2; // Margen original de 2 días
+                            return nameMatch && diffDays <= 2;
                         });
+                    } else {
+                        skipReason = "No coincide con calendario (Fecha/Nombre)";
+                    }
+
+                    // --- LÓGICA ANTI-DUPLICADOS ---
+                    if (foundEvent) {
+                        if (registeredEventIds.has(foundEvent.id)) {
+                            // CASO A: Ya existe en la base de datos
+                            foundEvent = null;
+                            skipReason = "Ya registrado en la base de datos";
+                        } else if (sessionEventIds.has(foundEvent.id)) {
+                            // CASO B: Ya lo hemos cogido en una columna anterior de este mismo CSV
+                            foundEvent = null;
+                            skipReason = "Duplicado en este archivo CSV";
+                        } else {
+                            // ✅ Partido Nuevo y Único: Lo marcamos como usado para esta sesión
+                            sessionEventIds.add(foundEvent.id);
+                        }
+                    } else if (!skipReason) {
+                        skipReason = "No encontrado en calendario";
                     }
 
                     newMatchesMap[index] = {
                         opponent: rivalName,
                         originalDate: dateStringOriginal,
-                        linkedEvent: foundEvent, 
+                        linkedEvent: foundEvent,
+                        skipReason: skipReason, // Guardamos la razón para el log final
                         playerStats: []
                     };
                 }
             });
 
-            // 4. LEER NOTAS (Mantenemos el arreglo de limpieza aquí)
+            // 4. LEER NOTAS
             for (let i = startLine; i < lines.length; i++) {
                 const row = parseCSVRow(lines[i]);
                 const playerName = row[0];
@@ -7130,14 +7156,9 @@
                 if (player) {
                     for (let col = 1; col < row.length; col++) {
                         let noteStr = row[col];
-                        
                         if (!noteStr || noteStr.trim() === '') continue;
 
-                        // --- ARREGLO DE NOTAS ---
-                        // 1. Cambiar coma por punto
-                        // 2. Eliminar todo lo que NO sea número o punto (quita letras, asteriscos, espacios)
                         noteStr = noteStr.replace(',', '.').replace(/[^0-9.]/g, ''); 
-
                         const rating = parseFloat(noteStr);
 
                         if (!isNaN(rating) && rating > 0) {
@@ -7146,7 +7167,7 @@
                                     playerId: player.id,
                                     isStarter: true,
                                     minutes: 90,
-                                    rating: rating, // Guardamos la nota limpia
+                                    rating: rating,
                                     goals: 0, 
                                     assists: 0, 
                                     yellowCards: 0, 
@@ -7161,6 +7182,7 @@
 
             // 5. PROCESAR Y GUARDAR
             Object.values(newMatchesMap).forEach(m => {
+                // Solo procesamos si hay jugadores con nota para ese partido
                 if (m.playerStats.length > 0) {
                     if (m.linkedEvent) {
                         linkedCount++;
@@ -7182,8 +7204,9 @@
                         };
                         matches.push(finalMatch);
                     } else {
+                        // Si no se vinculó (por no existir o por estar duplicado), lo metemos al log
                         skippedCount++;
-                        skippedLog.push(`- ${m.opponent} (${m.originalDate}): No coincide con calendario oficial.`);
+                        skippedLog.push(`- ${m.opponent} (${m.originalDate}): ${m.skipReason || "Error desconocido"}.`);
                     }
                 }
             });
@@ -7197,7 +7220,7 @@
             
             let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados correctamente.`;
             if (skippedCount > 0) {
-                msg += `\n\n⚠️ ${skippedCount} partidos OMITIDOS por no encontrarse en el calendario:\n${skippedLog.join('\n')}`;
+                msg += `\n\n⚠️ ${skippedCount} partidos OMITIDOS:\n${skippedLog.join('\n')}`;
             }
             alert(msg);
         }
