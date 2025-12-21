@@ -5102,7 +5102,7 @@
                     <button type="button" onclick="backToEditLineup()" class="text-slate-500 hover:text-slate-800 font-bold text-sm px-4">
                         ⬅️ Volver
                     </button>
-                    <button type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-lg transition-all transform hover:-translate-y-0.5">
+                    <button id="edit-save-btn" type="button" onclick="handleEditMatchSubmit(event)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg text-lg transition-all transform hover:-translate-y-0.5">
                         💾 GUARDAR CAMBIOS
                     </button>
                 </div>
@@ -7608,88 +7608,90 @@
             }
         }
 
-        function goToEditStats() {
-            const statsList = document.getElementById('edit-stats-list');
-    if (!statsList) {
-        console.error('edit-stats-list no existe todavía');
-        return;
-    }
-            // 1. Recoger jugadores de la pizarra y suplentes
-            const starterIds = Object.values(currentPitchPlayers).filter(id => id);
-            const subIds = currentSubstitutes || []; 
-            const players = getPlayers();
+            // --- 2. NAVEGACIÓN Y GUARDADO ---
+function goToEditStats() {
+    const starterIds = Object.values(currentPitchPlayers).filter(id => id);
+    const subIds = currentSubstitutes || []; 
+    const players = getPlayers();
+    
+    const matchId = document.getElementById('edit-match-id').value;
+    const matches = getData('matches');
+    const match = matches.find(m => m.id === matchId);
+    
+    // Seguridad: Leer isImported del objeto match, no del DOM
+    const isImported = match.isImported === true;
+    const coach = players.find(p => p.posicion === 'entrenador');
 
-            // 2. Preparar Roster
-            const matchId = document.getElementById('edit-match-id').value;
-            const matches = getData('matches');
-            const match = matches.find(m => m.id === matchId);
-            const isImported = match.isImported === true;
-            
-            const coach = players.find(p => p.posicion === 'entrenador');
-            let roster = [];
-            
-            starterIds.forEach(id => {
-                const p = players.find(pl => pl.id === id);
-                if(p) roster.push({ ...p, rol: 'Titular' });
-            });
-            subIds.forEach(id => {
-                const p = players.find(pl => pl.id === id);
-                if(p && !roster.find(r => r.id === p.id)) {
-                    roster.push({ ...p, rol: 'Suplente' });
-                }
-            });
-            if(coach) roster.push({ ...coach, rol: 'Entrenador' });
-
-            // 3. Pintar Lista (SIN el botón, porque ya está en el HTML)
-            const container = document.getElementById('edit-stats-list');
-            
-            if (roster.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 mt-4">No hay jugadores seleccionados.</p>';
-            } else {
-                container.innerHTML = roster.map(p => {
-                    const prevStats = match.playerStats.find(ps => ps.playerId === p.id);
-                    
-                    const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
-                    const goalsVal = prevStats ? prevStats.goals : 0;
-                    const assistsVal = prevStats ? prevStats.assists : 0;
-                    const yellowVal = prevStats ? prevStats.yellowCards : 0;
-                    const redVal = prevStats ? prevStats.redCards : 0;
-                    const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 30);
-                    
-                    const isCoach = p.rol === 'Entrenador';
-                    const ratingInputAttr = (isImported && !isCoach) 
-                        ? `readonly class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold bg-gray-100 text-gray-500 cursor-not-allowed"`
-                        : `class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none"`;
-
-                    return `
-                    <div class="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex items-center gap-3" data-player-id="${p.id}" data-rol="${p.rol}">
-                        <div class="w-10 flex flex-col items-center">
-                             <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top shadow-sm">
-                        </div>
-                        <div class="w-24 overflow-hidden">
-                            <p class="text-xs font-bold truncate">${p.apodo || p.apellido}</p>
-                            <p class="text-[10px] text-gray-500 uppercase tracking-wide">${p.rol}</p>
-                        </div>
-                        <div class="flex-1 grid grid-cols-6 gap-2">
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" placeholder="-" ${ratingInputAttr}></div>
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Gol</label>${!isCoach ? `<input type="number" class="stat-goals w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${goalsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Asis</label>${!isCoach ? `<input type="number" class="stat-assists w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${assistsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">Min</label>${!isCoach ? `<input type="number" class="stat-minutes w-full px-1 py-1 border rounded text-center text-sm font-medium" value="${minsVal}">` : '<div class="text-center text-gray-300">-</div>'}</div>
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟨</label><input type="number" class="stat-yellow w-full px-1 py-1 border rounded text-center text-sm font-medium bg-yellow-50" max="2" value="${yellowVal}"></div>
-                            <div class="col-span-1"><label class="text-[8px] uppercase text-gray-400 block text-center mb-1">🟥</label><input type="number" class="stat-red w-full px-1 py-1 border rounded text-center text-sm font-medium bg-red-50" max="1" value="${redVal}"></div>
-                        </div>
-                    </div>`;
-                }).join('');
-            }
-
-            // Cambiar vista
-            document.getElementById('edit-step-lineup').classList.add('hidden');
-            document.getElementById('edit-step-stats').classList.remove('hidden');
+    let roster = [];
+    starterIds.forEach(id => {
+        const p = players.find(pl => pl.id === id);
+        if(p) roster.push({ ...p, rol: 'Titular' });
+    });
+    
+    subIds.forEach(id => {
+        const p = players.find(pl => pl.id === id);
+        // ✅ CORRECCIÓN 1 (Extra): Asegurar que el entrenador NO se cuele aquí
+        if(p && p.posicion !== 'entrenador' && !roster.find(r => r.id === p.id)) {
+            roster.push({ ...p, rol: 'Suplente' });
         }
+    });
+    
+    if(coach) roster.push({ ...coach, rol: 'Entrenador' });
+
+    const container = document.getElementById('edit-stats-list');
+    
+    if (roster.length === 0) {
+        container.innerHTML = '<div class="text-center p-8 text-gray-400">No hay jugadores seleccionados.</div>';
+    } else {
+        container.innerHTML = roster.map(p => {
+            const prevStats = match.playerStats ? match.playerStats.find(ps => ps.playerId === p.id) : null;
+            const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
+            const goalsVal = prevStats ? (prevStats.goals || 0) : 0;
+            const assistsVal = prevStats ? (prevStats.assists || 0) : 0;
+            const yellowVal = prevStats ? (prevStats.yellowCards || 0) : 0;
+            const redVal = prevStats ? (prevStats.redCards || 0) : 0;
+            const minsVal = prevStats ? (prevStats.minutes || (p.rol === 'Titular' ? 90 : (p.rol === 'Suplente' ? 30 : 0))) : 0;
+            
+            const isCoach = p.rol === 'Entrenador';
+            
+            // ✅ CORRECCIÓN 2: Si es importado, se bloquea SIEMPRE (incluido Entrenador)
+            // Lógica anterior: (isImported && !isCoach) -> dejaba editar al míster.
+            // Lógica nueva: (isImported) -> bloquea a todos.
+            const ratingAttr = (isImported) 
+                ? `readonly class="stat-rating w-full bg-gray-100 text-gray-400 border border-gray-200 rounded text-center font-bold text-sm py-1 cursor-not-allowed"`
+                : `class="stat-rating w-full border border-gray-300 rounded text-center font-bold text-sm py-1 focus:ring-2 focus:ring-blue-500"`;
+
+            return `
+            <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100 shadow-sm" data-player-id="${p.id}" data-rol="${p.rol}">
+                <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200 bg-gray-50" onerror="this.src='https://via.placeholder.com/40'">
+                <div class="w-28 shrink-0">
+                    <div class="font-bold text-sm truncate text-gray-800">${p.apodo || p.apellido}</div>
+                    <div class="text-[10px] uppercase font-bold tracking-wider ${p.rol === 'Titular' ? 'text-emerald-600' : (isCoach ? 'text-gray-500' : 'text-blue-500')}">${p.rol}</div>
+                </div>
+                <div class="flex-1 grid grid-cols-6 gap-2">
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" ${ratingAttr} placeholder="-"></div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Gol</label>${isCoach?'-':`<input type="number" class="stat-goals w-full border border-gray-300 rounded text-center text-sm py-1" value="${goalsVal}">`}</div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Asis</label>${isCoach?'-':`<input type="number" class="stat-assists w-full border border-gray-300 rounded text-center text-sm py-1" value="${assistsVal}">`}</div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Min</label>${isCoach?'-':`<input type="number" class="stat-minutes w-full border border-gray-300 rounded text-center text-sm py-1" value="${minsVal}">`}</div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Ama</label><input type="number" class="stat-yellow w-full border border-yellow-200 bg-yellow-50 rounded text-center text-sm py-1" max="2" value="${yellowVal}"></div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Roj</label><input type="number" class="stat-red w-full border border-red-200 bg-red-50 rounded text-center text-sm py-1" max="1" value="${redVal}"></div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    document.getElementById('edit-step-lineup').classList.add('hidden');
+    document.getElementById('edit-step-stats').classList.remove('hidden');
+    document.getElementById('edit-step-stats').classList.add('flex');
+    const saveBtn = document.getElementById('edit-save-btn');
+    if (saveBtn) saveBtn.style.display = 'block';
+}
 
         function backToEditLineup() {
             document.getElementById('edit-step-stats').classList.add('hidden');
             document.getElementById('edit-step-lineup').classList.remove('hidden');
+             const saveBtn = document.getElementById('edit-save-btn');
+            if (saveBtn) saveBtn.style.display = 'none';
             // Ocultar botón Guardar para que no guarden a medias
             document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
         }
