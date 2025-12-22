@@ -7022,208 +7022,208 @@
         // IMPORTADOR CSV ESTRICTO (V5.0)
         // Solo importa si coincide con el Calendario Oficial
         // ==========================================
+            // --- IMPORTADOR CSV BLINDADO (SIN DUPLICADOS) ---
+function processCSVData(csvText) {
+    const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
+    if (lines.length < 2) {
+        alert("⚠️ El archivo CSV parece estar vacío.");
+        return;
+    }
 
-            function processCSVData(csvText) {
-            const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                alert("⚠️ El archivo CSV parece estar vacío.");
-                return;
-            }
-
-            const separator = lines[0].indexOf(';') > -1 ? ';' : ',';
-            
-            // Parser de CSV
-            const parseCSVRow = (rowText) => {
-                const result = [];
-                let current = '';
-                let inQuotes = false;
-                for (let i = 0; i < rowText.length; i++) {
-                    const char = rowText[i];
-                    if (char === '"') { inQuotes = !inQuotes; }
-                    else if (char === separator && !inQuotes) { result.push(current); current = ''; }
-                    else { current += char; }
-                }
-                result.push(current);
-                return result.map(val => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
-            };
-
-            // 1. LEER CABECERAS
-            const rivals = parseCSVRow(lines[0]).slice(1);
-
-            // 2. DETECTAR FECHAS
-            const row2 = parseCSVRow(lines[1]);
-            const hasDateRow = row2.slice(1).some(cell => cell.includes('/') || cell.includes('-'));
-
-            let startLine = 1;
-            let csvDates = [];
-
-            if (hasDateRow) {
-                startLine = 2;
-                csvDates = row2.slice(1);
-            }
-
-            const players = getPlayers();
-            const matches = getData('matches'); // Partidos ya guardados en DB
-            const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
-
-            // SETS DE CONTROL PARA EVITAR DUPLICADOS
-            // 1. IDs que ya están guardados en la web (para no sobrescribir)
-            const registeredEventIds = new Set(matches.map(m => m.calendarEventId));
-            // 2. IDs que acabamos de asignar en esta importación (para evitar duplicados en el mismo CSV)
-            const sessionEventIds = new Set();
-
-            let linkedCount = 0;
-            let skippedCount = 0;
-            let skippedLog = [];
-
-            const newMatchesMap = {};
-            
-            // 3. PREPARAR PARTIDOS Y VINCULAR
-            rivals.forEach((rivalName, index) => {
-                if(rivalName) {
-                    let csvDateObj = new Date();
-                    let dateStringOriginal = csvDates[index] || "Sin fecha";
-                    let isValidDate = false;
-
-                    // Parsear fecha
-                    if (hasDateRow && csvDates[index]) {
-                        const dParts = csvDates[index].split(/[\/\-]/);
-                        if (dParts.length === 3) {
-                            const day = parseInt(dParts[0]);
-                            const month = parseInt(dParts[1]) - 1;
-                            const year = parseInt(dParts[2]);
-                            csvDateObj = new Date(year, month, day, 12, 0, 0);
-                            isValidDate = true;
-                        }
-                    }
-
-                    // Buscar en calendario oficial
-                    let foundEvent = null;
-                    let skipReason = null;
-
-                    if (isValidDate && officialEvents.length > 0) {
-                        foundEvent = officialEvents.find(e => {
-                            const nameMatch = e.opponent.toLowerCase().includes(rivalName.toLowerCase()) || 
-                                              rivalName.toLowerCase().includes(e.opponent.toLowerCase());
-                            const diffTime = Math.abs(e.start - csvDateObj);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            return nameMatch && diffDays <= 2;
-                        });
-                    } else {
-                        skipReason = "No coincide con calendario (Fecha/Nombre)";
-                    }
-
-                    // --- LÓGICA ANTI-DUPLICADOS ---
-                    if (foundEvent) {
-                        if (registeredEventIds.has(foundEvent.id)) {
-                            // CASO A: Ya existe en la base de datos
-                            foundEvent = null;
-                            skipReason = "Ya registrado en la base de datos";
-                        } else if (sessionEventIds.has(foundEvent.id)) {
-                            // CASO B: Ya lo hemos cogido en una columna anterior de este mismo CSV
-                            foundEvent = null;
-                            skipReason = "Duplicado en este archivo CSV";
-                        } else {
-                            // ✅ Partido Nuevo y Único: Lo marcamos como usado para esta sesión
-                            sessionEventIds.add(foundEvent.id);
-                        }
-                    } else if (!skipReason) {
-                        skipReason = "No encontrado en calendario";
-                    }
-
-                    newMatchesMap[index] = {
-                        opponent: rivalName,
-                        originalDate: dateStringOriginal,
-                        linkedEvent: foundEvent,
-                        skipReason: skipReason, // Guardamos la razón para el log final
-                        playerStats: []
-                    };
-                }
-            });
-
-            // 4. LEER NOTAS
-            for (let i = startLine; i < lines.length; i++) {
-                const row = parseCSVRow(lines[i]);
-                const playerName = row[0];
-                
-                if (!playerName) continue;
-
-                const player = players.find(p => {
-                    const name = p.nombre + " " + p.apellido + " " + (p.apodo || "");
-                    return name.toLowerCase().includes(playerName.toLowerCase());
-                });
-
-                if (player) {
-                    for (let col = 1; col < row.length; col++) {
-                        let noteStr = row[col];
-                        if (!noteStr || noteStr.trim() === '') continue;
-
-                        noteStr = noteStr.replace(',', '.').replace(/[^0-9.]/g, ''); 
-                        const rating = parseFloat(noteStr);
-
-                        if (!isNaN(rating) && rating > 0) {
-                            if (newMatchesMap[col - 1]) {
-                                newMatchesMap[col - 1].playerStats.push({
-                                    playerId: player.id,
-                                    isStarter: true,
-                                    minutes: 90,
-                                    rating: rating,
-                                    goals: 0, 
-                                    assists: 0, 
-                                    yellowCards: 0, 
-                                    redCards: 0,
-                                    played: true
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 5. PROCESAR Y GUARDAR
-            Object.values(newMatchesMap).forEach(m => {
-                // Solo procesamos si hay jugadores con nota para ese partido
-                if (m.playerStats.length > 0) {
-                    if (m.linkedEvent) {
-                        linkedCount++;
-                        const finalMatch = {
-                            id: generateId(),
-                            calendarEventId: m.linkedEvent.id,
-                            competition: m.linkedEvent.competition || "Liga EA Sports",
-                            roundId: `jornada-${m.linkedEvent.start.getTime()}`,
-                            round: "Partido Oficial",
-                            date: m.linkedEvent.start.toISOString().split('T')[0],
-                            opponent: m.linkedEvent.opponent,
-                            venue: m.linkedEvent.venue,
-                            stadium: m.linkedEvent.location,
-                            result: "0-0", 
-                            outcome: "empate",
-                            isImported: true,
-                            mvp: calculateAutoMVP(m.playerStats),
-                            playerStats: m.playerStats
-                        };
-                        matches.push(finalMatch);
-                    } else {
-                        // Si no se vinculó (por no existir o por estar duplicado), lo metemos al log
-                        skippedCount++;
-                        skippedLog.push(`- ${m.opponent} (${m.originalDate}): ${m.skipReason || "Error desconocido"}.`);
-                    }
-                }
-            });
-
-            saveData('matches', matches);
-            
-            renderMatches();
-            renderStats();
-            renderPrincipal();
-            renderTrafficLight();
-            
-            let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados correctamente.`;
-            if (skippedCount > 0) {
-                msg += `\n\n⚠️ ${skippedCount} partidos OMITIDOS:\n${skippedLog.join('\n')}`;
-            }
-            alert(msg);
+    const separator = lines[0].indexOf(';') > -1 ? ';' : ',';
+    
+    // Parser de CSV
+    const parseCSVRow = (rowText) => {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < rowText.length; i++) {
+            const char = rowText[i];
+            if (char === '"') { inQuotes = !inQuotes; }
+            else if (char === separator && !inQuotes) { result.push(current); current = ''; }
+            else { current += char; }
         }
+        result.push(current);
+        return result.map(val => val.trim().replace(/^"|"$/g, '').replace(/""/g, '"'));
+    };
+
+    // 1. LEER CABECERAS
+    const rivals = parseCSVRow(lines[0]).slice(1);
+
+    // 2. DETECTAR FECHAS
+    const row2 = parseCSVRow(lines[1]);
+    const hasDateRow = row2.slice(1).some(cell => cell.includes('/') || cell.includes('-'));
+
+    let startLine = 1;
+    let csvDates = [];
+
+    if (hasDateRow) {
+        startLine = 2;
+        csvDates = row2.slice(1);
+    }
+
+    const players = getPlayers();
+    const matches = getData('matches');
+    const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
+
+    // --- FILTROS DE SEGURIDAD (ANTI-DUPLICADOS) ---
+    // 1. IDs que ya están guardados en la web (para no sobrescribir)
+    const registeredEventIds = new Set(matches.map(m => m.calendarEventId));
+    // 2. IDs que acabamos de asignar en esta importación (para evitar duplicados en el mismo CSV)
+    const sessionEventIds = new Set();
+
+    let linkedCount = 0;
+    let skippedCount = 0;
+    let skippedLog = [];
+
+    const newMatchesMap = {};
+    
+    // 3. PREPARAR PARTIDOS Y VINCULAR
+    rivals.forEach((rivalName, index) => {
+        if(rivalName) {
+            let csvDateObj = new Date();
+            let dateStringOriginal = csvDates[index] || "Sin fecha";
+            let isValidDate = false;
+
+            // Parsear fecha
+            if (hasDateRow && csvDates[index]) {
+                const dParts = csvDates[index].split(/[\/\-]/);
+                if (dParts.length === 3) {
+                    const day = parseInt(dParts[0]);
+                    const month = parseInt(dParts[1]) - 1;
+                    const year = parseInt(dParts[2]);
+                    csvDateObj = new Date(year, month, day, 12, 0, 0);
+                    isValidDate = true;
+                }
+            }
+
+            // Buscar en calendario oficial
+            let foundEvent = null;
+            let skipReason = null;
+
+            if (isValidDate && officialEvents.length > 0) {
+                foundEvent = officialEvents.find(e => {
+                    const nameMatch = e.opponent.toLowerCase().includes(rivalName.toLowerCase()) || 
+                                      rivalName.toLowerCase().includes(e.opponent.toLowerCase());
+                    const diffTime = Math.abs(e.start - csvDateObj);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                    return nameMatch && diffDays <= 2;
+                });
+            } else {
+                skipReason = "No coincide con calendario (Fecha/Nombre)";
+            }
+
+            // --- LÓGICA DE BLOQUEO DE DUPLICADOS ---
+            if (foundEvent) {
+                if (registeredEventIds.has(foundEvent.id)) {
+                    // CASO A: Ya existe en la base de datos -> OMITIR
+                    foundEvent = null;
+                    skipReason = "Ya registrado en la base de datos";
+                } else if (sessionEventIds.has(foundEvent.id)) {
+                    // CASO B: Duplicado dentro del propio CSV -> OMITIR
+                    foundEvent = null;
+                    skipReason = "Duplicado en este archivo CSV";
+                } else {
+                    // ✅ Partido Nuevo y Único: Lo marcamos como usado para esta sesión
+                    sessionEventIds.add(foundEvent.id);
+                }
+            } else if (!skipReason) {
+                skipReason = "No encontrado en calendario";
+            }
+
+            newMatchesMap[index] = {
+                opponent: rivalName,
+                originalDate: dateStringOriginal,
+                linkedEvent: foundEvent,
+                skipReason: skipReason, // Guardamos la razón para el log final
+                playerStats: []
+            };
+        }
+    });
+
+    // 4. LEER NOTAS
+    for (let i = startLine; i < lines.length; i++) {
+        const row = parseCSVRow(lines[i]);
+        const playerName = row[0];
+        
+        if (!playerName) continue;
+
+        const player = players.find(p => {
+            const name = p.nombre + " " + p.apellido + " " + (p.apodo || "");
+            return name.toLowerCase().includes(playerName.toLowerCase());
+        });
+
+        if (player) {
+            for (let col = 1; col < row.length; col++) {
+                let noteStr = row[col];
+                if (!noteStr || noteStr.trim() === '') continue;
+
+                noteStr = noteStr.replace(',', '.').replace(/[^0-9.]/g, ''); 
+                const rating = parseFloat(noteStr);
+
+                if (!isNaN(rating) && rating > 0) {
+                    if (newMatchesMap[col - 1]) {
+                        newMatchesMap[col - 1].playerStats.push({
+                            playerId: player.id,
+                            isStarter: true,
+                            minutes: 90,
+                            rating: rating,
+                            goals: 0, 
+                            assists: 0, 
+                            yellowCards: 0, 
+                            redCards: 0,
+                            played: true
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. PROCESAR Y GUARDAR
+    Object.values(newMatchesMap).forEach(m => {
+        // Solo procesamos si hay jugadores con nota para ese partido
+        if (m.playerStats.length > 0) {
+            if (m.linkedEvent) {
+                linkedCount++;
+                const finalMatch = {
+                    id: generateId(),
+                    calendarEventId: m.linkedEvent.id,
+                    competition: m.linkedEvent.competition || "Liga EA Sports",
+                    roundId: `jornada-${m.linkedEvent.start.getTime()}`,
+                    round: "Partido Oficial",
+                    date: m.linkedEvent.start.toISOString().split('T')[0],
+                    opponent: m.linkedEvent.opponent,
+                    venue: m.linkedEvent.venue,
+                    stadium: m.linkedEvent.location,
+                    result: "0-0", 
+                    outcome: "empate",
+                    isImported: true,
+                    mvp: calculateAutoMVP(m.playerStats),
+                    playerStats: m.playerStats
+                };
+                matches.push(finalMatch);
+            } else {
+                // Si no se vinculó (por no existir o por estar duplicado), lo metemos al log
+                skippedCount++;
+                skippedLog.push(`- ${m.opponent} (${m.originalDate}): ${m.skipReason || "Error desconocido"}.`);
+            }
+        }
+    });
+
+    saveData('matches', matches);
+    
+    renderMatches();
+    renderStats();
+    renderPrincipal();
+    renderTrafficLight();
+    
+    let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados correctamente.`;
+    if (skippedCount > 0) {
+        msg += `\n\n⚠️ ${skippedCount} partidos OMITIDOS:\n${skippedLog.join('\n')}`;
+    }
+    alert(msg);
+}
 
         function toggleCSVInfo() {
             const modal = document.getElementById('csv-info-modal');
