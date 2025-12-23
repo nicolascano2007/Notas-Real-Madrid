@@ -1026,10 +1026,10 @@
                                     <div class="mb-2 flex items-center justify-center gap-2">
                                         <label class="text-sm font-bold text-gray-700">Esquema:</label>
                                         <select id="formation-select" class="border rounded px-2 py-1 bg-white text-gray-800 focus:ring-2 focus:ring-green-500 text-sm" onchange="updatePitchFormation()">
-                                            <option value="4-3-3">4-3-3</option>
-                                            <option value="4-4-2">4-4-2</option>
-                                            <option value="4-2-3-1">4-2-3-1</option>
-                                            <option value="3-5-2">3-5-2</option>
+                                             <option value="4-3-3">4-3-3</option>
+                                             <option value="4-4-2">4-4-2</option>
+                                             <option value="4-2-3-1" selected>4-2-3-1</option> 
+                                             <option value="3-5-2">3-5-2</option>
                                         </select>
                                     </div>
 
@@ -1474,87 +1474,6 @@
                         <h4 class="font-bold text-gray-700 mb-4">Mapa de Rendimiento (Nota Media por Posición)</h4>
                         <div class="heatmap-pitch" id="heatmap-container">
                              <!-- Populated by JS -->
-                        </div>
-                    </div>
-
-                    <div class="mb-8">
-                        <h4 class="font-bold text-gray-700 text-xl mb-4">🔍 Análisis de Impacto (Efecto Talismán)</h4>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                            
-                            <div class="flex flex-col sm:flex-row items-center gap-4 mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                <label class="text-sm font-bold text-slate-700 whitespace-nowrap">Analizar influencia de:</label>
-                                <select id="impact-player-select" onchange="renderImpactAnalysis()" class="w-full sm:w-64 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white">
-                                    <option value="">Selecciona un jugador...</option>
-                                </select>
-                            </div>
-
-                            <div id="impact-results" class="hidden">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="bg-green-50 rounded-xl p-5 border border-green-100 relative overflow-hidden">
-                                        <div class="absolute top-0 right-0 p-4 opacity-10 text-green-600 text-6xl font-black">ON</div>
-                                        <h5 class="text-green-800 font-bold text-lg mb-4 flex items-center gap-2">✅ Con el jugador</h5>
-                                        
-                                        <div class="space-y-4">
-                                            <div>
-                                                <p class="text-xs text-green-600 uppercase font-bold">Porcentaje de Victorias</p>
-                                                <div class="flex items-end gap-2">
-                                                    <span class="text-3xl font-black text-green-700" id="impact-win-on">0%</span>
-                                                    <span class="text-sm text-green-600 mb-1" id="impact-matches-on">(0 part)</span>
-                                                </div>
-                                                <div class="w-full bg-green-200 h-2 rounded-full mt-1">
-                                                    <div id="bar-win-on" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <p class="text-xs text-green-600 uppercase font-bold">Goles Favor / Part</p>
-                                                    <p class="text-xl font-bold text-green-700" id="impact-gf-on">0.00</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-green-600 uppercase font-bold">Goles Contra / Part</p>
-                                                    <p class="text-xl font-bold text-green-700" id="impact-ga-on">0.00</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="bg-red-50 rounded-xl p-5 border border-red-100 relative overflow-hidden">
-                                        <div class="absolute top-0 right-0 p-4 opacity-10 text-red-600 text-6xl font-black">OFF</div>
-                                        <h5 class="text-red-800 font-bold text-lg mb-4 flex items-center gap-2">❌ Sin el jugador</h5>
-                                        
-                                        <div class="space-y-4">
-                                            <div>
-                                                <p class="text-xs text-red-600 uppercase font-bold">Porcentaje de Victorias</p>
-                                                <div class="flex items-end gap-2">
-                                                    <span class="text-3xl font-black text-red-700" id="impact-win-off">0%</span>
-                                                    <span class="text-sm text-red-600 mb-1" id="impact-matches-off">(0 part)</span>
-                                                </div>
-                                                <div class="w-full bg-red-200 h-2 rounded-full mt-1">
-                                                    <div id="bar-win-off" class="bg-red-500 h-2 rounded-full" style="width: 0%"></div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <p class="text-xs text-red-600 uppercase font-bold">Goles Favor / Part</p>
-                                                    <p class="text-xl font-bold text-red-700" id="impact-gf-off">0.00</p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-xs text-red-600 uppercase font-bold">Goles Contra / Part</p>
-                                                    <p class="text-xl font-bold text-red-700" id="impact-ga-off">0.00</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div id="impact-verdict" class="mt-4 p-3 rounded-lg text-center font-bold text-sm"></div>
-                            </div>
-                            
-                            <div id="impact-empty" class="text-center py-8 text-gray-400 italic">
-                                Selecciona un jugador para ver su impacto en el equipo.
-                            </div>
                         </div>
                     </div>
 
@@ -2895,7 +2814,6 @@ function renderRegularityAnalysis() {
         function renderAdvancedStats() {
             renderLineWarsChart();
             renderMinutesChart();
-            populateImpactSelect();
             const matches = getData('matches');
             const players = getPlayers();
 
@@ -3757,7 +3675,8 @@ function renderRegularityAnalysis() {
             document.getElementById('wizard-step-2').classList.remove('hidden');
             currentPitchPlayers = {}; // Reseteamos alineación
             currentSubstitutes = [];
-            renderBench();            // Cargamos jugadores
+            editingMatchPlayersPool = null;
+            renderBench();
             updatePitchFormation();   // Pintamos el campo (4-3-3 por defecto)
         }
 
@@ -4026,109 +3945,102 @@ function renderRegularityAnalysis() {
         }
 
         function renderPlayerStatsForm(containerId, currentCompetition) {
-            const container = document.getElementById(containerId);
-            let players = getActivePlayers();
-            
-            // SUSPENSION LOGIC: Find last match of this competition and check red cards
-            const matches = getData('matches')
-                .filter(m => m.competition === currentCompetition)
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            const lastMatch = matches[0]; // Most recent match
-            const suspendedPlayers = [];
-            
-            if (lastMatch) {
-                lastMatch.playerStats.forEach(ps => {
-                    if (ps.redCards > 0) {
-                        suspendedPlayers.push(ps.playerId);
-                    }
-                });
-            }
+    const container = document.getElementById(containerId);
+    let players = getActivePlayers();
+    
+    // SUSPENSION LOGIC
+    const matches = getData('matches')
+        .filter(m => m.competition === currentCompetition)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    const lastMatch = matches[0];
+    const suspendedPlayers = [];
+    
+    if (lastMatch) {
+        lastMatch.playerStats.forEach(ps => {
+            if (ps.redCards > 0) suspendedPlayers.push(ps.playerId);
+        });
+    }
 
-            // Use custom order for both teams
-            if (currentTeam === 'masculino' || currentTeam === 'femenino') {
-                const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
-                
-                players.sort((a, b) => {
-                    const idxA = orderList.indexOf(a.id);
-                    const idxB = orderList.indexOf(b.id);
-                    if (idxA === -1 && idxB === -1) return 0;
-                    if (idxA === -1) return 1; // Los que no estén en la lista van al final
-                    if (idxB === -1) return -1;
-                    return idxA - idxB;
-                });
-            } else {
-                // Fallback por si acaso
-                players.sort((a, b) => {
-                    if (a.posicion === 'entrenador') return -1;
-                    if (b.posicion === 'entrenador') return 1;
-                    return a.dorsal - b.dorsal;
-                });
-            }
-            container.innerHTML = players.map(player => {
-                const isCoach = player.posicion === 'entrenador';
-                const isSuspended = suspendedPlayers.includes(player.id) && !isCoach;
-                
-                return `
-                <div class="bg-gray-50 rounded-lg p-3 ${isSuspended ? 'player-suspended' : ''}" data-player-id="${player.id}">
-                    <div class="flex items-center gap-3 mb-3">
-                        <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
-                        <div class="flex-1">
-                        <span class="font-medium text-gray-800">${player.apodo || player.nombre + ' ' + player.apellido}</span>
-                            <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
-                            ${isSuspended ? '<span class="text-xs text-red-600 font-bold ml-2">⛔ SUSPENDIDO (Roja directa)</span>' : ''}
-                        </div>
-                        
-                         <!-- NEW CHECKBOXES: STARTER / SUB (Mutually Exclusive) -->
-                         ${!isCoach ? `
-                         <label class="flex items-center gap-1 text-sm cursor-pointer">
-                            <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${isSuspended ? 'disabled' : ''}>
-                            <span>Titular</span>
-                         </label>
-                         <label class="flex items-center gap-1 text-sm cursor-pointer">
-                            <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${isSuspended ? 'disabled' : ''}>
-                            <span>Suplente</span>
-                         </label>
-                         ` : `
-                         <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
-                         `}
+    // ORDER LOGIC
+    if (currentTeam === 'masculino' || currentTeam === 'femenino') {
+        const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
+        players.sort((a, b) => {
+            const idxA = orderList.indexOf(a.id);
+            const idxB = orderList.indexOf(b.id);
+            if (idxA === -1 && idxB === -1) return 0;
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+        });
+    } else {
+        players.sort((a, b) => {
+            if (a.posicion === 'entrenador') return -1;
+            if (b.posicion === 'entrenador') return 1;
+            return a.dorsal - b.dorsal;
+        });
+    }
 
-                    </div>
-                    
-                    <!-- Stats Section (Hidden/Shown based on participation) -->
-                    <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="${isCoach ? 'display:grid' : 'display:none'}">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
-                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" placeholder="–">
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Goles</label>
-                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Asist.</label>
-                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">Minutos</label>
-                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                        </div>
-                    </div>
-                    
-                    <!-- Cards Section (Always visible unless suspended) -->
-                     <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
-                            <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="0" ${isSuspended ? 'disabled' : ''}>
-                        </div>
-                        <div>
-                            <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
-                            <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="0" ${isSuspended ? 'disabled' : ''}>
-                        </div>
-                    </div>
+    container.innerHTML = players.map(player => {
+        const isCoach = player.posicion === 'entrenador';
+        const isSuspended = suspendedPlayers.includes(player.id) && !isCoach;
+        
+        return `
+        <div class="bg-gray-50 rounded-lg p-3 ${isSuspended ? 'player-suspended' : ''}" data-player-id="${player.id}">
+            <div class="flex items-center gap-3 mb-3">
+                <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
+                <div class="flex-1">
+                <span class="font-medium text-gray-800">${player.apodo || player.nombre + ' ' + player.apellido}</span>
+                    <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                    ${isSuspended ? '<span class="text-xs text-red-600 font-bold ml-2">⛔ SUSPENDIDO (Roja directa)</span>' : ''}
                 </div>
-            `}).join('');
-        }
+                
+                ${!isCoach ? `
+                <label class="flex items-center gap-1 text-sm cursor-pointer">
+                <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${isSuspended ? 'disabled' : ''}>
+                <span>Titular</span>
+                </label>
+                <label class="flex items-center gap-1 text-sm cursor-pointer">
+                <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${isSuspended ? 'disabled' : ''}>
+                <span>Suplente</span>
+                </label>
+                ` : `
+                <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
+                `}
+            </div>
+            
+            <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="${isCoach ? 'display:grid' : 'display:none'}">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
+                    <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" placeholder="–">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Goles</label>
+                    ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Asist.</label>
+                    ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Minutos</label>
+                    ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
+                    <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="0" oninput="checkAutoRedCard(this)" ${isSuspended ? 'disabled' : ''}>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
+                    <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="0" ${isSuspended ? 'disabled' : ''}>
+                </div>
+            </div>
+        </div>
+        `}).join('');
+}
         
         // Handles mutual exclusion for Starter/Sub checkboxes
         function handleRoleCheck(checkbox, role) {
@@ -5079,19 +4991,18 @@ function renderRegularityAnalysis() {
         }
         
             // --- 1. FUNCIÓN EDITAR PARTIDO (CORRECCIÓN CSV: SOBRANTES AL BANQUILLO) ---
-            function editMatch(matchId) {
+           function editMatch(matchId) {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // 1. Ocultar botón azul antiguo si existe (limpieza visual)
+    // --- LIMPIEZA Y PREPARACIÓN DEL FORMULARIO EXISTENTE ---
     const formContainer = document.getElementById('edit-match-form');
     if (formContainer && formContainer.parentElement) {
         const oldFooter = formContainer.parentElement.querySelector('.flex.justify-end.p-4');
         if (oldFooter) oldFooter.style.display = 'none';
     }
 
-    // --- CORRECCIÓN CLAVE 1: ASIGNAR EL ID Y ATRIBUTOS AL FORMULARIO YA EXISTENTE ---
     const idInput = document.getElementById('edit-match-id');
     if (idInput) idInput.value = match.id;
 
@@ -5099,9 +5010,8 @@ function renderRegularityAnalysis() {
     if (existingForm) {
         existingForm.setAttribute('data-is-imported', match.isImported || 'false');
     }
-    // --------------------------------------------------------------------------------
 
-    // 2. Preparar datos de jugadores
+    // --- LÓGICA DE JUGADORES (IGUAL QUE ANTES) ---
     const players = getPlayers();
     const participants = [];
     match.playerStats.forEach(ps => {
@@ -5110,16 +5020,13 @@ function renderRegularityAnalysis() {
     });
     editingMatchPlayersPool = participants.map(p => p.id);
 
-    // 3. Restaurar Pizarra
+    // --- RESTAURAR PIZARRA (IGUAL QUE ANTES) ---
     currentPitchPlayers = {}; 
     currentSubstitutes = [];
-
     const starters = participants.filter(p => p.isStarter);
     const subs = participants.filter(p => !p.isStarter);
 
-    // Intentar usar posición guardada
     const hasSavedSlots = starters.some(p => p.pitchSlot !== undefined && p.pitchSlot !== null);
-    
     if (hasSavedSlots) {
         starters.forEach(p => {
             if (p.pitchSlot !== undefined && p.pitchSlot !== null) {
@@ -5137,10 +5044,8 @@ function renderRegularityAnalysis() {
             }
         });
     } else {
-        // Orden automático (Fallback)
         const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
         starters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-        
         starters.forEach((p, index) => { 
             if (index < 11) {
                 currentPitchPlayers[`edit-slot-${index}`] = p.id; 
@@ -5155,17 +5060,91 @@ function renderRegularityAnalysis() {
             currentSubstitutes.push(p.id);
         }
     });
+        // --- LÓGICA DE RONDAS ADAPTADA (ESTILO MANUAL PERO PARA EDICIÓN) ---
+    let roundOptionsHtml = '<option value="">-- Sin asignar --</option>';
+    let roundInfoText = ''; // Para mostrar info extra si quieres
 
-    // 4. INYECTAR HTML
+    // 1. Detectar Competición (ID o Nombre)
+    let compKey = null;
+    let compConfig = null;
+
+    if (match.competition && typeof COMPETICIONES_ACTUALES !== 'undefined') {
+        const matchCompName = match.competition.toString().trim().toLowerCase();
+        
+        // Buscar clave correcta
+        compKey = Object.keys(COMPETICIONES_ACTUALES).find(key => {
+            const cfg = COMPETICIONES_ACTUALES[key];
+            return key.toLowerCase() === matchCompName || 
+                   (cfg.nombre && cfg.nombre.toLowerCase() === matchCompName);
+        });
+
+        if (compKey) {
+            compConfig = COMPETICIONES_ACTUALES[compKey];
+        }
+    }
+
+    // 2. Si encontramos configuración, generamos la lista plana de rondas
+    if (compConfig) {
+        // Aplanar todas las rondas de todas las fases
+        let allRounds = [];
+        compConfig.fases.forEach(fase => {
+            fase.rondas.forEach(r => {
+                allRounds.push({ ...r, faseTipo: fase.tipo });
+            });
+        });
+        
+        // Ordenar por orden numérico
+        allRounds.sort((a, b) => a.orden - b.orden);
+
+        // Buscar qué rondas ya están ocupadas por OTROS partidos
+        const otherMatches = getData('matches').filter(m => 
+            m.competition === match.competition && m.id !== match.id // Excluir este partido
+        );
+        const occupiedRoundIds = otherMatches.map(m => m.roundId || m.round); // Soporte dual
+
+        // Generar HTML
+        roundOptionsHtml = '<option value="">-- Seleccionar Ronda --</option>';
+        
+        roundOptionsHtml += allRounds.map(r => {
+            // Verificar si esta ronda es la que tiene guardada este partido
+            // Comprobamos match.roundId (ideal) o match.round (legacy/csv)
+            const isCurrent = (match.roundId === r.id) || (match.round === r.id) || (match.round === r.nombre);
+            
+            const isOccupied = occupiedRoundIds.includes(r.id);
+            
+            let icon = '⚪'; // Disponible
+            let statusText = '';
+            let disabled = '';
+
+            if (isCurrent) {
+                icon = '📍'; // Selección actual
+                statusText = '(Actual)';
+            } else if (isOccupied) {
+                icon = '🔒'; // Ocupada por otro partido
+                statusText = '(Ocupada)';
+                // Opcional: disabled = 'disabled'; // Descomenta si quieres impedir duplicar rondas
+            } else {
+                icon = '🟢'; // Libre
+            }
+
+            return `<option value="${r.id}" ${isCurrent ? 'selected' : ''} ${disabled}>
+                ${icon} ${r.nombre} ${statusText}
+            </option>`;
+        }).join('');
+    } else {
+        // Fallback si no se detecta competición (ej: amistosos o nombres raros)
+        roundOptionsHtml = `<option value="${match.round}" selected>?? ${match.round} (Desconocida)</option>`;
+    }
+    // -------------------------------------------------------------------
+
+    // --- INYECTAR HTML ---
     const content = document.getElementById('edit-match-content');
-    const savedFormation = match.formation || "4-3-3";
+    const savedFormation = match.formation || "4-2-3-1";
     
     const badgeHtml = match.isImported 
         ? `<span class="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded border border-amber-200">🔒 CSV</span>`
         : `<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200">🔓 Edición</span>`;
 
-    // --- CORRECCIÓN CLAVE 2: ELIMINAMOS LA ETIQUETA <form> E <input hidden> DE AQUÍ ---
-    // (Porque ya están en el HTML principal envolviendo a este div)
     content.innerHTML = `
         <div class="h-full flex flex-col">
             <div class="bg-gray-100 p-2 border-b flex justify-between items-center text-xs text-gray-500 shadow-sm z-10">
@@ -5219,10 +5198,17 @@ function renderRegularityAnalysis() {
 
             <div id="edit-step-stats" class="hidden flex-col h-full p-4 bg-gray-50">
                 <div class="mb-4 bg-white p-4 rounded-xl shadow-sm border border-gray-200 shrink-0">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Resultado</label>
                             <input type="text" id="edit-result-val" value="${match.result}" class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-xl font-bold text-center text-slate-800">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Jornada / Ronda</label>
+                            <select id="edit-round-select" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-slate-700 bg-white">
+                                ${roundOptionsHtml}
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Rival</label>
@@ -5535,38 +5521,45 @@ function renderRegularityAnalysis() {
             });
         }
 
-        // Pinta la ficha redonda del jugador en el campo
-// Pinta la ficha redonda del jugador en el campo
-        function renderPlayerOnPitch(player, slotId, container) {
-            const slotEl = document.getElementById(slotId);
-            if (!slotEl) return;
+            function renderPlayerOnPitch(player, slotId, container) {
+    const slotEl = document.getElementById(slotId);
+    if (!slotEl) return;
 
-            const div = document.createElement('div');
-            div.className = 'player-token hover:scale-110 transition-transform cursor-pointer'; // Añadido hover y cursor
-            div.style.top = slotEl.style.top;
-            div.style.left = slotEl.style.left;
-            div.draggable = true;
-            div.id = `token-${player.id}`;
-            div.setAttribute('data-player-id', player.id);
-            div.setAttribute('data-current-slot', slotId);
-            
-            // Eventos Drag
-            div.ondragstart = drag;
-            
-            // AÑADIDO: Evento Click para cambiar jugador
-            // stopPropagation es importante para que no haga click en el slot de abajo a la vez
-            div.onclick = (e) => {
-                e.stopPropagation();
-                openPlayerSelector(slotId);
-            };
+    const div = document.createElement('div');
+    // AÑADIDO: 'pointer-events-auto' para contrarrestar el 'pointer-events-none' del padre
+    div.className = 'player-token hover:scale-110 transition-transform cursor-pointer pointer-events-auto'; 
+    
+    div.style.position = 'absolute';
+    div.style.top = slotEl.style.top;
+    div.style.left = slotEl.style.left;
+    div.style.zIndex = '50'; // AÑADIDO: Asegurar que flota por encima de los slots
+    div.style.pointerEvents = 'auto'; // AÑADIDO: Fuerza bruta para asegurar click
+    
+    div.draggable = true;
+    div.id = `token-${player.id}`;
+    
+    div.setAttribute('data-player-id', player.id);
+    div.setAttribute('data-current-slot', slotId);
+    
+    div.ondragstart = drag;
+    
+    // Evitar que al hacer click se propague al slot de abajo
+    div.onclick = (e) => {
+        e.stopPropagation();
+        openPlayerSelector(slotId);
+    };
+    
+    // IMPORTANTE: Permitir soltar encima de otro jugador para hacer Swap
+    div.ondragover = allowDrop;
+    div.ondrop = drop;
 
-            div.innerHTML = `
-                <img src="${player.foto}" onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
-                <div class="player-token-name">${player.apodo || player.apellido}</div>
-            `;
-            
-            container.appendChild(div);
-        }
+    div.innerHTML = `
+        <img src="${player.foto}" draggable="false" style="pointer-events: none;" onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
+        <div class="player-token-name" style="pointer-events: none;">${player.apodo || player.apellido}</div>
+    `;
+    
+    container.appendChild(div);
+}
 
         function renderBench(prefix = '') {
             const benchZone = document.getElementById(prefix + 'bench-zone');
@@ -5628,21 +5621,22 @@ function renderRegularityAnalysis() {
 
        // 1. Función DRAG (Al empezar a arrastrar)
         function drag(ev) {
-            // Guardamos ID del jugador
-            ev.dataTransfer.setData("playerId", ev.target.getAttribute('data-player-id'));
-            
-            // INTENTO DE DETECTAR EL SLOT DE ORIGEN
-            // Buscamos el elemento padre que tenga la clase 'pitch-slot'
-            const sourceSlot = ev.target.closest('.pitch-slot');
-            
-            if (sourceSlot) {
-                // Si sale de la pizarra, guardamos el ID del slot (ej: 'slot-portero')
-                ev.dataTransfer.setData("sourceSlot", sourceSlot.id);
-            } else {
-                // Si sale del banquillo o lista, sourceSlot va vacío
-                ev.dataTransfer.setData("sourceSlot", ""); 
-            }
-        }
+    // 1. Guardar ID del jugador
+    const playerId = ev.target.getAttribute('data-player-id');
+    ev.dataTransfer.setData("playerId", playerId);
+    
+    // 2. DETECTAR ORIGEN (CORREGIDO)
+    // En lugar de buscar en el DOM con closest(), leemos el atributo directo
+    const sourceSlotId = ev.target.getAttribute('data-current-slot');
+    
+    if (sourceSlotId) {
+        // Viene de dentro del campo (Pizarra)
+        ev.dataTransfer.setData("sourceSlot", sourceSlotId);
+    } else {
+        // Viene del banquillo o lista (no tiene slot asignado)
+        ev.dataTransfer.setData("sourceSlot", ""); 
+    }
+}
 
 // --- LÓGICA DE MOVIMIENTO ---
 
@@ -5658,59 +5652,67 @@ function renderRegularityAnalysis() {
 
         // Soltar en el CAMPO (Titular)
         function drop(ev) {
-            ev.preventDefault();
-            const draggedPlayerId = ev.dataTransfer.getData("playerId");
-            const sourceSlotId = ev.dataTransfer.getData("sourceSlot"); 
-            
-            // Identificar donde soltamos (Slot destino)
-            let target = ev.target;
-            if (!target.classList.contains('pitch-slot')) {
-                target = target.closest('.pitch-slot');
-            }
-            
-            if (!target) return; // Si soltamos fuera de un hueco, cancelar
-            
-            const targetSlotId = target.id;
-            const existingPlayerId = currentPitchPlayers[targetSlotId];
+    ev.preventDefault();
+    ev.stopPropagation(); // Evitar doble disparo
 
-            // LOGICA DE INTERCAMBIO
-            
-            // 1. Si soltamos en el MISMO hueco de donde venía, no hacer nada
-            if (sourceSlotId === targetSlotId) return;
+    const draggedPlayerId = ev.dataTransfer.getData("playerId");
+    const sourceSlotId = ev.dataTransfer.getData("sourceSlot"); 
+    
+    // --- LÓGICA MEJORADA DE DETECCIÓN DE DESTINO ---
+    let target = ev.target;
+    let targetSlotId = null;
 
-            // 2. Si el destino está VACÍO
-            if (!existingPlayerId) {
-                // Asignar al nuevo
-                currentPitchPlayers[targetSlotId] = draggedPlayerId;
-                
-                // Borrar del antiguo (si venía de la pizarra)
-                if (sourceSlotId && currentPitchPlayers[sourceSlotId] === draggedPlayerId) {
-                    delete currentPitchPlayers[sourceSlotId];
-                } else {
-                    // Si venía del banquillo, quitarlo de suplentes
-                     removeFromSubs(draggedPlayerId);
-                }
-            } 
-            // 3. Si el destino está OCUPADO (SWAP / INTERCAMBIO)
-            else {
-                if (sourceSlotId) {
-                    // INTERCAMBIO PURO (Pizarra <-> Pizarra)
-                    // El que estaba en destino (existing) se va al origen (source)
-                    currentPitchPlayers[sourceSlotId] = existingPlayerId;
-                    // El que arrastramos se queda en destino
-                    currentPitchPlayers[targetSlotId] = draggedPlayerId;
-                } else {
-                    // SUSTITUCIÓN (Banquillo -> Pizarra)
-                    // El que arrastramos entra al campo
-                    // El que estaba (existing) se va al banquillo (lo borramos del mapa y renderBench lo pillará)
-                    removeFromSubs(draggedPlayerId);
-                    currentPitchPlayers[targetSlotId] = draggedPlayerId;
-                    // Nota: existingPlayerId queda libre, aparecerá disponible en el banquillo automáticamente
-                }
-            }
-
-            renderAll();
+    // Caso A: Soltamos sobre un hueco vacío (.pitch-slot)
+    if (target.classList.contains('pitch-slot')) {
+        targetSlotId = target.id;
+    } 
+    // Caso B: Soltamos sobre otro jugador (Swap)
+    // Buscamos si el elemento tiene el atributo data-current-slot
+    else {
+        // Puede que hayamos soltado en la imagen o el div interior, subimos hasta el token
+        const token = target.closest('.player-token');
+        if (token) {
+            targetSlotId = token.getAttribute('data-current-slot');
+        } else {
+            // Último intento: quizás soltamos en un slot pero dimos en el borde
+            const slot = target.closest('.pitch-slot');
+            if (slot) targetSlotId = slot.id;
         }
+    }
+    
+    if (!targetSlotId) return; // Si no encontramos hueco válido, cancelar
+
+    const existingPlayerId = currentPitchPlayers[targetSlotId];
+
+    // 1. Si soltamos en el MISMO hueco, no hacer nada
+    if (sourceSlotId === targetSlotId) return;
+
+    // 2. LOGICA: DESTINO VACÍO
+    if (!existingPlayerId) {
+        currentPitchPlayers[targetSlotId] = draggedPlayerId;
+        
+        if (sourceSlotId) {
+            delete currentPitchPlayers[sourceSlotId];
+        } else {
+            removeFromSubs(draggedPlayerId);
+        }
+    } 
+    // 3. LOGICA: SWAP (Intercambio)
+    else {
+        if (sourceSlotId) {
+            // Pizarra <-> Pizarra
+            currentPitchPlayers[targetSlotId] = draggedPlayerId;
+            currentPitchPlayers[sourceSlotId] = existingPlayerId;
+        } else {
+            // Banquillo -> Pizarra
+            currentPitchPlayers[targetSlotId] = draggedPlayerId;
+            removeFromSubs(draggedPlayerId);
+            // El jugador que había (existingPlayerId) se va al limbo (al banquillo auto)
+        }
+    }
+
+    renderAll();
+}
 
         // Función auxiliar para limpiar de suplentes si estaba ahí
         function removeFromSubs(playerId) {
@@ -6734,101 +6736,6 @@ function renderRegularityAnalysis() {
             });
         }
         // ==========================================
-        // IMPACT ANALYSIS LOGIC
-        // ==========================================
-
-        function populateImpactSelect() {
-            const select = document.getElementById('impact-player-select');
-            if(!select) return;
-            
-            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
-            
-            select.innerHTML = '<option value="">Selecciona un jugador...</option>' + 
-                players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
-        }
-
-        function renderImpactAnalysis() {
-            const playerId = document.getElementById('impact-player-select').value;
-            const container = document.getElementById('impact-results');
-            const emptyMsg = document.getElementById('impact-empty');
-            
-            if (!playerId) {
-                container.classList.add('hidden');
-                emptyMsg.classList.remove('hidden');
-                return;
-            }
-
-            const matches = getData('matches');
-            
-            // Inicializar contadores
-            const stats = {
-                on: { played: 0, wins: 0, gf: 0, ga: 0 },
-                off: { played: 0, wins: 0, gf: 0, ga: 0 }
-            };
-
-            matches.forEach(m => {
-                // Buscar si el jugador participó (jugó al menos 1 minuto)
-                const ps = m.playerStats.find(s => String(s.playerId) === String(playerId));
-                const played = ps && (ps.minutes > 0 || ps.played === true); // Soporte para registros antiguos y nuevos
-
-                const target = played ? stats.on : stats.off;
-                
-                target.played++;
-                if (m.outcome === 'victoria') target.wins++;
-                
-                // Goles
-                const parts = m.result.replace('*','').split('-').map(Number);
-                if (m.venue === 'local') { target.gf += parts[0]; target.ga += parts[1]; }
-                else if (m.venue === 'visitante') { target.gf += parts[1]; target.ga += parts[0]; }
-                else { target.gf += parts[0]; target.ga += parts[1]; }
-            });
-
-            // Cálculos y visualización
-            const calc = (s) => ({
-                winRate: s.played > 0 ? (s.wins / s.played) * 100 : 0,
-                gfPerGame: s.played > 0 ? (s.gf / s.played).toFixed(2) : "0.00",
-                gaPerGame: s.played > 0 ? (s.ga / s.played).toFixed(2) : "0.00"
-            });
-
-            const resOn = calc(stats.on);
-            const resOff = calc(stats.off);
-
-            // Renderizar ON
-            document.getElementById('impact-win-on').textContent = Math.round(resOn.winRate) + '%';
-            document.getElementById('impact-matches-on').textContent = `(${stats.on.played} part)`;
-            document.getElementById('bar-win-on').style.width = resOn.winRate + '%';
-            document.getElementById('impact-gf-on').textContent = resOn.gfPerGame;
-            document.getElementById('impact-ga-on').textContent = resOn.gaPerGame;
-
-            // Renderizar OFF
-            document.getElementById('impact-win-off').textContent = Math.round(resOff.winRate) + '%';
-            document.getElementById('impact-matches-off').textContent = `(${stats.off.played} part)`;
-            document.getElementById('bar-win-off').style.width = resOff.winRate + '%';
-            document.getElementById('impact-gf-off').textContent = resOff.gfPerGame;
-            document.getElementById('impact-ga-off').textContent = resOff.gaPerGame;
-
-            // Veredicto
-            const verdictEl = document.getElementById('impact-verdict');
-            const diff = resOn.winRate - resOff.winRate;
-            
-            if (stats.on.played === 0 || stats.off.played === 0) {
-                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-gray-100 text-gray-500";
-                verdictEl.textContent = "Datos insuficientes para comparar (necesita partidos jugados y no jugados).";
-            } else if (diff >= 10) {
-                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-indigo-100 text-indigo-700 border border-indigo-200";
-                verdictEl.textContent = `💎 TALISMÁN: El equipo gana un ${Math.round(diff)}% más cuando juega.`;
-            } else if (diff <= -10) {
-                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-orange-100 text-orange-700 border border-orange-200";
-                verdictEl.textContent = `📉 El equipo tiene mejores resultados sin este jugador (${Math.round(Math.abs(diff))}% diferencia).`;
-            } else {
-                verdictEl.className = "mt-4 p-3 rounded-lg text-center font-bold text-sm bg-gray-100 text-gray-600 border border-gray-200";
-                verdictEl.textContent = "⚖️ Impacto neutral: El rendimiento del equipo es similar con o sin él.";
-            }
-
-            emptyMsg.classList.add('hidden');
-            container.classList.remove('hidden');
-        }
-        // ==========================================
         // MVP GALLERY LOGIC
         // ==========================================
 
@@ -7700,109 +7607,139 @@ function renderLineWarsChart() {
         }
 
         function handleEditMatchSubmit(e) {
-            if(e) e.preventDefault(); 
+    if(e) e.preventDefault(); 
+    
+    try {
+        if (!currentTeam) throw new Error("No hay equipo seleccionado (currentTeam es null). Recarga la página.");
+
+        const matchId = document.getElementById('edit-match-id').value;
+        const matches = getData('matches');
+        const matchIndex = matches.findIndex(m => m.id === matchId);
+        
+        if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
+
+        // 1. Datos Generales
+        const resultInput = document.getElementById('edit-result-val');
+        const newResult = resultInput ? resultInput.value.trim() : null;
+        if (!newResult) throw new Error("El resultado no puede estar vacío.");
+
+        const formationSelect = document.getElementById('edit-formation-select');
+        const newFormation = formationSelect ? formationSelect.value : "4-3-3";
+        
+
+        // --- NUEVO: LEER LA RONDA ---
+        const roundSelect = document.getElementById('edit-round-select');
+        if (roundSelect && roundSelect.value) {
+            const selectedRoundId = roundSelect.value;
             
-            try { // INICIO DEL BLOQUE SEGURO
+            // Intentar encontrar el nombre bonito de la ronda en la configuración
+            let roundName = selectedRoundId; // Fallback
+            
+            // Buscar en COMPETICIONES_ACTUALES si es posible
+            if (typeof COMPETICIONES_ACTUALES !== 'undefined' && matchToUpdate.competition) {
+                // Misma lógica de búsqueda de competición
+                const cKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
+                    k.toLowerCase() === matchToUpdate.competition.toLowerCase() || 
+                    (COMPETICIONES_ACTUALES[k].nombre && COMPETICIONES_ACTUALES[k].nombre.toLowerCase() === matchToUpdate.competition.toLowerCase())
+                );
                 
-                // console.log("Intentando guardar..."); // Depuración
-
-                if (!currentTeam) throw new Error("No hay equipo seleccionado (currentTeam es null). Recarga la página.");
-
-                const matchId = document.getElementById('edit-match-id').value;
-                const matches = getData('matches');
-                const matchIndex = matches.findIndex(m => m.id === matchId);
-                
-                if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
-
-                // 1. Datos Generales
-                const resultInput = document.getElementById('edit-result-val');
-                const newResult = resultInput ? resultInput.value.trim() : null;
-                if (!newResult) throw new Error("El resultado no puede estar vacío.");
-
-                const formationSelect = document.getElementById('edit-formation-select');
-                const newFormation = formationSelect ? formationSelect.value : "4-3-3";
-
-                // 2. Recoger Stats y Posiciones
-                const statsContainer = document.getElementById('edit-stats-list');
-                if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
-
-                const newPlayerStats = [];
-
-                statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
-                    const playerId = row.getAttribute('data-player-id');
-                    const rol = row.getAttribute('data-rol');
-                    const isCoach = rol === 'Entrenador';
-                    const isStarter = rol === 'Titular';
-
-                    // LÓGICA DE POSICIÓN
-                    let savedSlotIdx = null;
-                    if (isStarter) {
-                        // Buscamos manualmente en el objeto currentPitchPlayers
-                        const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
-                        if (slotKey) {
-                            const numMatch = slotKey.match(/\d+/);
-                            if (numMatch) savedSlotIdx = parseInt(numMatch[0]);
-                        }
-                    }
-
-                    // Leer inputs
-                    let rating = null;
-                    const ratingInput = row.querySelector('.stat-rating');
-                    if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
-
-                    const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
-                    const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
-                    const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
-                    const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
-                    const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
-
-                    newPlayerStats.push({
-                        playerId,
-                        isStarter,
-                        pitchSlot: savedSlotIdx, 
-                        rating,
-                        goals,
-                        assists,
-                        minutes,
-                        yellowCards: yellow,
-                        redCards: red,
-                        played: true
+                if (cKey) {
+                    const cfg = COMPETICIONES_ACTUALES[cKey];
+                    // Buscar la ronda en todas las fases
+                    cfg.fases.forEach(f => {
+                        const r = f.rondas.find(ron => ron.id === selectedRoundId);
+                        if (r) roundName = r.nombre;
                     });
-                });
-
-                // 3. Actualizar Objeto
-                const matchToUpdate = matches[matchIndex];
-                matchToUpdate.result = newResult;
-                matchToUpdate.formation = newFormation;
-                matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
-                matchToUpdate.playerStats = newPlayerStats;
-                matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
-
-                // 4. Guardar
-                saveData('matches', matches);
-                
-                if (typeof recalculateCompetitionState === "function") {
-                    recalculateCompetitionState(matchToUpdate.competition);
                 }
-
-                closeEditMatchModal();
-                renderMatches();
-                renderStats(); 
-                renderPrincipal();
-                renderCompetitionStatus();
-                
-                editingMatchPlayersPool = null;
-                
-                alert("✅ GUARDADO CORRECTAMENTE:\n- Datos actualizados\n- Posiciones de pizarra guardadas");
-
-            } catch (error) {
-                console.error(error);
-                alert("❌ ERROR AL GUARDAR:\n" + error.message);
             }
+
+            // Guardamos AMBOS: el ID para lógica y el Nombre para visualización
+            matchToUpdate.roundId = selectedRoundId; 
+            matchToUpdate.round = roundName;         
+        }
+        // ----------------------------
+
+        // 2. Recoger Stats y Posiciones (ESTO SIGUE IGUAL)
+        const statsContainer = document.getElementById('edit-stats-list');
+        if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
+
+        const newPlayerStats = [];
+
+        statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+            const playerId = row.getAttribute('data-player-id');
+            const rol = row.getAttribute('data-rol');
+            const isCoach = rol === 'Entrenador';
+            const isStarter = rol === 'Titular';
+
+            let savedSlotIdx = null;
+            if (isStarter) {
+                const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+                if (slotKey) {
+                    const numMatch = slotKey.match(/\d+/);
+                    if (numMatch) savedSlotIdx = parseInt(numMatch[0]);
+                }
+            }
+
+            let rating = null;
+            const ratingInput = row.querySelector('.stat-rating');
+            if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+
+            const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
+            const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
+            const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
+            const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
+            const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
+
+            newPlayerStats.push({
+                playerId,
+                isStarter,
+                pitchSlot: savedSlotIdx, 
+                rating,
+                goals,
+                assists,
+                minutes,
+                yellowCards: yellow,
+                redCards: red,
+                played: true
+            });
+        });
+
+        // 3. Actualizar Objeto
+        const matchToUpdate = matches[matchIndex];
+        matchToUpdate.result = newResult;
+        matchToUpdate.formation = newFormation;
+        // --- ACTUALIZAMOS LA RONDA ---
+        if (newRound) matchToUpdate.round = newRound; 
+        // ----------------------------
+        
+        matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
+        matchToUpdate.playerStats = newPlayerStats;
+        matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
+
+        // 4. Guardar
+        saveData('matches', matches);
+        
+        if (typeof recalculateCompetitionState === "function") {
+            recalculateCompetitionState(matchToUpdate.competition);
         }
 
-            // --- 2. NAVEGACIÓN Y GUARDADO ---
-function goToEditStats() {
+        closeEditMatchModal();
+        renderMatches();
+        renderStats(); 
+        renderPrincipal();
+        renderCompetitionStatus();
+        
+        editingMatchPlayersPool = null;
+        
+        alert("✅ GUARDADO CORRECTAMENTE:\n- Datos y Ronda actualizados\n- Posiciones de pizarra guardadas");
+
+    } catch (error) {
+        console.error(error);
+        alert("❌ ERROR AL GUARDAR:\n" + error.message);
+    }
+}
+
+          function goToEditStats() {
     const starterIds = Object.values(currentPitchPlayers).filter(id => id);
     const subIds = currentSubstitutes || []; 
     const players = getPlayers();
@@ -7811,7 +7748,6 @@ function goToEditStats() {
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     
-    // Seguridad: Leer isImported del objeto match, no del DOM
     const isImported = match.isImported === true;
     const coach = players.find(p => p.posicion === 'entrenador');
 
@@ -7823,7 +7759,6 @@ function goToEditStats() {
     
     subIds.forEach(id => {
         const p = players.find(pl => pl.id === id);
-        // ✅ CORRECCIÓN 1 (Extra): Asegurar que el entrenador NO se cuele aquí
         if(p && p.posicion !== 'entrenador' && !roster.find(r => r.id === p.id)) {
             roster.push({ ...p, rol: 'Suplente' });
         }
@@ -7847,12 +7782,9 @@ function goToEditStats() {
             
             const isCoach = p.rol === 'Entrenador';
             
-            // ✅ CORRECCIÓN 2: Si es importado, se bloquea SIEMPRE (incluido Entrenador)
-            // Lógica anterior: (isImported && !isCoach) -> dejaba editar al míster.
-            // Lógica nueva: (isImported) -> bloquea a todos.
             const ratingAttr = (isImported) 
-                ? `readonly class="stat-rating w-full bg-gray-100 text-gray-400 border border-gray-200 rounded text-center font-bold text-sm py-1 cursor-not-allowed"`
-                : `class="stat-rating w-full border border-gray-300 rounded text-center font-bold text-sm py-1 focus:ring-2 focus:ring-blue-500"`;
+                ? `readonly class="stat-rating w-full bg-gray-100 text-gray-400 border border-gray-200 rounded text-center font-bold text-sm py-1 cursor-not-allowed" min="0"`
+                : `class="stat-rating w-full border border-gray-300 rounded text-center font-bold text-sm py-1 focus:ring-2 focus:ring-blue-500" min="0"`;
 
             return `
             <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100 shadow-sm" data-player-id="${p.id}" data-rol="${p.rol}">
@@ -7863,11 +7795,20 @@ function goToEditStats() {
                 </div>
                 <div class="flex-1 grid grid-cols-6 gap-2">
                     <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" ${ratingAttr} placeholder="-"></div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Gol</label>${isCoach?'-':`<input type="number" class="stat-goals w-full border border-gray-300 rounded text-center text-sm py-1" value="${goalsVal}">`}</div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Asis</label>${isCoach?'-':`<input type="number" class="stat-assists w-full border border-gray-300 rounded text-center text-sm py-1" value="${assistsVal}">`}</div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Min</label>${isCoach?'-':`<input type="number" class="stat-minutes w-full border border-gray-300 rounded text-center text-sm py-1" value="${minsVal}">`}</div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Ama</label><input type="number" class="stat-yellow w-full border border-yellow-200 bg-yellow-50 rounded text-center text-sm py-1" max="2" value="${yellowVal}"></div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Roj</label><input type="number" class="stat-red w-full border border-red-200 bg-red-50 rounded text-center text-sm py-1" max="1" value="${redVal}"></div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Gol</label>${isCoach?'-':`<input type="number" class="stat-goals w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${goalsVal}">`}</div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Asis</label>${isCoach?'-':`<input type="number" class="stat-assists w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${assistsVal}">`}</div>
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Min</label>${isCoach?'-':`<input type="number" class="stat-minutes w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${minsVal}">`}</div>
+                    
+                    <div class="text-center">
+                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Ama</label>
+                        <input type="number" 
+                               class="stat-yellow w-full border border-yellow-200 bg-yellow-50 rounded text-center text-sm py-1" 
+                               min="0" max="2" 
+                               value="${yellowVal}" 
+                               oninput="checkAutoRedCard(this)">
+                    </div>
+                    
+                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Roj</label><input type="number" class="stat-red w-full border border-red-200 bg-red-50 rounded text-center text-sm py-1" min="0" max="1" value="${redVal}"></div>
                 </div>
             </div>`;
         }).join('');
@@ -7888,6 +7829,31 @@ function goToEditStats() {
             // Ocultar botón Guardar para que no guarden a medias
             document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
         }
+        // --- AUTO-ROJA: Función para detectar 2 amarillas ---
+window.checkAutoRedCard = function(yellowInput) {
+    // 1. Obtenemos el valor actual de amarillas
+    const amarillas = parseInt(yellowInput.value) || 0;
+
+    // 2. Si llega a 2 (o más)
+    if (amarillas >= 2) {
+        // 3. Buscamos la fila del jugador (usando el atributo data-player-id como referencia)
+        const row = yellowInput.closest('[data-player-id]'); 
+        
+        if (row) {
+            // 4. Buscamos el input de rojas dentro de esa misma fila
+            const redInput = row.querySelector('.stat-red');
+            
+            // 5. Si existe y actualmente es 0, le ponemos 1
+            if (redInput) {
+                redInput.value = 1;
+                
+                // (Opcional) Efecto visual rápido para indicar el cambio
+                redInput.style.backgroundColor = '#fee2e2'; // Un rojo suave
+                setTimeout(() => redInput.style.backgroundColor = '', 500);
+            }
+        }
+    }
+};
 
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
