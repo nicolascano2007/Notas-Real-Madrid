@@ -7618,6 +7618,10 @@ function renderLineWarsChart() {
         
         if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
 
+        // --- CORRECCIÓN: Definimos la variable AQUÍ ARRIBA para poder usarla después ---
+        const matchToUpdate = matches[matchIndex];
+        // -----------------------------------------------------------------------------
+
         // 1. Datos Generales
         const resultInput = document.getElementById('edit-result-val');
         const newResult = resultInput ? resultInput.value.trim() : null;
@@ -7626,8 +7630,7 @@ function renderLineWarsChart() {
         const formationSelect = document.getElementById('edit-formation-select');
         const newFormation = formationSelect ? formationSelect.value : "4-3-3";
         
-
-        // --- NUEVO: LEER LA RONDA ---
+        // --- LÓGICA DE RONDA (Ahora sí funcionará porque matchToUpdate existe) ---
         const roundSelect = document.getElementById('edit-round-select');
         if (roundSelect && roundSelect.value) {
             const selectedRoundId = roundSelect.value;
@@ -7637,7 +7640,6 @@ function renderLineWarsChart() {
             
             // Buscar en COMPETICIONES_ACTUALES si es posible
             if (typeof COMPETICIONES_ACTUALES !== 'undefined' && matchToUpdate.competition) {
-                // Misma lógica de búsqueda de competición
                 const cKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
                     k.toLowerCase() === matchToUpdate.competition.toLowerCase() || 
                     (COMPETICIONES_ACTUALES[k].nombre && COMPETICIONES_ACTUALES[k].nombre.toLowerCase() === matchToUpdate.competition.toLowerCase())
@@ -7659,7 +7661,7 @@ function renderLineWarsChart() {
         }
         // ----------------------------
 
-        // 2. Recoger Stats y Posiciones (ESTO SIGUE IGUAL)
+        // 2. Recoger Stats y Posiciones
         const statsContainer = document.getElementById('edit-stats-list');
         if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
 
@@ -7704,14 +7706,9 @@ function renderLineWarsChart() {
             });
         });
 
-        // 3. Actualizar Objeto
-        const matchToUpdate = matches[matchIndex];
+        // 3. Actualizar resto de propiedades
         matchToUpdate.result = newResult;
         matchToUpdate.formation = newFormation;
-        // --- ACTUALIZAMOS LA RONDA ---
-        if (newRound) matchToUpdate.round = newRound; 
-        // ----------------------------
-        
         matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
         matchToUpdate.playerStats = newPlayerStats;
         matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
