@@ -2370,162 +2370,275 @@
             renderStats();
         }
 
-        /* ==========================================================================
-   RENDERIZADO DE ESTADÍSTICAS (CON RATIOS AVANZADOS)
-   ========================================================================== */
-function renderStats() {
-    // 1. Localizar contenedor (Asegúrate de que este ID coincida con tu HTML)
-    // Si tu contenedor tiene otro nombre (ej: 'stats-list' o 'stats-table'), cámbialo aquí.
-    const container = document.getElementById('stats-table-body') || document.getElementById('stats-list'); 
-    
-    if (!container) return; // Si no estamos en la vista de stats, salimos
-
-    const players = getPlayers();
+        function renderStats() {
     const matches = getData('matches');
-
-    // 2. Calcular Estadísticas Agregadas
-    const stats = players.map(player => {
-        let minutes = 0;
-        let goals = 0;
-        let assists = 0;
-        let matchesPlayed = 0;
-        let totalRating = 0;
-        let ratingCount = 0;
-        let yellow = 0;
-        let red = 0;
-
-        matches.forEach(m => {
-            const p = m.playerStats.find(ps => ps.playerId === player.id);
-            if (p && (p.played || p.minutes > 0)) {
-                minutes += (p.minutes || 0);
-                goals += (p.goals || 0);
-                assists += (p.assists || 0);
-                yellow += (p.yellowCards || 0);
-                red += (p.redCards || 0);
-                matchesPlayed++;
-                if (p.rating > 0) {
-                    totalRating += p.rating;
-                    ratingCount++;
-                }
-            }
-        });
-
-        // Cálculos Básicos
-        const avgRating = ratingCount > 0 ? (totalRating / ratingCount).toFixed(2) : '-';
-        
-        // --- CÁLCULOS DE RATIOS (NUEVO) ---
-        // 1. Minutos por Partido
-        const minPerMatch = matchesPlayed > 0 ? (minutes / matchesPlayed).toFixed(0) : '0';
-        
-        // 2. Ratios "Per 90" (Más legible que Gol/Min puro)
-        // Fórmula: (Total / Minutos) * 90
-        const factor = minutes > 0 ? (90 / minutes) : 0;
-        const gPer90 = (goals * factor).toFixed(2);
-        const aPer90 = (assists * factor).toFixed(2);
-        const gaPer90 = ((goals + assists) * factor).toFixed(2);
-
-        return {
-            ...player,
-            matchesPlayed,
-            minutes,
-            goals,
-            assists,
-            yellow,
-            red,
-            avgRating,
-            // Nuevos datos
-            minPerMatch,
-            gPer90,
-            aPer90,
-            gaPer90
-        };
+    const players = getPlayers();
+    
+    const competitionFilter = document.getElementById('stats-filter-competition').value;
+    const statusFilter = document.getElementById('stats-filter-status').value;
+    
+    // Actualizar visuales de las cabeceras
+    document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('th-active');
+        th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
     });
-
-    // 3. Ordenar (Por defecto por Nota Media)
-    stats.sort((a, b) => {
-        const ra = a.avgRating === '-' ? 0 : parseFloat(a.avgRating);
-        const rb = b.avgRating === '-' ? 0 : parseFloat(b.avgRating);
-        return rb - ra; // Mayor a menor
-    });
-
-    // 4. Generar HTML (Tabla)
-    // Encabezado de la tabla
-    let html = `
-    <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
-        <table class="w-full text-sm text-left text-gray-600">
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b">
-                <tr>
-                    <th class="px-4 py-3">Jugador</th>
-                    <th class="px-3 py-3 text-center" title="Partidos Jugados">PJ</th>
-                    <th class="px-3 py-3 text-center" title="Minutos Totales">Min</th>
-                    <th class="px-3 py-3 text-center text-emerald-600 font-bold" title="Minutos por Partido">Min/P</th>
-                    <th class="px-3 py-3 text-center">Goles</th>
-                    <th class="px-3 py-3 text-center text-blue-600 font-bold" title="Goles cada 90 min">G/90'</th>
-                    <th class="px-3 py-3 text-center">Asist</th>
-                    <th class="px-3 py-3 text-center text-blue-600 font-bold" title="Asistencias cada 90 min">A/90'</th>
-                    <th class="px-3 py-3 text-center text-purple-600 font-bold" title="Goles + Asistencias cada 90 min">G+A/90'</th>
-                    <th class="px-3 py-3 text-center">Nota</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    // Filas
-    if (stats.length === 0) {
-        html += `<tr><td colspan="10" class="px-4 py-8 text-center text-gray-400">No hay estadísticas registradas</td></tr>`;
-    } else {
-        html += stats.map(p => `
-            <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-                <td class="px-4 py-3 font-medium text-gray-900 flex items-center gap-3">
-                    <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/30'">
-                    <span>${p.apodo || p.apellido}</span>
-                </td>
-                <td class="px-3 py-3 text-center">${p.matchesPlayed}</td>
-                <td class="px-3 py-3 text-center">${p.minutes}</td>
-                
-                <td class="px-3 py-3 text-center font-bold bg-emerald-50 text-emerald-700 rounded-lg">
-                    ${p.minPerMatch}'
-                </td>
-                
-                <td class="px-3 py-3 text-center font-bold">${p.goals}</td>
-                
-                <td class="px-3 py-3 text-center text-blue-600 font-mono text-xs">
-                    ${p.gPer90}
-                </td>
-                
-                <td class="px-3 py-3 text-center font-bold">${p.assists}</td>
-                
-                <td class="px-3 py-3 text-center text-blue-600 font-mono text-xs">
-                    ${p.aPer90}
-                </td>
-
-                <td class="px-3 py-3 text-center font-bold text-purple-700 bg-purple-50 rounded-lg">
-                    ${p.gaPer90}
-                </td>
-                
-                <td class="px-3 py-3 text-center">
-                    <span class="${getRatingColorClass(p.avgRating)} text-white px-2 py-1 rounded text-xs font-bold">
-                        ${p.avgRating}
-                    </span>
-                </td>
-            </tr>
-        `).join('');
+    const activeTh = document.getElementById(`th-${currentSortColumn}`);
+    if (activeTh) {
+        activeTh.classList.add('th-active');
+        activeTh.innerHTML += currentSortOrder === 'asc' ? ' ▲' : ' ▼';
     }
 
-    html += `</tbody></table></div>`;
-    
-    // Inyectar
-    container.innerHTML = html;
-}
+    let filteredMatches = matches;
+    if (competitionFilter) {
+        filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
+    }
 
-// Helper opcional para colores de nota (si no lo tienes ya)
-function getRatingColorClass(rating) {
-    if (rating === '-') return 'bg-gray-400';
-    const r = parseFloat(rating);
-    if (r >= 9) return 'bg-emerald-600';
-    if (r >= 7) return 'bg-green-500';
-    if (r >= 5) return 'bg-yellow-500';
-    return 'bg-red-500';
+    // Lógica de Rachas
+    const streakContainer = document.getElementById('team-streak');
+    const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+    
+    if (last5Matches.length > 0 && streakContainer) {
+        streakContainer.innerHTML = last5Matches.map(m => {
+            let outcomeClass = 'streak-d';
+            let letter = 'E';
+            if (m.outcome === 'victoria') { outcomeClass = 'streak-w'; letter = 'V'; }
+            else if (m.outcome === 'derrota') { outcomeClass = 'streak-l'; letter = 'D'; }
+            return `<span class="streak-dot ${outcomeClass}" title="${m.opponent} (${m.result})">${letter}</span>`;
+        }).join('');
+    } else if (streakContainer) {
+        streakContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin partidos jugados</span>';
+    }
+
+    // Cálculo de Estadísticas Globales
+    let totalWins = 0, totalDraws = 0, totalLosses = 0;
+    let totalGoalsFor = 0, totalGoalsAgainst = 0;
+    let totalAssists = 0;
+    
+    filteredMatches.forEach(m => {
+        if (m.outcome === 'victoria') totalWins++;
+        else if (m.outcome === 'empate') totalDraws++;
+        else if (m.outcome === 'derrota') totalLosses++;
+
+        if (m.result && m.result.includes('-')) {
+            const parts = m.result.replace('*','').split('-').map(Number);
+            if (m.venue === 'local') {
+                totalGoalsFor += parts[0];
+                totalGoalsAgainst += parts[1];
+            } else if (m.venue === 'visitante') {
+                totalGoalsFor += parts[1];
+                totalGoalsAgainst += parts[0];
+            } else { 
+                 totalGoalsFor += parts[0]; 
+                 totalGoalsAgainst += parts[1];
+            }
+        }
+    });
+    
+    if(document.getElementById('stat-total-matches')) document.getElementById('stat-total-matches').textContent = filteredMatches.length;
+    if(document.getElementById('stat-wins')) document.getElementById('stat-wins').textContent = totalWins;
+    if(document.getElementById('stat-draws')) document.getElementById('stat-draws').textContent = totalDraws;
+    if(document.getElementById('stat-losses')) document.getElementById('stat-losses').textContent = totalLosses;
+    if(document.getElementById('stat-total-goals')) document.getElementById('stat-total-goals').textContent = totalGoalsFor;
+    if(document.getElementById('stat-total-goals-against')) document.getElementById('stat-total-goals-against').textContent = totalGoalsAgainst;
+
+    let filteredPlayers = [...players];
+    if (statusFilter) {
+        filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
+    }
+    
+    const playerOnlyCount = filteredPlayers.filter(p => p.posicion !== 'entrenador').length;
+    if(document.getElementById('stat-total-players')) document.getElementById('stat-total-players').textContent = playerOnlyCount;
+
+    // --- CÁLCULO DE ESTADÍSTICAS POR JUGADOR ---
+    const playerStats = filteredPlayers.map(player => {
+        const stats = {
+            id: player.id,
+            name: player.apodo || `${player.nombre} ${player.apellido}`,
+            number: player.dorsal,
+            foto: player.foto,
+            posicion: player.posicion,
+            estado: player.estado,
+            matchesPlayed: 0,
+            totalRating: 0,
+            ratingCount: 0,
+            goals: 0,
+            assists: 0,
+            ga: 0,
+            minutes: 0,
+            mvpCount: 0,
+            wins: 0,
+            draws: 0,
+            losses: 0,
+            yellowCards: 0,
+            redCards: 0,
+            last5Ratings: [],
+            // Nuevos campos para ratios
+            minPerMatch: 0,
+            gPer90: 0,
+            aPer90: 0,
+            gaPer90: 0
+        };
+        
+        const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        playerMatchesSorted.forEach(match => {
+            const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
+            
+            if (ps) {
+                // Contar partido si jugó algún minuto o está marcado como played
+                if (ps.minutes > 0 || ps.played) {
+                    stats.matchesPlayed++;
+                }
+                
+                stats.goals += (ps.goals || 0);
+                stats.assists += (ps.assists || 0);
+                stats.minutes += (ps.minutes || 0);
+                stats.yellowCards += (ps.yellowCards || 0);
+                stats.redCards += (ps.redCards || 0);
+                
+                if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                    const r = parseFloat(ps.rating);
+                    stats.totalRating += r;
+                    stats.ratingCount++;
+                    stats.last5Ratings.push(r);
+                }
+                
+                if (match.outcome === 'victoria') stats.wins++;
+                else if (match.outcome === 'empate') stats.draws++;
+                else if (match.outcome === 'derrota') stats.losses++;
+            }
+            if (String(match.mvp) === String(player.id)) {
+                stats.mvpCount++;
+            }
+        });
+        
+        stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
+        stats.ga = stats.goals + stats.assists;
+
+        // --- CÁLCULO DE RATIOS (NUEVO) ---
+        // Minutos por partido
+        stats.minPerMatch = stats.matchesPlayed > 0 ? (stats.minutes / stats.matchesPlayed).toFixed(0) : '-';
+
+        // Ratios por 90 minutos
+        const factor = stats.minutes > 0 ? (90 / stats.minutes) : 0;
+        stats.gPer90 = (stats.goals * factor).toFixed(2);
+        stats.aPer90 = (stats.assists * factor).toFixed(2);
+        stats.gaPer90 = (stats.ga * factor).toFixed(2);
+
+        totalAssists += stats.assists;
+        return stats;
+    });
+    
+    if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
+
+    // Top Form Logic (sin cambios)
+    const formContainer = document.getElementById('top-form-players');
+    if (formContainer) {
+        const playersWithRecentGames = playerStats
+            .filter(p => p.last5Ratings.length > 0 && p.posicion !== 'entrenador')
+            .map(p => {
+                const recent = p.last5Ratings.slice(0, 5);
+                const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+                return { ...p, recentAvg: avg };
+            })
+            .sort((a, b) => b.recentAvg - a.recentAvg)
+            .slice(0, 3);
+
+        if (playersWithRecentGames.length > 0) {
+            formContainer.innerHTML = playersWithRecentGames.map((p, i) => `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-400 w-4">${i+1}.</span>
+                        <img src="${p.foto}" class="top-form-img">
+                        <span class="text-sm font-medium">${p.name}</span>
+                    </div>
+                    <span class="text-sm font-bold text-green-600">${p.recentAvg.toFixed(2)}</span>
+                </div>
+            `).join('');
+        } else {
+            formContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin datos suficientes</span>';
+        }
+    }
+
+
+    playerStats.sort((a, b) => {
+        if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
+        if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
+
+        let valA = a[currentSortColumn];
+        let valB = b[currentSortColumn];
+        
+        if (currentSortColumn === 'avgRating') {
+            valA = valA === '-' ? -1 : parseFloat(valA);
+            valB = valB === '-' ? -1 : parseFloat(valB);
+        }
+        
+        // Manejo de ordenación para los nuevos ratios si se usan como columnas ordenables
+        if (['gPer90', 'aPer90', 'gaPer90', 'minPerMatch'].includes(currentSortColumn)) {
+             valA = parseFloat(valA) || 0;
+             valB = parseFloat(valB) || 0;
+        }
+        
+        if(currentSortColumn === 'number' && valA === 'DT') valA = -1;
+        if(currentSortColumn === 'number' && valB === 'DT') valB = -1;
+
+        return currentSortOrder === 'asc' ? valA - valB : valB - valA;
+    });
+
+    const tableBody = document.getElementById('stats-table-body');
+    const noStats = document.getElementById('no-stats');
+    
+    if (playerStats.length === 0) {
+        tableBody.innerHTML = '';
+        noStats.classList.remove('hidden');
+        return;
+    }
+    
+    noStats.classList.add('hidden');
+    tableBody.innerHTML = playerStats.map(stats => {
+        const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
+        
+        return `
+        <tr class="border-t hover:bg-gray-50 cursor-pointer ${stats.estado === 'Inactivo' ? 'opacity-60 bg-gray-50' : ''}" onclick="viewPlayerDetails('${stats.id}')">
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <img src="${stats.foto}" class="player-photo-small" onerror="this.src='https://via.placeholder.com/40x40?text=${stats.number}'">
+                    <div>
+                        <span class="font-medium text-gray-800">${stats.name}</span>
+                        <span class="text-gray-500 text-sm ml-1">${stats.number === 'DT' ? 'DT' : '#' + stats.number}</span>
+                        ${stats.estado === 'Inactivo' ? '<span class="text-xs text-red-500 font-bold ml-1">(Inactivo)</span>' : ''}
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3 text-center font-medium">${stats.matchesPlayed}</td>
+            <td class="px-4 py-3 text-center font-semibold ${getRatingColor(stats.avgRating)}">${stats.avgRating}</td>
+            
+            <td class="px-4 py-3 text-center font-medium text-emerald-600">${isCoach ? '-' : stats.goals}</td>
+            <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono" title="Goles p/90">${isCoach ? '-' : stats.gPer90}</td>
+
+            <td class="px-4 py-3 text-center">${isCoach ? '-' : stats.assists}</td>
+            <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono" title="Asist p/90">${isCoach ? '-' : stats.aPer90}</td>
+
+            <td class="px-4 py-3 text-center font-bold">${isCoach ? '-' : stats.ga}</td>
+            <td class="px-2 py-3 text-center text-xs text-purple-600 font-bold font-mono" title="G+A p/90">${isCoach ? '-' : stats.gaPer90}</td>
+
+            <td class="px-4 py-3 text-center text-gray-600">${isCoach ? '-' : stats.minutes + "'"}</td>
+            <td class="px-2 py-3 text-center text-xs text-gray-500 italic" title="Min p/Partido">${isCoach ? '-' : stats.minPerMatch + "'"}</td>
+
+            <td class="px-4 py-3 text-center">
+                ${stats.mvpCount > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-sm font-medium">${stats.mvpCount}</span>` : '-'}
+            </td>
+            <td class="px-4 py-3 text-center text-green-600 font-medium">${stats.wins}</td>
+            <td class="px-4 py-3 text-center text-amber-600">${stats.draws}</td>
+            <td class="px-4 py-3 text-center text-red-600">${stats.losses}</td>
+            <td class="px-4 py-3 text-center">${stats.yellowCards > 0 ? stats.yellowCards : '-'}</td>
+            <td class="px-4 py-3 text-center">${stats.redCards > 0 ? `<span class="text-red-600 font-medium">${stats.redCards}</span>` : '-'}</td>
+        </tr>
+    `}).join('');
+    
+    renderCharts(filteredMatches);
+    renderBestXI();
+    renderScatterChart();
 }
         // ==========================================
         // GRÁFICOS INTERACTIVOS (CHART.JS)
