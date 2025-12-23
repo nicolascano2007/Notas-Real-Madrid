@@ -1333,6 +1333,17 @@
                             <div class="p-2 bg-red-50 text-red-600 rounded border border-red-100">⚠️ Fatiga (Juegan mucho / Rinden bajo)</div>
                         </div>
                     </div>
+                    <div class="flex gap-4 text-xs font-medium text-gray-500">
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <span id="legend-def-val">Defensa</span> </div>
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="legend-mid-val">Medio</span> </div>
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span id="legend-fwd-val">Delantera</span> </div>
+</div>
 
                     <!-- Stats Filters -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
@@ -1363,30 +1374,25 @@
                         <div class="table-container">
                             <table class="w-full">
                                <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b select-none sticky top-0 z-10">
-    <tr>
-        <th class="px-4 py-3 cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('name')" id="th-name">Jugador</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('matchesPlayed')" id="th-matchesPlayed" title="Partidos Jugados">PJ</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('avgRating')" id="th-avgRating" title="Nota Media">Nota</th>
-        
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('goals')" id="th-goals" title="Goles">Gol</th>
-        <th class="px-2 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-blue-600" onclick="sortStats('gPer90')" id="th-gPer90" title="Goles cada 90 min">G/90'</th>
-
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('assists')" id="th-assists" title="Asistencias">Asis</th>
-        <th class="px-2 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-blue-600" onclick="sortStats('aPer90')" id="th-aPer90" title="Asistencias cada 90 min">A/90'</th>
-
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('ga')" id="th-ga" title="Goles + Asistencias">G+A</th>
-        <th class="px-2 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-purple-600" onclick="sortStats('gaPer90')" id="th-gaPer90" title="Producción ofensiva (G+A) cada 90 min">G+A/90'</th>
-
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('minutes')" id="th-minutes" title="Minutos Totales">Min</th>
-        <th class="px-2 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-gray-500" onclick="sortStats('minPerMatch')" id="th-minPerMatch" title="Promedio de minutos por partido">Min/P</th>
-
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('mvpCount')" id="th-mvpCount" title="MVPs del Partido">MVP</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-green-600" onclick="sortStats('wins')" id="th-wins" title="Victorias">V</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-amber-600" onclick="sortStats('draws')" id="th-draws" title="Empates">E</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable text-red-600" onclick="sortStats('losses')" id="th-losses" title="Derrotas">D</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('yellowCards')" id="th-yellowCards" title="Tarjetas Amarillas">🟨</th>
-        <th class="px-4 py-3 text-center cursor-pointer hover:bg-gray-100 sortable" onclick="sortStats('redCards')" id="th-redCards" title="Tarjetas Rojas">🟥</th>
-    </tr>
+                                <tr>
+    <th class="px-4 py-3 text-left text-xs font-semibold uppercase sortable" onclick="sortStats('name')" id="th-name">Jugador</th>
+    <th id="th-matchesPlayed" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('matchesPlayed')" title="Partidos Jugados">PJ</th>
+    <th id="th-avgRating" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('avgRating')" title="Nota Media">Nota</th>
+    <th id="th-gPer90" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-blue-600" onclick="handleSort('gPer90')" title="Goles cada 90 min">G/90'</th>
+    <th id="th-goals" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('goals')" title="Goles">Gol</th>
+    <th id="th-aPer90" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-blue-600" onclick="handleSort('aPer90')" title="Asistencias cada 90 min">A/90'</th>
+    <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')" title="Asistencias">Asis</th>
+    <th id="th-gaPer90" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-purple-600" onclick="handleSort('gaPer90')" title="Producción ofensiva (G+A) cada 90 min">G+A/90'</th>
+    <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('ga')" title="Goles + Asistencias">G+A</th>
+    <th id="th-minPerMatch" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-gray-500" onclick="handleSort('minPerMatch')" title="Promedio de minutos por partido">Min/P</th>
+    <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('minutes')" title="Minutos Totales">Min</th>
+    <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')" title="MVPs del Partido">MVP</th>
+    <th id="th-wins" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-green-600" onclick="handleSort('wins')" title="Victorias">V</th>
+    <th id="th-draws" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-amber-600" onclick="handleSort('draws')" title="Empates">E</th>
+    <th id="th-losses" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-red-600" onclick="handleSort('losses')" title="Derrotas">D</th>
+    <th id="th-yellowCards" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('yellowCards')" title="Tarjetas Amarillas">🟨</th>
+    <th id="th-redCards" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('redCards')" title="Tarjetas Rojas">🟥</th>
+</tr>
 </thead>
                                 <tbody id="stats-table-body"></tbody>
                             </table>
@@ -1406,11 +1412,17 @@
                                 <h4 class="font-bold text-gray-800 text-lg">⚔️ Guerra de Líneas</h4>
                                 <p class="text-xs text-gray-500">Evolución del rendimiento: Defensa vs Medio vs Delantera</p>
                             </div>
-                            <div class="flex gap-3 text-xs font-bold mt-2 md:mt-0">
-                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Defensas</span>
-                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Medios</span>
-                                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Delanteros</span>
-                            </div>
+                           <div class="flex gap-4 text-xs font-medium text-gray-500">
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+        <span id="legend-def-val">Defensa</span> </div>
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span id="legend-mid-val">Medio</span> </div>
+    <div class="flex items-center gap-1">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span id="legend-fwd-val">Delantera</span> </div>
+</div>
                         </div>
                         <div class="w-full h-[350px]">
                             <canvas id="chart-line-wars"></canvas>
@@ -2648,6 +2660,95 @@
     renderCharts(filteredMatches);
     renderBestXI();
     renderScatterChart();
+    renderRegularityAnalysis();
+}
+/* ==========================================================================
+   ANÁLISIS DE REGULARIDAD (DESVIACIÓN TÍPICA)
+   ========================================================================== */
+function renderRegularityAnalysis() {
+    const container = document.getElementById('regularity-analysis-grid');
+    if (!container) return;
+
+    const matches = getData('matches');
+    const players = getPlayers();
+    const MIN_MATCHES = 3; // Mínimo de partidos para ser analizado
+
+    // 1. Calcular Desviación Típica por Jugador
+    const regularityData = players.map(p => {
+        // Recoger todas las notas válidas del jugador
+        const ratings = [];
+        matches.forEach(m => {
+            const ps = m.playerStats.find(s => s.playerId === p.id);
+            if (ps && ps.played && ps.rating > 0) {
+                ratings.push(parseFloat(ps.rating));
+            }
+        });
+
+        if (ratings.length < MIN_MATCHES) return null;
+
+        // Calcular Media
+        const mean = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+
+        // Calcular Varianza y Desviación Típica
+        // (Suma de las diferencias al cuadrado dividido por N)
+        const squaredDiffs = ratings.map(r => Math.pow(r - mean, 2));
+        const variance = squaredDiffs.reduce((a, b) => a + b, 0) / ratings.length;
+        const stdDev = Math.sqrt(variance);
+
+        return {
+            player: p,
+            mean: mean,
+            stdDev: stdDev, // Cuanto menor, más regular
+            count: ratings.length,
+            min: Math.min(...ratings),
+            max: Math.max(...ratings)
+        };
+    }).filter(item => item !== null);
+
+    // 2. Ordenar datos
+    // Más Regulares: Menor desviación primero
+    const mostConsistent = [...regularityData].sort((a, b) => a.stdDev - b.stdDev).slice(0, 5);
+    
+    // Más Irregulares: Mayor desviación primero
+    const leastConsistent = [...regularityData].sort((a, b) => b.stdDev - a.stdDev).slice(0, 5);
+
+    // 3. Generar HTML
+    const renderCard = (title, icon, data, colorClass, type) => `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <h4 class="font-bold text-gray-700 mb-4 flex items-center gap-2 pb-2 border-b">
+                <span class="text-2xl">${icon}</span> ${title}
+            </h4>
+            <div class="space-y-3">
+                ${data.map((d, i) => `
+                    <div class="flex items-center justify-between group">
+                        <div class="flex items-center gap-3">
+                            <span class="text-gray-400 font-mono text-xs w-4">${i + 1}.</span>
+                            <img src="${d.player.foto}" class="w-8 h-8 rounded-full object-cover border border-gray-100">
+                            <div>
+                                <div class="font-bold text-sm text-gray-800">${d.player.apodo || d.player.apellido}</div>
+                                <div class="text-[10px] text-gray-400">Media: <span class="font-semibold text-gray-600">${d.mean.toFixed(2)}</span> (${d.count} part.)</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono font-bold ${colorClass} text-lg leading-none" title="Índice de Regularidad (Desviación Típica)">
+                                ${d.stdDev.toFixed(2)}
+                            </div>
+                            <div class="text-[9px] text-gray-400 mt-1" title="Rango de notas">
+                                Min: ${d.min} - Max: ${d.max}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <p class="text-[10px] text-gray-400 mt-4 text-center italic">
+                * ${type === 'regular' ? 'Menor valor = Más estable' : 'Mayor valor = Más variable'}
+            </p>
+        </div>
+    `;
+
+    container.innerHTML = 
+        renderCard("Los 'Reloj Suizo' (Más Regulares)", "🛡️", mostConsistent, "text-emerald-600", 'regular') +
+        renderCard("Las 'Montañas Rusas' (Más Irregulares)", "🎢", leastConsistent, "text-amber-600", 'irregular');
 }
         // ==========================================
         // GRÁFICOS INTERACTIVOS (CHART.JS)
@@ -7294,126 +7395,159 @@ function processCSVData(csvText) {
         
         let lineWarsChart = null;
 
-        function renderLineWarsChart() {
-            const ctx = document.getElementById('chart-line-wars');
-            if (!ctx) return;
+       /* ==========================================================================
+   GRÁFICO LINE WARS (CON MEDIAS GLOBALES)
+   ========================================================================== */
+/* ==========================================================================
+   GRÁFICO LINE WARS (CON MEDIAS GLOBALES)
+   ========================================================================== */
+function renderLineWarsChart() {
+    const ctx = document.getElementById('chart-line-wars');
+    if (!ctx) return;
 
-            const matches = getData('matches').sort((a, b) => new Date(a.date) - new Date(b.date));
-            const players = getPlayers();
+    const matches = getData('matches').sort((a, b) => new Date(a.date) - new Date(b.date));
+    const players = getPlayers();
 
-            if (matches.length === 0) return;
+    if (matches.length === 0) return;
 
-            // Arrays de datos para el gráfico
-            const labels = [];
-            const dataDef = [];
-            const dataMid = [];
-            const dataFwd = [];
+    // Arrays de datos para el gráfico
+    const labels = [];
+    const dataDef = [];
+    const dataMid = [];
+    const dataFwd = [];
 
-            matches.forEach(m => {
-                // Etiqueta del eje X (Rival)
-                labels.push(m.opponent.substring(0, 3).toUpperCase()); // Ej: BAR, ATL
+    // Acumuladores globales para medias totales
+    let totalSumDef = 0, totalCountDef = 0;
+    let totalSumMid = 0, totalCountMid = 0;
+    let totalSumFwd = 0, totalCountFwd = 0;
 
-                // Acumuladores para este partido
-                let sumDef = 0, countDef = 0;
-                let sumMid = 0, countMid = 0;
-                let sumFwd = 0, countFwd = 0;
+    matches.forEach(m => {
+        // Etiqueta del eje X (Rival)
+        labels.push(m.opponent.substring(0, 3).toUpperCase());
 
-                m.playerStats.forEach(ps => {
-                    // Solo si jugó y tiene nota
-                    if ((ps.rating || ps.rating === 0) && ps.minutes > 0) {
-                        const p = players.find(pl => pl.id === ps.playerId);
-                        if (p) {
-                            const nota = parseFloat(ps.rating);
-                            
-                            if (p.posicion === 'defensa') {
-                                sumDef += nota; countDef++;
-                            } else if (p.posicion === 'centrocampista') {
-                                sumMid += nota; countMid++;
-                            } else if (p.posicion === 'delantero' || p.posicion === 'extremo') {
-                                // Agrupamos Delanteros y Extremos en "Ataque"
-                                sumFwd += nota; countFwd++;
-                            }
-                        }
-                    }
-                });
+        // Acumuladores para este partido
+        let sumDef = 0, countDef = 0;
+        let sumMid = 0, countMid = 0;
+        let sumFwd = 0, countFwd = 0;
 
-                // Calcular medias (si no jugaron, null para romper la línea o 0)
-                dataDef.push(countDef > 0 ? (sumDef / countDef).toFixed(2) : null);
-                dataMid.push(countMid > 0 ? (sumMid / countMid).toFixed(2) : null);
-                dataFwd.push(countFwd > 0 ? (sumFwd / countFwd).toFixed(2) : null);
-            });
-
-            // Destruir gráfico anterior si existe para actualizar
-            if (lineWarsChart) lineWarsChart.destroy();
-
-            const isDark = document.body.classList.contains('dark-mode');
-            const gridColor = isDark ? '#334155' : '#f3f4f6';
-            const textColor = isDark ? '#94a3b8' : '#6b7280';
-
-            lineWarsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Defensa',
-                            data: dataDef,
-                            borderColor: '#3b82f6', // Azul
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: 'Medio',
-                            data: dataMid,
-                            borderColor: '#10b981', // Esmeralda
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: 'Delantera',
-                            data: dataFwd,
-                            borderColor: '#f43f5e', // Rosa/Rojo
-                            backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                            tension: 0.3,
-                            pointRadius: 3,
-                            pointHoverRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        legend: { display: false }, // Usamos nuestra leyenda HTML personalizada
-                        tooltip: {
-                            callbacks: {
-                                title: (context) => matches[context[0].dataIndex].opponent // Nombre completo en tooltip
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            min: 4, // Empezamos en 4 para que se vea más detalle en la parte alta
-                            max: 10,
-                            grid: { color: gridColor },
-                            ticks: { color: textColor }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: textColor, font: { size: 10 } }
-                        }
+        m.playerStats.forEach(ps => {
+            // Solo si jugó y tiene nota válida (> 0)
+            if ((ps.rating || ps.rating === 0) && ps.minutes > 0 && parseFloat(ps.rating) > 0) {
+                const p = players.find(pl => pl.id === ps.playerId);
+                if (p) {
+                    const nota = parseFloat(ps.rating);
+                    
+                    if (p.posicion === 'defensa') {
+                        sumDef += nota; countDef++;
+                        totalSumDef += nota; totalCountDef++;
+                    } else if (p.posicion === 'centrocampista') {
+                        sumMid += nota; countMid++;
+                        totalSumMid += nota; totalCountMid++;
+                    } else if (p.posicion === 'delantero' || p.posicion === 'extremo') {
+                        sumFwd += nota; countFwd++;
+                        totalSumFwd += nota; totalCountFwd++;
                     }
                 }
-            });
+            }
+        });
+
+        // Calcular medias del partido (null si no hay datos para romper la línea)
+        dataDef.push(countDef > 0 ? (sumDef / countDef).toFixed(2) : null);
+        dataMid.push(countMid > 0 ? (sumMid / countMid).toFixed(2) : null);
+        dataFwd.push(countFwd > 0 ? (sumFwd / countFwd).toFixed(2) : null);
+    });
+
+    // --- ACTUALIZAR LEYENDA CON MEDIAS GLOBALES ---
+    const avgDef = totalCountDef > 0 ? (totalSumDef / totalCountDef).toFixed(2) : '-';
+    const avgMid = totalCountMid > 0 ? (totalSumMid / totalCountMid).toFixed(2) : '-';
+    const avgFwd = totalCountFwd > 0 ? (totalSumFwd / totalCountFwd).toFixed(2) : '-';
+
+    // Buscamos los contenedores de la leyenda (Asumiendo que tienes spans o divs con estos IDs o clases)
+    // Si no tienes IDs, añade id="legend-def", "legend-mid", "legend-fwd" a los textos de la leyenda en tu HTML
+    const legendDef = document.getElementById('legend-def-val') || document.querySelector('.legend-def span');
+    const legendMid = document.getElementById('legend-mid-val') || document.querySelector('.legend-mid span');
+    const legendFwd = document.getElementById('legend-fwd-val') || document.querySelector('.legend-fwd span');
+
+    // Si existen, actualizamos el texto
+    if (legendDef) legendDef.textContent = `Defensa (${avgDef})`;
+    if (legendMid) legendMid.textContent = `Medio (${avgMid})`;
+    if (legendFwd) legendFwd.textContent = `Delantera (${avgFwd})`;
+
+    // Destruir gráfico anterior
+    if (typeof lineWarsChart !== 'undefined' && lineWarsChart) {
+        lineWarsChart.destroy();
+    }
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const gridColor = isDark ? '#334155' : '#f3f4f6';
+    const textColor = isDark ? '#94a3b8' : '#6b7280';
+
+    // Crear Gráfico
+    // @ts-ignore (Si usas TS)
+    lineWarsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: `Defensa (Media: ${avgDef})`, // Tooltip mostrará la media
+                    data: dataDef,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: `Medio (Media: ${avgMid})`,
+                    data: dataMid,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: `Delantera (Media: ${avgFwd})`,
+                    data: dataFwd,
+                    borderColor: '#f43f5e',
+                    backgroundColor: 'rgba(244, 63, 94, 0.1)',
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: { display: false }, // Mantenemos leyenda oculta porque usamos la HTML
+                tooltip: {
+                    callbacks: {
+                        title: (context) => matches[context[0].dataIndex].opponent
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 4,
+                    max: 10,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, font: { size: 10 } }
+                }
+            }
         }
+    });
+}
         // ==========================================
         // ROSCO DE MINUTOS (ROTACIONES)
         // ==========================================
