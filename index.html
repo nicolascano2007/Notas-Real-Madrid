@@ -2058,6 +2058,20 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 manualJuneMatches: false
             }
         };
+        // Nombres de posiciones por índice de hueco (0 es Portero, 1-10 Jugadores de campo)
+const FORMATION_ROLES = {
+    '4-3-3': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Interior', 'Interior', 'Extremo Izq', 'Delantero Centro', 'Extremo Der'],
+    '4-4-2': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Extremo Izq', 'Medio Centro', 'Medio Centro', 'Extremo Der', 'Delantero', 'Delantero'],
+    '4-2-3-1': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Pivote', 'Media Punta', 'Extremo Izq', 'Delantero', 'Extremo Der'],
+    '3-5-2': ['Portero', 'Central', 'Central', 'Central', 'Carrilero Izq', 'Pivote', 'Carrilero Der', 'Interior', 'Interior', 'Delantero', 'Delantero'],
+    // Fallback genérico
+    'default': ['Portero', 'Defensa', 'Defensa', 'Defensa', 'Defensa', 'Centrocampista', 'Centrocampista', 'Centrocampista', 'Delantero', 'Delantero', 'Delantero']
+};
+
+function getPositionName(formation, index) {
+    const roles = FORMATION_ROLES[formation] || FORMATION_ROLES['default'];
+    return roles[index] || 'Jugador de Campo';
+}
 
         // Variables globales
         let calendarEvents = [];
@@ -2409,14 +2423,14 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             renderStats();
         }
 
-        function renderStats() {
+function renderStats() {
     const matches = getData('matches');
     const players = getPlayers();
     
     const competitionFilter = document.getElementById('stats-filter-competition').value;
     const statusFilter = document.getElementById('stats-filter-status').value;
     
-    // Actualizar visuales de las cabeceras
+    // Headers visuales
     document.querySelectorAll('th.sortable').forEach(th => {
         th.classList.remove('th-active');
         th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
@@ -2432,7 +2446,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
         filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
     }
 
-    // Lógica de Rachas
+    // Rachas
     const streakContainer = document.getElementById('team-streak');
     const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
     
@@ -2448,7 +2462,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
         streakContainer.innerHTML = '<span class="text-gray-500 text-sm">Sin partidos jugados</span>';
     }
 
-    // Cálculo de Estadísticas Globales
+    // Totales globales
     let totalWins = 0, totalDraws = 0, totalLosses = 0;
     let totalGoalsFor = 0, totalGoalsAgainst = 0;
     let totalAssists = 0;
@@ -2511,11 +2525,12 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             yellowCards: 0,
             redCards: 0,
             last5Ratings: [],
-            // Nuevos campos para ratios
             minPerMatch: 0,
             gPer90: 0,
             aPer90: 0,
-            gaPer90: 0
+            gaPer90: 0,
+            // NUEVO: Aquí guardaremos el desglose de posiciones
+            positionsPlayed: {} // Ej: {'Lateral Der': 5, 'Central': 2}
         };
         
         const playerMatchesSorted = filteredMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -2524,9 +2539,14 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             const ps = match.playerStats?.find(s => String(s.playerId) === String(player.id));
             
             if (ps) {
-                // Contar partido si jugó algún minuto o está marcado como played
                 if (ps.minutes > 0 || ps.played) {
                     stats.matchesPlayed++;
+                    
+                    // --- NUEVO: ACUMULAR POSICIÓN ---
+                    // Si el partido tiene el dato 'specificPosition' (lo añadiremos al guardar), lo contamos.
+                    // Si es antiguo y no lo tiene, ignoramos o contamos como "Desconocido"
+                    const posName = ps.specificPosition || (ps.isStarter ? 'Titular' : 'Suplente');
+                    stats.positionsPlayed[posName] = (stats.positionsPlayed[posName] || 0) + 1;
                 }
                 
                 stats.goals += (ps.goals || 0);
@@ -2554,11 +2574,8 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
         stats.avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
         stats.ga = stats.goals + stats.assists;
 
-        // --- CÁLCULO DE RATIOS (NUEVO) ---
-        // Minutos por partido
+        // Ratios
         stats.minPerMatch = stats.matchesPlayed > 0 ? (stats.minutes / stats.matchesPlayed).toFixed(0) : '-';
-
-        // Ratios por 90 minutos
         const factor = stats.minutes > 0 ? (90 / stats.minutes) : 0;
         stats.gPer90 = (stats.goals * factor).toFixed(2);
         stats.aPer90 = (stats.assists * factor).toFixed(2);
@@ -2570,7 +2587,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
     
     if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
 
-    // Top Form Logic (sin cambios)
+    // Top Form
     const formContainer = document.getElementById('top-form-players');
     if (formContainer) {
         const playersWithRecentGames = playerStats
@@ -2612,7 +2629,6 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             valB = valB === '-' ? -1 : parseFloat(valB);
         }
         
-        // Manejo de ordenación para los nuevos ratios si se usan como columnas ordenables
         if (['gPer90', 'aPer90', 'gaPer90', 'minPerMatch'].includes(currentSortColumn)) {
              valA = parseFloat(valA) || 0;
              valB = parseFloat(valB) || 0;
@@ -4387,6 +4403,7 @@ function renderPerformanceMatrix(matches) {
                 playerStats.push({
                     playerId: playerId,
                     isStarter: isStarter,
+                    specificPosition: specificPos,
                     rating: rating,
                     goals: goals,
                     assists: assists,
@@ -5702,40 +5719,41 @@ function renderPerformanceMatrix(matches) {
             }
         }
 
-        function renderTacticalBoard(prefix = '') {
-            // Buscamos los contenedores con el prefijo correcto
-            const slotsLayer = document.getElementById(prefix + 'pitch-slots-layer');
-            const playersLayer = document.getElementById(prefix + 'pitch-players-layer');
-            
-            if (!slotsLayer || !playersLayer) return; // Protección por si no existen
+            function renderTacticalBoard(prefix = '') {
+    const slotsLayer = document.getElementById(prefix + 'pitch-slots-layer');
+    const playersLayer = document.getElementById(prefix + 'pitch-players-layer');
+    
+    if (!slotsLayer || !playersLayer) return;
 
-            const coords = FORMACIONES[currentFormation];
+    const coords = FORMACIONES[currentFormation] || []; // Seguridad
 
-            // Generamos slots con IDs únicos (ej: 'edit-slot-0')
-            slotsLayer.innerHTML = coords.map((pos, index) => `
-                <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
-                     id="${prefix}slot-${index}"
-                     style="top: ${pos.top}%; left: ${pos.left}%;"
-                     ondragover="allowDrop(event)" 
-                     ondrop="drop(event)"
-                     onclick="openPlayerSelector('${prefix}slot-${index}')"
-                     title="Clic para elegir jugador">
-                </div>
-            `).join('');
+    slotsLayer.innerHTML = coords.map((pos, index) => {
+        // Obtenemos el nombre bonito de la posición
+        const posName = getPositionName(currentFormation, index);
+        
+        return `
+        <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
+             id="${prefix}slot-${index}"
+             style="top: ${pos.top}%; left: ${pos.left}%;"
+             ondragover="allowDrop(event)" 
+             ondrop="drop(event)"
+             onclick="openPlayerSelector('${prefix}slot-${index}')"
+             title="${posName}"> <span class="heatmap-label" style="position:absolute; bottom:-15px; font-size:7px; opacity:0.7; width:60px; text-align:center;">${posName}</span>
+        </div>
+    `}).join('');
 
-            playersLayer.innerHTML = ''; 
-            
-            Object.keys(currentPitchPlayers).forEach(slotId => {
-                // Solo pintamos si el slot pertenece a este contexto (prefijo coincidente)
-                if (slotId.startsWith(prefix)) {
-                    const playerId = currentPitchPlayers[slotId];
-                    const player = getPlayers().find(p => p.id === playerId);
-                    if (player) {
-                        renderPlayerOnPitch(player, slotId, playersLayer);
-                    }
-                }
-            });
+    playersLayer.innerHTML = ''; 
+    
+    Object.keys(currentPitchPlayers).forEach(slotId => {
+        if (slotId.startsWith(prefix)) {
+            const playerId = currentPitchPlayers[slotId];
+            const player = getPlayers().find(p => p.id === playerId);
+            if (player) {
+                renderPlayerOnPitch(player, slotId, playersLayer);
+            }
         }
+    });
+}
 
             function renderPlayerOnPitch(player, slotId, container) {
     const slotEl = document.getElementById(slotId);
@@ -6129,102 +6147,114 @@ function renderPerformanceMatrix(matches) {
                 }
             });
         }
-        function goToStep3() {
-            // 1. Validar que hay 11 titulares
-            const titularesIds = Object.values(currentPitchPlayers);
-            // Filtramos undefined o null por si acaso
-            const titularesReales = titularesIds.filter(id => id);
+            function goToStep3() {
+    const titularesIds = Object.values(currentPitchPlayers).filter(id => id);
+    
+    if (titularesIds.length !== 11) {
+        alert(`⚠️ Tienes ${titularesIds.length} jugadores en el campo. Deben ser exactamente 11.`);
+        return;
+    }
+    
+    const suplentesIds = currentSubstitutes || [];
+    const container = document.getElementById('final-stats-container');
+    const allPlayers = getPlayers();
+
+    let selectedPlayers = [];
+    
+    // 1. PROCESAR TITULARES Y SUS POSICIONES EXACTAS
+    titularesIds.forEach(id => {
+        const p = allPlayers.find(pl => pl.id === id);
+        if (p) {
+            // Buscar en qué slot estaba este jugador
+            const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === id);
+            let specificPos = 'Titular'; // Valor por defecto
             
-            if (titularesReales.length !== 11) {
-                alert(`⚠️ Tienes ${titularesReales.length} jugadores en el campo. Deben ser exactamente 11.`);
-                return;
+            if (slotKey) {
+                // Extraer índice del slot (ej: 'slot-4' -> 4)
+                const indexMatch = slotKey.match(/-(\d+)$/);
+                if (indexMatch) {
+                    const idx = parseInt(indexMatch[1]);
+                    // Usar la función helper para sacar el nombre (ej: "Lateral Der")
+                    specificPos = getPositionName(currentFormation, idx);
+                }
             }
-            const suplentesIds = currentSubstitutes;
-            // 2. Identificar Suplentes (Están en la zona #subs-zone)
-            const subsZone = document.getElementById('subs-zone');
-
-            // 3. Generar la lista limpia
-            const container = document.getElementById('final-stats-container');
-            const allPlayers = getPlayers(); // Todos los datos
             
-            // Unimos y marcamos rol
-            let selectedPlayers = [];
-            
-            // Titulares
-            titularesReales.forEach(id => {
-                const p = allPlayers.find(pl => pl.id === id);
-                if(p) selectedPlayers.push({ ...p, rol: 'Titular' });
-            });
-            
-            // Suplentes
-            suplentesIds.forEach(id => {
-                const p = allPlayers.find(pl => pl.id === id);
-                if(p) selectedPlayers.push({ ...p, rol: 'Suplente' });
-            });
-            
-            // Entrenador (Siempre va)
-            const coach = allPlayers.find(p => p.posicion === 'entrenador');
-            if(coach) selectedPlayers.push({ ...coach, rol: 'Entrenador' });
-
-            // Renderizar HTML limpio
-            container.innerHTML = selectedPlayers.map(p => {
-                const isCoach = p.posicion === 'entrenador';
-                const rolBadge = p.rol === 'Titular' 
-                    ? '<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded border border-green-200">TITULAR</span>'
-                    : (isCoach ? '<span class="bg-gray-200 text-gray-800 text-xs font-bold px-2 py-1 rounded">STAFF</span>' 
-                    : '<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-200">SUPLENTE</span>');
-
-                return `
-                <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" data-player-id="${p.id}" data-rol="${p.rol}">
-                    <div class="flex items-center gap-3 w-full md:w-1/3">
-                        <img src="${p.foto}" class="player-photo-xs border border-gray-200" onerror="this.src='https://via.placeholder.com/40x40'">
-                        <div class="flex-1">
-                            <div class="flex justify-between items-center">
-                                <span class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</span>
-                                ${rolBadge}
-                            </div>
-                            <span class="text-xs text-gray-500">#${p.dorsal} - ${p.posicion}</span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-4 gap-2 w-full md:flex-1">
-                        <div class="flex flex-col">
-                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Nota</label>
-                            <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none" min="0" max="10" step="0.25" placeholder="-">
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Goles</label>
-                            ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Asist</label>
-                            ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Min</label>
-                            ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm text-center" min="0" max="120" value="${p.rol === 'Titular' ? 90 : 45}">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                        </div>
-                    </div>
-
-                    <div class="flex gap-2 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-0 md:pl-3 justify-center">
-                        <div class="flex flex-col items-center">
-                            <label class="text-[10px] mb-1">🟨</label>
-                            <input type="number" class="stat-yellow w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="2" value="0">
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <label class="text-[10px] mb-1">🟥</label>
-                            <input type="number" class="stat-red w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="1" value="0">
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-
-            // 4. Cambiar Pantalla
-            document.getElementById('wizard-step-2').classList.add('hidden');
-            document.getElementById('wizard-step-3').classList.remove('hidden');
+            selectedPlayers.push({ ...p, rol: 'Titular', specificPos: specificPos });
         }
+    });
+    
+    // 2. Procesar Suplentes
+    suplentesIds.forEach(id => {
+        const p = allPlayers.find(pl => pl.id === id);
+        if(p) selectedPlayers.push({ ...p, rol: 'Suplente', specificPos: 'Suplente' });
+    });
+    
+    // 3. Entrenador
+    const coach = allPlayers.find(p => p.posicion === 'entrenador');
+    if(coach) selectedPlayers.push({ ...coach, rol: 'Entrenador', specificPos: 'Entrenador' });
 
+    // 4. Renderizar
+    container.innerHTML = selectedPlayers.map(p => {
+        const isCoach = p.posicion === 'entrenador';
+        const rolBadge = p.rol === 'Titular' 
+            ? `<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded border border-green-200">${p.specificPos.toUpperCase()}</span>`
+            : (isCoach ? '<span class="bg-gray-200 text-gray-800 text-xs font-bold px-2 py-1 rounded">STAFF</span>' 
+            : '<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-200">SUPLENTE</span>');
+
+        // AÑADIMOS data-specific-pos AQUÍ ABAJO ↓↓↓
+        return `
+        <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" 
+             data-player-id="${p.id}" 
+             data-rol="${p.rol}"
+             data-specific-pos="${p.specificPos}"> 
+             
+            <div class="flex items-center gap-3 w-full md:w-1/3">
+                <img src="${p.foto}" class="player-photo-xs border border-gray-200" onerror="this.src='https://via.placeholder.com/40x40'">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</span>
+                        ${rolBadge}
+                    </div>
+                    <span class="text-xs text-gray-500">#${p.dorsal} - ${p.posicion}</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 w-full md:flex-1">
+                <div class="flex flex-col">
+                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Nota</label>
+                    <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none" min="0" max="10" step="0.25" placeholder="-">
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Goles</label>
+                    ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Asist</label>
+                    ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                </div>
+                <div class="flex flex-col">
+                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Min</label>
+                    ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm text-center" min="0" max="120" value="${p.rol === 'Titular' ? 90 : 45}">` : `<span class="text-center text-gray-300 py-1">-</span>`}
+                </div>
+            </div>
+
+            <div class="flex gap-2 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-0 md:pl-3 justify-center">
+                <div class="flex flex-col items-center">
+                    <label class="text-[10px] mb-1">🟨</label>
+                    <input type="number" class="stat-yellow w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="2" value="0">
+                </div>
+                <div class="flex flex-col items-center">
+                    <label class="text-[10px] mb-1">🟥</label>
+                    <input type="number" class="stat-red w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="1" value="0">
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    document.getElementById('wizard-step-2').classList.add('hidden');
+    document.getElementById('wizard-step-3').classList.remove('hidden');
+}
 
         // ==========================================
         // SISTEMA DE COPIA DE SEGURIDAD (CORREGIDO)
@@ -7886,6 +7916,7 @@ function renderLineWarsChart() {
         statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
             const playerId = row.getAttribute('data-player-id');
             const rol = row.getAttribute('data-rol');
+            const specificPos = row.getAttribute('data-specific-pos');
             const isCoach = rol === 'Entrenador';
             const isStarter = rol === 'Titular';
 
