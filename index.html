@@ -450,6 +450,60 @@
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
             animation: bounce 2s infinite;
         }
+        /* --- SALA DE TROFEOS --- */
+.trophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 15px;
+    padding: 10px;
+}
+.trophy-card {
+    background: white;
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+.trophy-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+/* Fondo dorado suave para trofeos desbloqueados */
+.trophy-unlocked { border-color: #fbbf24; background: linear-gradient(to bottom right, #fffbeb, #fff); }
+/* Gris para bloqueados */
+.trophy-locked { opacity: 0.6; filter: grayscale(1); background: #f9fafb; border-style: dashed; }
+
+.trophy-icon { font-size: 2.5rem; margin-bottom: 10px; display: block; }
+.trophy-title { font-weight: 800; color: #1f2937; font-size: 1.1rem; margin-bottom: 4px; }
+.trophy-desc { font-size: 0.8rem; color: #6b7280; margin-bottom: 12px; line-height: 1.4; }
+
+/* Lista de ganadores dentro de la tarjeta */
+.trophy-winners {
+    border-top: 1px solid #f3f4f6;
+    padding-top: 10px;
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.winner-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* Efecto de brillo para trofeos muy raros */
+.trophy-rare::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+    transform: rotate(45deg); pointer-events: none;
+}
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-3px); }
@@ -535,6 +589,9 @@
                     </button>
                     <button onclick="showTab('comparador')" id="tab-comparador" class="tab-btn px-4 py-3 font-medium text-gray-300 hover:text-amber-400 whitespace-nowrap">
                         🆚 Comparador
+                    </button>
+                    <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
+                        <span>🏆</span> Trofeos
                     </button>
                 </div>
             </div>
@@ -1659,6 +1716,27 @@
             </div>
         </div>
     </div>
+    <div id="trophy-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+    <div class="bg-white w-full max-w-5xl h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col m-4">
+        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-white">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🏆</span>
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800">Sala de Trofeos</h2>
+                    <p class="text-xs text-gray-500 font-medium">Logros desbloqueados: <span id="trophy-count" class="text-amber-600 font-bold">0/0</span></p>
+                </div>
+            </div>
+            <button onclick="closeTrophyRoom()" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto bg-slate-50 p-4">
+            <div id="trophy-container" class="trophy-grid">
+                </div>
+        </div>
+    </div>
+</div>
     </div>
     </div>
 
@@ -7989,6 +8067,230 @@ window.checkAutoRedCard = function(yellowInput) {
         }
     }
 };
+// =============================================================================
+// 4. SISTEMA DE LOGROS (TROPHY ROOM)
+// =============================================================================
+
+const ACHIEVEMENTS_CONFIG = [
+    {
+        id: 'hat_trick',
+        icon: '🎩',
+        title: 'Hat-Trick Hero',
+        desc: 'Marcar 3 o más goles en un solo partido.',
+        check: (players, matches) => {
+            const winners = [];
+            matches.forEach(m => {
+                m.playerStats.forEach(ps => {
+                    if (ps.goals >= 3) {
+                        const p = players.find(pl => pl.id === ps.playerId);
+                        // Evitar duplicados si el mismo jugador lo hace varias veces, o mostrarlo varias veces (opcional)
+                        // Aquí mostramos cada vez que ocurre con la fecha
+                        if (p) winners.push({ p, detail: `vs ${m.opponent}` });
+                    }
+                });
+            });
+            return winners;
+        }
+    },
+    {
+        id: 'wall',
+        icon: '🧱',
+        title: 'El Muro',
+        desc: 'Portero que mantiene la portería a cero en un partido completo.',
+        check: (players, matches) => {
+            const winners = [];
+            matches.forEach(m => {
+                // 1. Ver si el equipo NO encajó goles
+                let opponentGoals = 0;
+                const parts = m.result.split('-');
+                if (parts.length === 2) {
+                    opponentGoals = m.venue === 'local' ? parseInt(parts[1]) : parseInt(parts[0]);
+                }
+
+                if (opponentGoals === 0) {
+                    // 2. Buscar portero titular
+                    m.playerStats.forEach(ps => {
+                        const p = players.find(pl => pl.id === ps.playerId);
+                        // Asumimos que si es portero y titular cuenta (simplificación)
+                        if (p && (p.posicion === 'portero' || p.posicion === 'portera') && ps.isStarter) {
+                            winners.push({ p, detail: `vs ${m.opponent}` });
+                        }
+                    });
+                }
+            });
+            return winners;
+        }
+    },
+    {
+        id: 'sniper',
+        icon: '🎯',
+        title: 'Francotirador',
+        desc: 'Marcar gol en 3 partidos consecutivos.',
+        check: (players, matches) => {
+            const winners = [];
+            // Ordenar cronológicamente
+            const sortedMatches = [...matches].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            players.forEach(p => {
+                let streak = 0;
+                let maxStreak = 0;
+                
+                sortedMatches.forEach(m => {
+                    const stats = m.playerStats.find(ps => ps.playerId === p.id);
+                    if (stats && stats.goals > 0) {
+                        streak++;
+                    } else if (stats && stats.played) {
+                        // Si jugó y no marcó, se rompe la racha
+                        streak = 0;
+                    }
+                    // Si no jugó, mantenemos la racha (opcional, o la rompemos)
+                    if (streak > maxStreak) maxStreak = streak;
+                });
+
+                if (maxStreak >= 3) {
+                    winners.push({ p, detail: `${maxStreak} seguidos` });
+                }
+            });
+            return winners;
+        }
+    },
+    {
+        id: 'super_sub',
+        icon: '⚡',
+        title: 'Revulsivo de Oro',
+        desc: 'Jugador con más goles saliendo desde el banquillo (Mínimo 2).',
+        check: (players, matches) => {
+            const subGoals = {};
+            matches.forEach(m => {
+                m.playerStats.forEach(ps => {
+                    if (!ps.isStarter && ps.goals > 0) {
+                        subGoals[ps.playerId] = (subGoals[ps.playerId] || 0) + ps.goals;
+                    }
+                });
+            });
+            
+            // Filtrar los que tengan >= 2
+            const winners = [];
+            Object.keys(subGoals).forEach(pid => {
+                if (subGoals[pid] >= 2) {
+                    const p = players.find(pl => pl.id === pid);
+                    if (p) winners.push({ p, detail: `${subGoals[pid]} goles` });
+                }
+            });
+            return winners.sort((a,b) => parseInt(b.detail) - parseInt(a.detail)); // Ordenar por cantidad
+        }
+    },
+    {
+        id: 'butcher',
+        icon: '🟨',
+        title: 'El Carnicero',
+        desc: 'Jugador que acumula más tarjetas (Amarillas + Rojas) esta temporada.',
+        check: (players, matches) => {
+            const cards = {};
+            matches.forEach(m => {
+                m.playerStats.forEach(ps => {
+                    const total = (ps.yellowCards || 0) + (ps.redCards || 0);
+                    if (total > 0) cards[ps.playerId] = (cards[ps.playerId] || 0) + total;
+                });
+            });
+            
+            // Top 3 "carniceros" (mínimo 3 tarjetas para salir)
+            const winners = [];
+            Object.keys(cards).forEach(pid => {
+                if (cards[pid] >= 3) {
+                    const p = players.find(pl => pl.id === pid);
+                    if (p) winners.push({ p, detail: `${cards[pid]} 🟨🟥` });
+                }
+            });
+            return winners.sort((a,b) => parseInt(b.detail) - parseInt(a.detail)).slice(0, 3);
+        }
+    },
+    {
+        id: 'mvp_king',
+        icon: '👑',
+        title: 'MVP de la Temporada',
+        desc: 'Jugador que ha ganado el premio MVP más veces (Mínimo 3).',
+        check: (players, matches) => {
+            const mvps = {};
+            matches.forEach(m => {
+                if (m.mvp) {
+                    mvps[m.mvp] = (mvps[m.mvp] || 0) + 1;
+                }
+            });
+            
+            const winners = [];
+            Object.keys(mvps).forEach(pid => {
+                if (mvps[pid] >= 3) {
+                    const p = players.find(pl => pl.id === pid);
+                    if (p) winners.push({ p, detail: `${mvps[pid]} veces` });
+                }
+            });
+            return winners.sort((a,b) => parseInt(b.detail) - parseInt(a.detail));
+        }
+    }
+];
+
+function openTrophyRoom() {
+    const modal = document.getElementById('trophy-modal');
+    if (!modal) return; // Seguridad
+
+    const container = document.getElementById('trophy-container');
+    container.innerHTML = ''; // Limpiar
+
+    const players = getPlayers();
+    const matches = getData('matches');
+
+    let totalUnlocked = 0;
+
+    ACHIEVEMENTS_CONFIG.forEach(ach => {
+        // Ejecutar la función de chequeo de cada logro
+        const winners = ach.check(players, matches);
+        const isUnlocked = winners.length > 0;
+        if (isUnlocked) totalUnlocked++;
+
+        // Crear tarjeta HTML
+        const card = document.createElement('div');
+        card.className = `trophy-card ${isUnlocked ? 'trophy-unlocked trophy-rare' : 'trophy-locked'}`;
+        
+        let winnersHtml = '';
+        if (isUnlocked) {
+            winnersHtml = `<div class="trophy-winners">`;
+            // Mostrar máximo 5 ganadores para no saturar
+            winners.slice(0, 5).forEach(w => {
+                winnersHtml += `
+                    <div class="winner-badge">
+                        <img src="${w.p.foto}" class="w-4 h-4 rounded-full object-cover">
+                        <span>${w.p.apodo || w.p.apellido}</span>
+                        <span class="text-xs text-gray-500 font-normal">(${w.detail})</span>
+                    </div>
+                `;
+            });
+            if (winners.length > 5) {
+                winnersHtml += `<span class="text-xs text-gray-400 flex items-center">+${winners.length - 5} más</span>`;
+            }
+            winnersHtml += `</div>`;
+        } else {
+            winnersHtml = `<div class="mt-4 text-xs text-gray-400 italic">Nadie ha conseguido esto todavía...</div>`;
+        }
+
+        card.innerHTML = `
+            <span class="trophy-icon">${ach.icon}</span>
+            <div class="trophy-title">${ach.title}</div>
+            <div class="trophy-desc">${ach.desc}</div>
+            ${winnersHtml}
+        `;
+        container.appendChild(card);
+    });
+
+    // Actualizar contador del título
+    document.getElementById('trophy-count').textContent = `${totalUnlocked}/${ACHIEVEMENTS_CONFIG.length}`;
+
+    modal.classList.add('active');
+}
+
+function closeTrophyRoom() {
+    document.getElementById('trophy-modal').classList.remove('active');
+}
 
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
