@@ -457,6 +457,8 @@
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -485,7 +487,6 @@
             </div>
         </div>
     </section>
-
     <!-- APP CONTAINER (Hidden initially) -->
     <div id="app-container" class="hidden bg-gray-100">
         <!-- Header Real Madrid -->
@@ -1660,7 +1661,16 @@
     </div>
     </div>
     </div>
+
     <script>
+
+// Variables de Estado de la Aplicación
+let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
+
+
+
+// --- RESTO DE FUNCIONES (switchAppMode, getData, saveData...) ---
+// (Mantenlas igual que en el paso anterior, ya funcionan con este nuevo CLOUD_API)
         // ==========================================
         // DATA & CONSTANTS
         // ==========================================
@@ -2037,17 +2047,28 @@
         // DATA MANAGEMENT (TEAM SCOPED)
         // ==========================================
         
-        function getData(key) {
+             function getData(key) {
+
             if (!currentTeam) return [];
+
             const scopedKey = `${currentTeam}_${key}`;
+
             const data = localStorage.getItem(scopedKey);
+
             return data ? JSON.parse(data) : [];
+
         }
 
+
+
         function saveData(key, data) {
+
             if (!currentTeam) return;
+
             const scopedKey = `${currentTeam}_${key}`;
+
             localStorage.setItem(scopedKey, JSON.stringify(data));
+
         }
 
         function generateId() {
@@ -2676,136 +2697,253 @@ function renderRegularityAnalysis() {
         let goalsChart = null;
         let evolutionChart = null;
 
-        function renderCharts(filteredMatches) {
-            const players = getPlayers();
-            
-            // --- 1. DATOS PARA GRÁFICO DE GOLES (DONUT) ---
-            // Definimos solo las 3 grandes categorías
-            const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0 };
-            
-            filteredMatches.forEach(m => {
-                m.playerStats.forEach(ps => {
-                    const p = players.find(pl => pl.id === ps.playerId);
-                    if (p && ps.goals > 0) {
-                        let pos = p.posicion;
-                        
-                        // FUSIÓN CLAVE: Si es extremo, lo contamos como delantero para este gráfico
-                        if (pos === 'extremo') pos = 'delantero';
-                        
-                        // Solo sumamos si entra en una de las 3 categorías principales (ignoramos porteros si marcaran)
-                        if (goalsByPos[pos] !== undefined) {
-                            goalsByPos[pos] += ps.goals;
-                        }
-                    }
-                });
-            });
+            function renderCharts(filteredMatches) {
+    const players = getPlayers();
+    
+    // --- 1. DATOS PARA GRÁFICO DE GOLES (DONUT) ---
+    const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0 };
+    
+    filteredMatches.forEach(m => {
+        m.playerStats.forEach(ps => {
+            const p = players.find(pl => pl.id === ps.playerId);
+            if (p && ps.goals > 0) {
+                let pos = p.posicion;
+                if (pos === 'extremo') pos = 'delantero';
+                
+                if (goalsByPos[pos] !== undefined) {
+                    goalsByPos[pos] += ps.goals;
+                }
+            }
+        });
+    });
 
-            const ctxGoals = document.getElementById('chart-goals-distribution').getContext('2d');
-            
-            if (goalsChart) goalsChart.destroy();
+    const ctxGoals = document.getElementById('chart-goals-distribution').getContext('2d');
+    if (goalsChart) goalsChart.destroy();
 
-            goalsChart = new Chart(ctxGoals, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Delanteros (+Ext)', 'Medios', 'Defensas'],
-                    datasets: [{
-                        data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
-                        backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
-                        hoverOffset: 4,
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { font: { size: 11 } } },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const value = context.raw;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
-                                    return ` ${value} Goles (${percentage})`;
-                                }
-                            }
+    goalsChart = new Chart(ctxGoals, {
+        type: 'doughnut',
+        data: {
+            labels: ['Delanteros (+Ext)', 'Medios', 'Defensas'],
+            datasets: [{
+                data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
+                backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                hoverOffset: 4,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
+                            return ` ${value} Goles (${percentage})`;
                         }
                     }
                 }
-            });
-
-            // --- 2. DATOS PARA EVOLUCIÓN (LÍNEA) ---
-            const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            const labels = sortedMatches.map(m => {
-                const shortRound = m.round.replace('Jornada', 'J').replace('Fase de Liga - ', '').replace('Fase de Grupos - ', 'G');
-                return `${shortRound} vs ${m.opponent}`;
-            });
-
-            const ratings = sortedMatches.map(m => {
-                let total = 0, count = 0;
-                m.playerStats.forEach(ps => {
-                    if (ps.rating) {
-                        total += parseFloat(ps.rating);
-                        count++;
-                    }
-                });
-                return count > 0 ? (total / count).toFixed(2) : null;
-            });
-
-            const ctxEvo = document.getElementById('chart-season-evolution').getContext('2d');
-            
-            if (evolutionChart) evolutionChart.destroy();
-
-            evolutionChart = new Chart(ctxEvo, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Nota Media',
-                        data: ratings,
-                        borderColor: '#f59e0b',
-                        backgroundColor: (context) => {
-                            const ctx = context.chart.ctx;
-                            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
-                            gradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
-                            return gradient;
-                        },
-                        tension: 0.3,
-                        fill: true,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#f59e0b',
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    scales: {
-                        y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, border: { display: false } },
-                        x: { display: false }
-                    },
-                    plugins: {
-                        tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            titleColor: '#1f2937',
-                            bodyColor: '#1f2937',
-                            borderColor: '#e5e7eb',
-                            borderWidth: 1,
-                            callbacks: {
-                                title: (context) => context[0].label
-                            }
-                        },
-                        legend: { display: false }
-                    }
-                }
-            });
+            }
         }
+    });
+
+    // --- 2. DATOS PARA EVOLUCIÓN (LÍNEA) ---
+    const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    const labels = sortedMatches.map(m => {
+        const shortRound = m.round.replace('Jornada', 'J').replace('Fase de Liga - ', '').replace('Fase de Grupos - ', 'G');
+        return `${shortRound} vs ${m.opponent}`;
+    });
+
+    const ratings = sortedMatches.map(m => {
+        let total = 0, count = 0;
+        m.playerStats.forEach(ps => {
+            if (ps.rating) {
+                total += parseFloat(ps.rating);
+                count++;
+            }
+        });
+        return count > 0 ? (total / count).toFixed(2) : null;
+    });
+
+    const ctxEvo = document.getElementById('chart-season-evolution').getContext('2d');
+    if (evolutionChart) evolutionChart.destroy();
+
+    evolutionChart = new Chart(ctxEvo, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Nota Media',
+                data: ratings,
+                borderColor: '#f59e0b',
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                    gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+                    gradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+                    return gradient;
+                },
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#f59e0b',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+                y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, border: { display: false } },
+                x: { display: false }
+            },
+            plugins: {
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#1f2937',
+                    bodyColor: '#1f2937',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    callbacks: { title: (context) => context[0].label }
+                },
+                legend: { display: false }
+            }
+        }
+    });
+
+    // --- 3. NUEVO: MATRIZ DE RENDIMIENTO (HEATMAP) ---
+    renderPerformanceMatrix(sortedMatches);
+}
+
+// --- FUNCIÓN AUXILIAR PARA DIBUJAR LA MATRIZ ---
+        // --- FUNCIÓN AUXILIAR PARA DIBUJAR LA MATRIZ (CON NOTA MEDIA DE TEMPORADA) ---
+function renderPerformanceMatrix(matches) {
+    // 1. Buscar o Crear el contenedor
+    let container = document.getElementById('performance-matrix-container');
+    if (!container) {
+        const chartsSection = document.getElementById('chart-season-evolution')?.closest('.bg-white') || document.getElementById('charts-view');
+        if (chartsSection && chartsSection.parentNode) {
+            container = document.createElement('div');
+            container.id = 'performance-matrix-container';
+            container.className = 'mt-6 bg-white p-4 rounded-xl shadow-sm border border-gray-200';
+            chartsSection.parentNode.insertBefore(container, chartsSection.nextSibling);
+        } else {
+            return; 
+        }
+    }
+
+    // 2. Agrupar partidos y CALCULAR MEDIA GLOBAL
+    const matchesByComp = {};
+    let globalSum = 0;
+    let globalCount = 0;
+
+    matches.forEach(m => {
+        // --- Cálculo de media para este partido ---
+        let matchTotal = 0, matchPCount = 0;
+        m.playerStats.forEach(ps => {
+            if (ps.rating) {
+                matchTotal += parseFloat(ps.rating);
+                matchPCount++;
+            }
+        });
+        
+        if (matchPCount > 0) {
+            const matchAvg = matchTotal / matchPCount;
+            globalSum += matchAvg;
+            globalCount++;
+        }
+        // -----------------------------------------
+
+        let compName = m.competition;
+        if (typeof COMPETICIONES_ACTUALES !== 'undefined') {
+            const key = Object.keys(COMPETICIONES_ACTUALES).find(k => 
+                k === m.competition || COMPETICIONES_ACTUALES[k].nombre === m.competition
+            );
+            if (key) compName = COMPETICIONES_ACTUALES[key].nombre; 
+        }
+        
+        if (!matchesByComp[compName]) matchesByComp[compName] = [];
+        matchesByComp[compName].push(m);
+    });
+
+    // Calcular nota final de temporada
+    const seasonAvg = globalCount > 0 ? (globalSum / globalCount).toFixed(2) : '-';
+    const seasonColor = getTeamRatingColor(seasonAvg);
+
+    // 3. Generar HTML
+    // He modificado el header para incluir la nota media
+    let html = `
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+                <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wide">📊 Matriz de Rendimiento</h3>
+                
+                <div class="px-3 py-1 rounded-lg text-white font-bold text-sm shadow-sm flex items-center gap-2" 
+                     style="background-color: ${seasonColor}">
+                    <span>Nota Temp:</span>
+                    <span class="text-lg">${seasonAvg}</span>
+                </div>
+            </div>
+
+            <div class="flex gap-1 text-[10px] text-gray-400">
+                <span class="px-1 rounded bg-[#dc0c00] text-white">Bad</span>
+                <span class="px-1 rounded bg-[#d9af00] text-white">Avg</span>
+                <span class="px-1 rounded bg-[#00c424] text-white">Good</span>
+                <span class="px-1 rounded bg-[#00adc4] text-white">Top</span>
+            </div>
+        </div>
+        <div class="space-y-3 overflow-x-auto">
+    `;
+
+    Object.keys(matchesByComp).forEach(comp => {
+        const compMatches = matchesByComp[comp];
+        
+        html += `
+            <div class="flex flex-col md:flex-row md:items-center gap-2">
+                <div class="w-full md:w-32 shrink-0">
+                    <span class="text-xs font-bold text-gray-600 truncate block" title="${comp}">${comp}</span>
+                </div>
+                <div class="flex-1 flex flex-wrap gap-1">
+        `;
+
+        compMatches.forEach(m => {
+            let total = 0, count = 0;
+            m.playerStats.forEach(ps => {
+                if (ps.rating) {
+                    total += parseFloat(ps.rating);
+                    count++;
+                }
+            });
+            
+            const avgRating = count > 0 ? (total / count).toFixed(1) : '-';
+            const color = getTeamRatingColor(avgRating);
+            const isWin = m.outcome === 'victoria';
+            const isLoss = m.outcome === 'derrota';
+            const borderColor = isWin ? 'border-amber-400' : (isLoss ? 'border-red-200' : 'border-gray-200');
+
+            html += `
+                <div onclick="viewMatchDetails('${m.id}')" 
+                     class="w-8 h-8 rounded flex items-center justify-center cursor-pointer transition-transform hover:scale-110 hover:z-10 border ${borderColor}"
+                     style="background-color: ${color}; color: white;"
+                     title="${m.date} vs ${m.opponent}\nNota Equipo: ${avgRating}\nResultado: ${m.result}">
+                    <span class="text-[10px] font-bold">${avgRating}</span>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    container.innerHTML = html;
+}
 
         // ==========================================
         // ADVANCED STATISTICS
