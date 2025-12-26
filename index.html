@@ -7294,7 +7294,7 @@ function renderPerformanceMatrix(matches) {
         // ==========================================
             // --- IMPORTADOR CSV BLINDADO (SIN DUPLICADOS) ---
 // --- IMPORTADOR CSV BLINDADO (DOBLE VERIFICACIÓN: ID + FECHA/RIVAL) ---
-function processCSVData(csvText) {
+            function processCSVData(csvText) {
     const lines = csvText.split(/\r\n|\n/).filter(line => line.trim() !== '');
     if (lines.length < 2) {
         alert("⚠️ El archivo CSV parece estar vacío.");
@@ -7335,29 +7335,20 @@ function processCSVData(csvText) {
 
     const players = getPlayers();
     const matches = getData('matches');
-    const officialEvents = calendarEvents.length > 0 ? calendarEvents : [];
+    // Aseguramos que calendarEvents exista o sea array vacío
+    const officialEvents = (typeof calendarEvents !== 'undefined' && calendarEvents.length > 0) ? calendarEvents : [];
 
     // --- FILTROS DE SEGURIDAD (ANTI-DUPLICADOS) ---
-    // 1. IDs conocidos
     const registeredEventIds = new Set(matches.map(m => m.calendarEventId).filter(id => id));
-    // 2. IDs de sesión
     const sessionEventIds = new Set();
 
-    // HELPER: Verificar si existe por contenido (Fecha + Rival)
-    // Esto detecta manuales o restaurados que no tengan ID de calendario
     const isMatchAlreadySaved = (evt) => {
-        // A. Por ID
         if (registeredEventIds.has(evt.id)) return true;
-
-        // B. Por Contenido (Fecha YYYY-MM-DD y Nombre)
         const evtDate = evt.start.toISOString().split('T')[0];
         const evtRival = evt.opponent.toLowerCase().trim();
-
         return matches.some(m => {
-            const mDate = m.date; // Ya está en formato YYYY-MM-DD
+            const mDate = m.date; 
             const mRival = m.opponent.toLowerCase().trim();
-            
-            // Coincidencia exacta de fecha Y coincidencia parcial de nombre
             return mDate === evtDate && (mRival.includes(evtRival) || evtRival.includes(mRival));
         });
     };
@@ -7401,19 +7392,15 @@ function processCSVData(csvText) {
                 skipReason = "No coincide con calendario (Fecha/Nombre)";
             }
 
-            // --- LÓGICA DE BLOQUEO DE DUPLICADOS ---
             if (foundEvent) {
-                // 1. Chequeo Global (Base de datos)
                 if (isMatchAlreadySaved(foundEvent)) {
                     foundEvent = null;
                     skipReason = "Ya registrado en la base de datos (Manual o Importado)";
                 } 
-                // 2. Chequeo Local (CSV actual)
                 else if (sessionEventIds.has(foundEvent.id)) {
                     foundEvent = null;
                     skipReason = "Duplicado en este archivo CSV";
                 } else {
-                    // ✅ Aceptado
                     sessionEventIds.add(foundEvent.id);
                 }
             } else if (!skipReason) {
@@ -7444,12 +7431,14 @@ function processCSVData(csvText) {
         if (player) {
             for (let col = 1; col < row.length; col++) {
                 let noteStr = row[col];
+                // Si la celda está vacía, saltamos
                 if (!noteStr || noteStr.trim() === '') continue;
 
                 noteStr = noteStr.replace(',', '.').replace(/[^0-9.]/g, ''); 
                 const rating = parseFloat(noteStr);
 
-                if (!isNaN(rating) && rating >=0) {
+                // --- CORRECCIÓN AQUÍ: Permitimos el 0 (rating >= 0) ---
+                if (!isNaN(rating) && rating >= 0) {
                     if (newMatchesMap[col - 1]) {
                         newMatchesMap[col - 1].playerStats.push({
                             playerId: player.id,
@@ -7464,6 +7453,7 @@ function processCSVData(csvText) {
                         });
                     }
                 }
+                // -----------------------------------------------------
             }
         }
     }
@@ -7474,7 +7464,7 @@ function processCSVData(csvText) {
             if (m.linkedEvent) {
                 linkedCount++;
                 const finalMatch = {
-                    id: generateId(),
+                    id: typeof generateId === 'function' ? generateId() : Date.now().toString() + Math.random(),
                     calendarEventId: m.linkedEvent.id,
                     competition: m.linkedEvent.competition || "Liga EA Sports",
                     roundId: `jornada-${m.linkedEvent.start.getTime()}`,
@@ -7486,7 +7476,7 @@ function processCSVData(csvText) {
                     result: "0-0", 
                     outcome: "empate",
                     isImported: true,
-                    mvp: calculateAutoMVP(m.playerStats),
+                    mvp: typeof calculateAutoMVP === 'function' ? calculateAutoMVP(m.playerStats) : null,
                     playerStats: m.playerStats
                 };
                 matches.push(finalMatch);
@@ -7499,10 +7489,11 @@ function processCSVData(csvText) {
 
     saveData('matches', matches);
     
-    renderMatches();
-    renderStats();
-    renderPrincipal();
-    renderTrafficLight();
+    // Repintar UI
+    if (typeof renderMatches === 'function') renderMatches();
+    if (typeof renderStats === 'function') renderStats();
+    if (typeof renderPrincipal === 'function') renderPrincipal();
+    if (typeof renderTrafficLight === 'function') renderTrafficLight();
     
     let msg = `📊 Resultado de la Importación:\n\n✅ ${linkedCount} partidos importados correctamente.`;
     if (skippedCount > 0) {
