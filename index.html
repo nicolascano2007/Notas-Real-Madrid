@@ -2423,47 +2423,25 @@ function getPositionName(formation, index) {
                 renderMVPGallery();
             }
         }
-    // --- BLOQUE DE ORDENACIÓN CORREGIDO ---
-    playerStats.sort((a, b) => {
-        // 1. Inactivos siempre al final
-        if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
-        if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
+  
 
-        let valA = a[currentSortColumn];
-        let valB = b[currentSortColumn];
+// --- FUNCIÓN DE ORDENACIÓN (HANDLE SORT) ---
+function handleSort(column) {
+    // Si pulsamos la misma columna, invertimos el orden
+    if (currentSortColumn === column) {
+        currentSortOrder = currentSortOrder === 'desc' ? 'asc' : 'desc';
+    } else {
+        // Si es nueva columna, empezamos en descendente (lo más alto arriba)
+        currentSortColumn = column;
+        currentSortOrder = 'desc';
         
-        // 2. Ordenación por nombre (Texto)
-        if (currentSortColumn === 'name') {
-            return currentSortOrder === 'asc' 
-                ? valA.localeCompare(valB) 
-                : valB.localeCompare(valA);
-        }
-
-        // 3. Limpieza de datos numéricos
-        // Si es Nota Media '-' cuenta como -1 para ir al final
-        if (currentSortColumn === 'avgRating') {
-            valA = (valA === '-' || valA === null) ? -1 : parseFloat(valA);
-            valB = (valB === '-' || valB === null) ? -1 : parseFloat(valB);
-        }
-        
-        // Si es Dorsal 'DT', cuenta como -1
-        else if (currentSortColumn === 'number') {
-            if (valA === 'DT') valA = -1; else valA = parseInt(valA) || 0;
-            if (valB === 'DT') valB = -1; else valB = parseInt(valB) || 0;
-        }
-
-        // 4. EL RESTO SON NÚMEROS (Goles, Asistencias, Minutos, Ratios...)
-        else {
-            // Convertimos todo a Float para asegurar orden numérico correcto
-            // (Evita que '10' sea menor que '2')
-            valA = parseFloat(valA) || 0;
-            valB = parseFloat(valB) || 0;
-        }
-
-        // 5. Aplicar orden Ascendente o Descendente
-        return currentSortOrder === 'asc' ? valA - valB : valB - valA;
-    });
-    // --------------------------------------
+        // Excepción: Si ordenamos por Nombre, mejor empezar Ascendente (A-Z)
+        if (column === 'name') currentSortOrder = 'asc';
+    }
+    
+    // IMPORTANTE: Repintar la tabla
+    renderStats();
+}
 
 function renderStats() {
     const matches = getData('matches');
