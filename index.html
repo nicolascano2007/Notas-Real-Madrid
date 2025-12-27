@@ -7046,80 +7046,81 @@ function renderPerformanceMatrix(matches) {
                 `;
             }).join('');
         }
-       function renderTrafficLight() {
-            const matches = getData('matches');
-            const players = getPlayers();
-            const container = document.getElementById('semaforo-content');
-            const btnContainer = document.getElementById('semaforo-expand-btn-container');
-            
-            if (!container) return;
+function renderTrafficLight() {
+    const matches = getData('matches');
+    const players = getPlayers();
+    const container = document.getElementById('semaforo-content');
+    const btnContainer = document.getElementById('semaforo-expand-btn-container');
+    
+    if (!container) return;
 
-            // 1. OBTENER ÚLTIMOS 3 PARTIDOS (Lógica corregida)
-            // Clonamos y ordenamos partidos por fecha (o ID si es incremental) descendente (más nuevos primero)
-            // Asumimos que los IDs de partidos crecen con el tiempo o que están guardados en orden.
-            // Si tienes campo 'fecha', úsalo. Si no, invertimos el array original.
-            const sortedMatches = [...matches].reverse(); 
+    // 1. OBTENER ÚLTIMOS 3 PARTIDOS (CORREGIDO)
+    // En lugar de reverse(), ordenamos por FECHA REAL (Descendente: más nuevo primero)
+    const sortedMatches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            const playerRatingsMap = {};
+    const playerRatingsMap = {};
 
-            // Recorremos partidos desde el más reciente
-            sortedMatches.forEach(m => {
-                m.playerStats.forEach(ps => {
-                    // Si tiene nota válida
-                    if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
-                        const val = parseFloat(ps.rating);
-                        if (!isNaN(val) && val > 0) {
-                            if (!playerRatingsMap[ps.playerId]) playerRatingsMap[ps.playerId] = [];
-                            
-                            // Solo guardamos si aun no tenemos 3 notas
-                            if (playerRatingsMap[ps.playerId].length < 3) {
-                                playerRatingsMap[ps.playerId].push(val);
-                            }
-                        }
-                    }
-                });
-            });
-
-            // 2. CALCULAR MEDIAS
-            const averages = [];
-            Object.keys(playerRatingsMap).forEach(pId => {
-                const ratings = playerRatingsMap[pId];
-                const p = players.find(pl => pl.id === pId);
+    // Recorremos partidos desde el más reciente hacia atrás
+    sortedMatches.forEach(m => {
+        m.playerStats.forEach(ps => {
+            // Validar que la nota existe
+            if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
+                const val = parseFloat(ps.rating);
                 
-                // Solo si el jugador existe, está activo y ha jugado al menos 1 de los últimos partidos
-                if (p && p.estado === 'Activo' && ratings.length > 0) {
-                    const sum = ratings.reduce((a, b) => a + b, 0);
-                    const avg = (sum / ratings.length).toFixed(2);
-                    averages.push({ ...p, avg: avg, games: ratings.length });
+                // CORRECCIÓN: Aceptamos 0 como nota válida (val >= 0)
+                if (!isNaN(val) && val >= 0) {
+                    if (!playerRatingsMap[ps.playerId]) playerRatingsMap[ps.playerId] = [];
+                    
+                    // Solo guardamos las 3 primeras notas que encontremos (que serán las más recientes)
+                    if (playerRatingsMap[ps.playerId].length < 3) {
+                        playerRatingsMap[ps.playerId].push(val);
+                    }
                 }
-            });
-
-            // Ordenar por nota
-            averages.sort((a, b) => b.avg - a.avg);
-
-            // Clasificar
-            const green = averages.filter(p => parseFloat(p.avg) >= 7.5); // Subí un poco la exigencia a 7.5 para "HOT"
-            const yellow = averages.filter(p => parseFloat(p.avg) >= 6.0 && parseFloat(p.avg) < 7.5);
-            const red = averages.filter(p => parseFloat(p.avg) < 6.0);
-
-            // 3. RENDERIZAR
-            // Ver si necesitamos el botón de "Ver más" (si alguna lista tiene más de 3)
-            const needsExpand = green.length > 3 || yellow.length > 3 || red.length > 3;
-
-            container.innerHTML = `
-                ${renderTrafficListSimple('🔥 En Racha (>7.5)', 'green', green)}
-                ${renderTrafficListSimple('⚖️ Estables (6.0-7.5)', 'yellow', yellow)}
-                ${renderTrafficListSimple('❄️ Fríos (<6.0)', 'red', red)}
-            `;
-
-            // Mostrar u ocultar el botón global
-            if (needsExpand) {
-                btnContainer.classList.remove('hidden');
-                document.getElementById('btn-traffic-all').innerHTML = 'Ver todos los jugadores ▼';
-            } else {
-                btnContainer.classList.add('hidden');
             }
+        });
+    });
+
+    // 2. CALCULAR MEDIAS
+    const averages = [];
+    Object.keys(playerRatingsMap).forEach(pId => {
+        const ratings = playerRatingsMap[pId];
+        const p = players.find(pl => pl.id === pId);
+        
+        // Solo si el jugador existe, está activo y ha jugado al menos 1 de los últimos partidos
+        if (p && p.estado === 'Activo' && ratings.length > 0) {
+            const sum = ratings.reduce((a, b) => a + b, 0);
+            const avg = (sum / ratings.length).toFixed(2);
+            averages.push({ ...p, avg: avg, games: ratings.length });
         }
+    });
+
+    // Ordenar por nota media (Mejor nota arriba)
+    averages.sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+
+    // Clasificar en grupos
+    const green = averages.filter(p => parseFloat(p.avg) >= 7.5);
+    const yellow = averages.filter(p => parseFloat(p.avg) >= 6.0 && parseFloat(p.avg) < 7.5);
+    const red = averages.filter(p => parseFloat(p.avg) < 6.0);
+
+    // 3. RENDERIZAR
+    const needsExpand = green.length > 3 || yellow.length > 3 || red.length > 3;
+
+    container.innerHTML = `
+        ${renderTrafficListSimple('🔥 En Racha (>7.5)', 'green', green)}
+        ${renderTrafficListSimple('⚖️ Estables (6.0-7.5)', 'yellow', yellow)}
+        ${renderTrafficListSimple('❄️ Fríos (<6.0)', 'red', red)}
+    `;
+
+    // Mostrar u ocultar el botón global de "Ver todos"
+    if (needsExpand) {
+        btnContainer.classList.remove('hidden');
+        if(document.getElementById('btn-traffic-all')) {
+            document.getElementById('btn-traffic-all').innerHTML = 'Ver todos los jugadores ▼';
+        }
+    } else {
+        btnContainer.classList.add('hidden');
+    }
+}
 
         // Función auxiliar simplificada (sin botón individual)
         function renderTrafficListSimple(title, colorName, list) {
