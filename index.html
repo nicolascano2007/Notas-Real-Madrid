@@ -385,7 +385,7 @@
             overflow: hidden;
         }
         /* ✅ AÑADIDO object-position: top !important */
-        .pitch-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top !important; }
+        .pitch-avatar img { width: 100%; height: 100%; object-fit: cover; object-position: top center !important; }
         .pitch-name {
             background-color: rgba(31, 41, 55, 0.9);
             color: white;
@@ -497,6 +497,12 @@
     font-size: 0.75rem;
     font-weight: 600;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.player-card img,                  /* Si tus cartas tienen esta clase */
+#player-modal-header-container img, /* La foto grande del modal */
+.card img {                        /* Cartas genéricas */
+    object-fit: cover;
+    object-position: top center !important;
 }
 /* Efecto de brillo para trofeos muy raros */
 .trophy-rare::after {
@@ -721,6 +727,13 @@
                        </button>
                         </div>
             </div>
+            <div id="top-performances-container" class="mt-6 mb-8 animate-fade-in hidden">
+    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+        <span>🌟</span> Actuaciones Legendarias (Top 5)
+    </h3>
+    <div id="top-performances-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        </div>
+</div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -1600,21 +1613,15 @@
     </div>
 
     <!-- PLAYER DETAILS & STATS MODAL -->
-    <div id="player-details-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b sticky top-0 bg-slate-800 text-white rounded-t-2xl z-10">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-bold">Ficha de Jugador</h3>
-                    <button onclick="closePlayerDetailsModal()" class="text-slate-300 hover:text-white">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div id="player-details-content" class="p-6"></div>
-        </div>
+
+<div id="player-details-modal" class="modal fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl m-4">
+        
+        <div id="player-modal-header-container" class="bg-white border-b border-gray-100 z-10 flex-none"></div>
+
+        <div id="player-details-content" class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 relative"></div>
     </div>
+</div>
 
     <!-- MATCH DETAIL MODAL -->
     <div id="match-detail-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
@@ -2435,6 +2442,109 @@ function handleSort(column) {
     // IMPORTANTE: Repintar la tabla
     renderStats();
 }
+function renderTopPerformances() {
+    const container = document.getElementById('top-performances-container');
+    const listContainer = document.getElementById('top-performances-list');
+    
+    if (!container || !listContainer) return;
+
+    const matches = getData('matches');
+    const players = getPlayers();
+    
+    // 1. Recopilar TODAS las actuaciones individuales
+    let allPerformances = [];
+
+    matches.forEach(match => {
+        match.playerStats.forEach(ps => {
+            // Filtros: Que tenga nota, que no sea 0 (opcional), y que NO sea el entrenador
+            if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
+                const ratingVal = parseFloat(ps.rating);
+                const player = players.find(p => p.id === ps.playerId);
+                
+                // Excluir entrenador y asegurar que el jugador existe
+                if (player && player.posicion !== 'entrenador' && player.dorsal !== 'DT') {
+                    allPerformances.push({
+                        rating: ratingVal,
+                        player: player,
+                        match: match,
+                        stats: ps
+                    });
+                }
+            }
+        });
+    });
+
+    // 2. Ordenar por Nota (Descendente)
+    // Si hay empate de nota, desempata por goles, luego asistencias, luego fecha más reciente
+    allPerformances.sort((a, b) => {
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        if ((b.stats.goals || 0) !== (a.stats.goals || 0)) return (b.stats.goals || 0) - (a.stats.goals || 0);
+        return new Date(b.match.date) - new Date(a.match.date);
+    });
+
+    // 3. Coger el Top 5
+    const top5 = allPerformances.slice(0, 5);
+
+    if (top5.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    container.classList.remove('hidden');
+
+    // 4. Renderizar HTML
+    listContainer.innerHTML = top5.map((perf, index) => {
+        const isNumberOne = index === 0;
+        const p = perf.player;
+        const m = perf.match;
+        const s = perf.stats;
+
+        // Estilos especiales para el número 1
+        const cardBorder = isNumberOne ? 'border-amber-400 ring-1 ring-amber-100' : 'border-gray-200';
+        const ratingBg = isNumberOne ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-800';
+
+        return `
+            <div class="bg-white rounded-xl shadow-sm border ${cardBorder} p-3 flex flex-col relative overflow-hidden transition-transform hover:scale-105">
+                ${isNumberOne ? '<div class="absolute top-0 right-0 bg-amber-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10">MVP TOTAL</div>' : ''}
+                
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex items-center gap-2">
+                        <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-100">
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold text-gray-800 truncate leading-tight">${p.apodo || p.apellido}</p>
+                            <p class="text-[10px] text-gray-500">vs ${m.opponent}</p>
+                        </div>
+                    </div>
+                    <div class="${ratingBg} font-bold text-lg px-2 rounded-lg shadow-sm">
+                        ${perf.rating}
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2 border-t border-gray-50">
+                    <div class="flex justify-between items-center text-[10px] text-gray-500 mb-1">
+                        <span class="truncate max-w-[80px]">${m.competition}</span>
+                        <span>${m.result}</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-1 text-center bg-gray-50 rounded-lg py-1">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-gray-400 uppercase">Gol</span>
+                            <span class="font-bold text-emerald-600 text-xs">${s.goals || 0}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-gray-400 uppercase">Asist</span>
+                            <span class="font-bold text-blue-600 text-xs">${s.assists || 0}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-gray-400 uppercase">Min</span>
+                            <span class="font-bold text-gray-600 text-xs">${s.minutes}'</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
 
             function renderStats() {
     const matches = getData('matches');
@@ -2668,6 +2778,7 @@ function handleSort(column) {
     if(typeof renderBestXI === 'function') renderBestXI();
     if(typeof renderScatterChart === 'function') renderScatterChart();
     if(typeof renderRegularityAnalysis === 'function') renderRegularityAnalysis();
+    if(typeof renderTopPerformances === 'function') renderTopPerformances();
 }
 /* ==========================================================================
    ANÁLISIS DE REGULARIDAD (DESVIACIÓN TÍPICA)
@@ -3570,180 +3681,347 @@ function renderPerformanceMatrix(matches) {
             `).join('');
         }
 
-        // ==========================================
-        // PLAYER DETAILS MODAL
-        // ==========================================
 
-        function viewPlayerDetails(playerId) {
-            const players = getPlayers();
-            const player = players.find(p => p.id === playerId);
-            if (!player) return;
+// ==========================================
+// FUNCIÓN PRINCIPAL: VER FICHA JUGADOR (CON DATOS POR COMPETICIÓN)
+// ==========================================
 
-            const modal = document.getElementById('player-details-modal');
-            const content = document.getElementById('player-details-content');
+let currentPlayerDetailsId = null;
+
+// =========================================================
+// 1. FUNCIÓN PRINCIPAL (Recopila datos y calcula MINUTOS por comp)
+// =========================================================
+function viewPlayerDetails(playerId) {
+    const players = getPlayers();
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    currentPlayerDetailsId = playerId;
+
+    const modal = document.getElementById('player-details-modal');
+    const headerContainer = document.getElementById('player-modal-header-container');
+    const contentContainer = document.getElementById('player-details-content');
+
+    if (!modal || !headerContainer || !contentContainer) return;
+
+    // --- PROCESAMIENTO DE DATOS ---
+    const matches = getData('matches');
+    const playerMatches = [];
+    
+    // Totales Generales
+    const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, totalRating: 0, ratingCount: 0, wins: 0 };
+    const ratingsHistory = [];
+
+    // Agrupación por Competición
+    const statsByComp = {}; 
+
+    matches.forEach(m => {
+        // Buscamos las estadísticas ESTE jugador en ESTE partido
+        const ps = m.playerStats ? m.playerStats.find(s => String(s.playerId) === String(playerId)) : null;
+        
+        // Si jugó o tuvo minutos
+        if (ps && (ps.played || ps.minutes > 0)) {
+            playerMatches.push({ ...m, ...ps });
             
-            const matches = getData('matches');
-            const playerMatches = [];
-            const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, yellowCards: 0, redCards: 0, totalRating: 0, ratingCount: 0, wins: 0 };
+            // 1. Datos básicos
+            stats.matchesPlayed++;
+            stats.goals += (Number(ps.goals) || 0);
+            stats.assists += (Number(ps.assists) || 0);
+            stats.minutes += (Number(ps.minutes) || 0);
             
-            // For Chart
-            const ratingsHistory = [];
-
-            matches.forEach(m => {
-                const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
-                if (ps) {
-                    playerMatches.push({
-                        date: m.date,
-                        opponent: m.opponent,
-                        competition: m.competition,
-                        venue: m.venue,
-                        result: m.result,
-                        outcome: m.outcome,
-                        ...ps
-                    });
-
-                    stats.matchesPlayed++;
-                    stats.goals += ps.goals || 0;
-                    stats.assists += ps.assists || 0;
-                    stats.minutes += ps.minutes || 0;
-                    stats.yellowCards += ps.yellowCards || 0;
-                    stats.redCards += ps.redCards || 0;
-                    if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                        stats.totalRating += parseFloat(ps.rating);
-                        stats.ratingCount++;
-                        ratingsHistory.push({ rating: parseFloat(ps.rating), opponent: m.opponent });
-                    }
-                    if (m.outcome === 'victoria') stats.wins++;
+            if (ps.rating) {
+                const r = parseFloat(ps.rating);
+                if (!isNaN(r)) {
+                    stats.totalRating += r;
+                    stats.ratingCount++;
+                    ratingsHistory.push({ rating: r, opponent: m.opponent });
                 }
-            });
+            }
+            if (m.outcome === 'victoria') stats.wins++;
 
-            // Sort matches newest first for list, oldest first for chart
-            playerMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const chartData = [...ratingsHistory].reverse().slice(-10); // Last 10 matches for chart
+            // 2. Lógica por Competición
+            const compName = m.competition || "Otras"; 
 
-            const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
-            const isCoach = player.posicion === 'entrenador';
-
-            // Generate Chart HTML
-            let chartHtml = '';
-            if (chartData.length > 0) {
-                 chartHtml = `
-                    <div class="mb-8">
-                        <h4 class="text-sm font-bold text-gray-500 uppercase mb-2">Evolución Rendimiento (Últimos 10 PJ)</h4>
-                        <div class="chart-container">
-                            ${chartData.map(d => {
-                                const height = (d.rating / 10) * 100;
-                                const color = d.rating >= 8 ? '#10b981' : (d.rating >= 6 ? '#3b82f6' : '#ef4444');
-                                return `
-                                    <div class="chart-bar" style="height: ${height}%; background-color: ${color};" title="${d.opponent}: ${d.rating}">
-                                        <span class="chart-label">${d.rating}</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
-                 `;
+            if (!statsByComp[compName]) {
+                statsByComp[compName] = { 
+                    pj: 0, g: 0, a: 0, min: 0, pi: 0, ta: 0, tr: 0, sumRating: 0, countRating: 0 
+                };
             }
 
-            content.innerHTML = `
-                <div class="flex flex-col md:flex-row gap-6 mb-8 items-center md:items-start">
-                    <img src="${player.foto}" class="player-photo-lg border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-300'} shadow-lg" 
-                         onerror="this.src='https://via.placeholder.com/120x120?text=${player.dorsal}'">
-                    <div class="text-center md:text-left flex-1">
-                        <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
-                             <span class="text-3xl font-bold text-slate-800">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
-                             <span class="position-badge pos-${player.posicion} text-base px-3 py-1">${capitalizeFirst(player.posicion)}</span>
-                        </div>
-                        <h2 class="text-3xl font-bold text-slate-800 mb-1">${player.nombre} ${player.apellido}</h2>
-                        <div class="text-gray-600 mb-4">
-                            <p>🌍 ${player.nacionalidad} | 🎂 ${calculateAge(player.fechaNacimiento)} años</p>
-                            <p class="text-sm mt-1">${player.categoria}</p>
-                        </div>
-                    </div>
-                </div>
+            const c = statsByComp[compName];
+            c.pj++;
+            c.g += (Number(ps.goals) || 0);
+            c.a += (Number(ps.assists) || 0);
+            c.min += (Number(ps.minutes) || 0);
+            c.ta += (Number(ps.yellowCards) || 0);
+            c.tr += (Number(ps.redCards) || 0);
 
-                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Estadísticas Generales</h3>
-                
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-gray-50 p-4 rounded-xl text-center">
-                        <p class="text-gray-500 text-sm">Partidos</p>
-                        <p class="text-2xl font-bold text-slate-800">${stats.matchesPlayed}</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl text-center">
-                        <p class="text-gray-500 text-sm">Nota Media</p>
-                        <p class="text-2xl font-bold ${getRatingColor(avgRating)}">${avgRating}</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl text-center">
-                        <p class="text-gray-500 text-sm">Victorias</p>
-                        <p class="text-2xl font-bold text-green-600">${stats.wins}</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded-xl text-center">
-                         <p class="text-gray-500 text-sm">Tarjetas</p>
-                         <div class="flex justify-center gap-3">
-                            <span class="text-amber-500 font-bold text-xl">🟨 ${stats.yellowCards}</span>
-                            <span class="text-red-500 font-bold text-xl">🟥 ${stats.redCards}</span>
-                         </div>
-                    </div>
-                </div>
+            // CORRECCIÓN "UNDEFINED": Verificamos isStarter en ps (playerStats) o en m (match)
+            const isStarter = (ps.isStarter === true || ps.isStarter === 'true' || m.isStarter === true || m.isStarter === 'true');
+            if (isStarter) {
+                c.pi++;
+            }
 
-                ${!isCoach ? `
-                <div class="grid grid-cols-3 gap-4 mb-8">
-                    <div class="bg-slate-800 text-white p-4 rounded-xl text-center">
-                        <p class="text-slate-300 text-sm">Goles</p>
-                        <p class="text-2xl font-bold">${stats.goals}</p>
-                    </div>
-                    <div class="bg-slate-700 text-white p-4 rounded-xl text-center">
-                        <p class="text-slate-300 text-sm">Asistencias</p>
-                        <p class="text-2xl font-bold">${stats.assists}</p>
-                    </div>
-                    <div class="bg-slate-600 text-white p-4 rounded-xl text-center">
-                        <p class="text-slate-300 text-sm">Minutos</p>
-                        <p class="text-2xl font-bold">${stats.minutes}'</p>
-                    </div>
-                </div>
-                ` : ''}
-
-                ${chartHtml}
-
-                <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b">Historial de Partidos</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead class="bg-slate-700 text-white">
-                            <tr>
-                                <th class="px-3 py-2 text-left">Fecha</th>
-                                <th class="px-3 py-2 text-left">Rival</th>
-                                <th class="px-3 py-2 text-left">Rol</th>
-                                <th class="px-3 py-2 text-center">Nota</th>
-                                <th class="px-3 py-2 text-center">G</th>
-                                <th class="px-3 py-2 text-center">A</th>
-                                <th class="px-3 py-2 text-center">Min</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${playerMatches.length > 0 ? playerMatches.map(m => `
-                                <tr class="border-t hover:bg-gray-50">
-                                    <td class="px-3 py-2 text-gray-600">${formatDate(m.date)}</td>
-                                    <td class="px-3 py-2">
-                                        <div class="font-medium">${m.opponent}</div>
-                                        <div class="text-xs text-gray-500">${m.competition}</div>
-                                    </td>
-                                    <td class="px-3 py-2">
-                                        ${m.isStarter === true || m.isStarter === 'true' ? 
-                                          '<span class="starter-badge">Titular</span>' : 
-                                          '<span class="sub-badge">Suplente</span>'}
-                                    </td>
-                                    <td class="px-3 py-2 text-center font-bold ${getRatingColor(m.rating)}">${m.rating !== null && m.rating !== undefined ? m.rating : '-'}</td>
-                                    <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.goals || 0)}</td>
-                                    <td class="px-3 py-2 text-center">${isCoach ? '-' : (m.assists || 0)}</td>
-                                    <td class="px-3 py-2 text-center text-gray-600">${isCoach ? '-' : (m.minutes || 0)}'</td>
-                                </tr>
-                            `).join('') : '<tr><td colspan="7" class="px-3 py-4 text-center text-gray-500">No hay partidos registrados.</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
-            `;
-            modal.classList.add('active');
+            if (ps.rating && !isNaN(parseFloat(ps.rating))) {
+                c.sumRating += parseFloat(ps.rating);
+                c.countRating++;
+            }
         }
+    });
+
+    playerMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
+    const safeAge = (d) => typeof calculateAge === 'function' ? calculateAge(d) : '';
+
+    // Render Header
+    headerContainer.innerHTML = `
+        <div class="px-6 pt-6 pb-2">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-5">
+                    <div class="relative">
+                        <img src="${player.foto}" class="w-20 h-20 rounded-full border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-200'} object-cover shadow-md" onerror="this.src='https://via.placeholder.com/150'">
+                        <div class="absolute -bottom-2 -right-2 bg-slate-800 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white">
+                            ${player.dorsal === 'DT' ? 'DT' : '#' + player.dorsal}
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800 leading-tight">${player.nombre} ${player.apellido}</h2>
+                        <div class="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                            <span class="bg-gray-100 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider text-gray-600">${player.posicion}</span>
+                            <span>•</span>
+                            <span>${player.nacionalidad || '-'}</span>
+                            <span>•</span>
+                            <span>${safeAge(player.fechaNacimiento)} años</span>
+                             <button onclick="openPlayerStatusModal('${player.id}')" class="ml-2 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border transition-colors">
+                                ${player.estado === 'Activo' ? '✅' : '❌'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closePlayerDetailsModal()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex gap-6 mt-6 border-b border-gray-200">
+                <button onclick="switchPlayerTab('visual')" id="tab-btn-visual" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2">
+                    <span>🔥</span> Resumen
+                </button>
+                <button onclick="switchPlayerTab('history')" id="tab-btn-history" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
+                    <span>📋</span> Historial
+                </button>
+            </div>
+        </div>
+    `;
+
+    const visualHTML = renderVisualTab(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
+    const historyHTML = typeof renderHistoryTab === 'function' ? renderHistoryTab(player, playerMatches) : '';
+
+    contentContainer.innerHTML = `
+        <div id="tab-content-visual" class="animate-fade-in block space-y-6">${visualHTML}</div>
+        <div id="tab-content-history" class="animate-fade-in hidden">${historyHTML}</div>
+    `;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.classList.add('active');
+    setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
+}
+
+// =========================================================
+// 2. FUNCIÓN VISUAL (LA QUE PINTA LA TABLA)
+// =========================================================
+function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, statsByComp) {
+    const isCoach = player.posicion === 'entrenador';
+    
+    // --- 1. TARJETAS DE RESUMEN (ARRIBA) ---
+    const colorRating = typeof getRatingColor === 'function' ? getRatingColor(avgRating) : 'text-gray-800';
+    const summaryCardsHTML = `
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                <span class="text-3xl font-black text-slate-800">${stats.matchesPlayed}</span>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Partidos</span>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                <span class="text-3xl font-black ${colorRating}">${avgRating}</span>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Nota Media</span>
+            </div>
+            ${!isCoach ? `
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                <span class="text-3xl font-black text-emerald-600">${stats.goals}</span>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Goles</span>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+                <span class="text-3xl font-black text-blue-600">${stats.assists}</span>
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mt-1">Asistencias</span>
+            </div>` : ''}
+        </div>`;
+
+    // --- 2. TABLA DARK CON LAS NUEVAS COLUMNAS (MIN, TIT, EMOJIS) ---
+    const compData = statsByComp || {};
+    let tableDarkHTML = '';
+
+    if (Object.keys(compData).length > 0) {
+        let tPJ=0, tG=0, tA=0, tMIN=0, tTIT=0, tTA=0, tTR=0, sMed=0, cMed=0;
+
+        const rows = Object.entries(compData).map(([compName, d]) => {
+            // Acumulamos totales
+            tPJ += d.pj; 
+            tG += d.g; 
+            tA += d.a; 
+            tMIN += (d.min || 0);  // Aseguramos que sume minutos
+            tTIT += (d.pi || d.tit || 0); // Usamos pi/tit según como lo hayas guardado
+            tTA += d.ta; 
+            tTR += d.tr;
+            sMed += d.sumRating; 
+            cMed += d.countRating;
+            
+            const med = d.countRating > 0 ? (d.sumRating / d.countRating).toFixed(2) : '-';
+
+            return `
+            <tr class="border-b border-gray-700/50 hover:bg-white/5 transition-colors text-sm">
+                <td class="py-3 text-left pl-4 text-white font-medium truncate">${compName}</td>
+                <td class="py-3 text-center text-gray-300">${d.pj}</td>
+                <td class="py-3 text-center text-green-400 font-bold">${d.g}</td>
+                <td class="py-3 text-center text-blue-300 font-bold">${d.a}</td>
+                <td class="py-3 text-center text-gray-400 text-xs">${d.min}'</td>
+                <td class="py-3 text-center text-gray-300">${d.pi || 0}</td>
+                <td class="py-3 text-center text-yellow-400 font-bold">${d.ta}</td>
+                <td class="py-3 text-center text-red-500 font-bold">${d.tr}</td>
+                <td class="py-3 text-center font-bold text-white">${med}</td>
+            </tr>`;
+        }).join('');
+
+        const totalMedia = cMed > 0 ? (sMed / cMed).toFixed(2) : '-';
+
+        tableDarkHTML = `
+        <div class="w-full bg-[#120f28] text-gray-300 rounded-xl overflow-hidden shadow-lg font-sans mb-6">
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse min-w-[600px]">
+                    <thead>
+                        <tr class="text-[11px] md:text-xs uppercase tracking-wider text-gray-400 border-b border-gray-700/50 bg-[#1a1635]">
+                            <th class="py-3 text-left pl-4 font-semibold w-1/3">Competición</th>
+                            <th class="py-3 text-center font-semibold">PJ</th>
+                            <th class="py-3 text-center font-semibold">G</th>
+                            <th class="py-3 text-center font-semibold">A</th>
+                            <th class="py-3 text-center font-semibold">MIN</th>
+                            <th class="py-3 text-center font-semibold" title="Titularidades">TIT</th>
+                            <th class="py-3 text-center font-semibold text-base" title="Amarillas">🟨</th>
+                            <th class="py-3 text-center font-semibold text-base" title="Rojas">🟥</th>
+                            <th class="py-3 text-center font-semibold">MED</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                    <tfoot>
+                        <tr class="text-sm font-bold text-white bg-[#1a1635] border-t border-gray-600">
+                            <td class="py-3 text-left pl-4 opacity-90">Totales</td>
+                            <td class="py-3 text-center">${tPJ}</td>
+                            <td class="py-3 text-center">${tG}</td>
+                            <td class="py-3 text-center">${tA}</td>
+                            <td class="py-3 text-center text-xs text-gray-400">${tMIN}'</td>
+                            <td class="py-3 text-center">${tTIT}</td>
+                            <td class="py-3 text-center text-yellow-500">${tTA}</td>
+                            <td class="py-3 text-center text-red-500">${tTR}</td>
+                            <td class="py-3 text-center text-blue-300">${totalMedia}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>`;
+    }
+
+    // --- 3. GRÁFICO (ABAJO) ---
+    const chartData = [...ratingsHistory].reverse().slice(-10);
+    let chartHTML = '';
+    if(chartData.length > 0) {
+        chartHTML = `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-32 flex items-end justify-between gap-1 mt-4">` +
+        chartData.map(d => {
+             const color = d.rating >= 8 ? 'bg-emerald-400' : (d.rating >= 6 ? 'bg-blue-400' : 'bg-red-400');
+             return `<div class="${color} w-full rounded-t relative group" style="height:${Math.min(d.rating*10, 100)}%">
+                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${d.rating}</div>
+             </div>`;
+        }).join('') +
+        `</div>`;
+    }
+
+    // --- 4. TOP ACTUACIONES ---
+    let topPerfHTML = '';
+    if (!isCoach) {
+        let topPerformances = [...matches]
+        .filter(m => m.rating).map(m => ({...m, rating: parseFloat(m.rating)}))
+        .sort((a,b) => b.rating - a.rating).slice(0,5);
+
+        if(topPerformances.length > 0) {
+            topPerfHTML = `<div class="mt-6"><h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">💎 Top 5 Actuaciones</h3><div class="grid grid-cols-5 gap-2">` + 
+            topPerformances.map(m => `
+                <div class="bg-white border border-gray-100 p-2 rounded shadow-sm text-center overflow-hidden">
+                    <div class="text-[10px] text-gray-400 truncate">vs ${m.opponent}</div>
+                    <div class="font-black text-lg text-slate-800">${m.rating}</div>
+                </div>`).join('') + 
+            `</div></div>`;
+        }
+    }
+    
+    return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${topPerfHTML}`;
+}
+
+function renderPlayerHistoryTab(player, matches) {
+    const isCoach = player.posicion === 'entrenador';
+    
+    if (matches.length === 0) {
+        return `<div class="text-center py-10 text-gray-400 italic">No hay partidos registrados.</div>`;
+    }
+
+    return `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3">Fecha / Rival</th>
+                            <th class="px-4 py-3 text-center">Rol</th>
+                            <th class="px-4 py-3 text-center">Nota</th>
+                            <th class="px-4 py-3 text-center text-emerald-600">G</th>
+                            <th class="px-4 py-3 text-center text-blue-600">A</th>
+                            <th class="px-4 py-3 text-center">Min</th>
+                            <th class="px-4 py-3 text-center">T</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${matches.map(m => `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3">
+                                    <div class="font-bold text-slate-700">${m.opponent}</div>
+                                    <div class="text-xs text-gray-400">${formatDate(m.date)}</div>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    ${(m.isStarter === true || m.isStarter === 'true') 
+                                        ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Titular</span>' 
+                                        : '<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Suplente</span>'}
+                                </td>
+                                <td class="px-4 py-3 text-center font-bold text-base ${typeof getRatingColor === 'function' ? getRatingColor(m.rating) : ''}">
+                                    ${m.rating || '-'}
+                                </td>
+                                <td class="px-4 py-3 text-center font-medium ${m.goals > 0 ? 'text-emerald-600 font-bold' : 'text-gray-300'}">
+                                    ${isCoach ? '-' : (m.goals || '-')}
+                                </td>
+                                <td class="px-4 py-3 text-center font-medium ${m.assists > 0 ? 'text-blue-600 font-bold' : 'text-gray-300'}">
+                                    ${isCoach ? '-' : (m.assists || '-')}
+                                </td>
+                                <td class="px-4 py-3 text-center text-gray-500">
+                                    ${isCoach ? '-' : (m.minutes || 0)}'
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                     ${m.redCards > 0 ? '🟥' : (m.yellowCards > 0 ? '🟨' : '')}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
 
         // ==========================================
         // CALENDAR FIXTURE SELECTION & DISPLAY
@@ -5544,11 +5822,7 @@ function renderPerformanceMatrix(matches) {
         function closePlayerStatusModal() {
              document.getElementById('player-status-modal').classList.remove('active');
         }
-        
-        function closePlayerDetailsModal() {
-             document.getElementById('player-details-modal').classList.remove('active');
-        }
-        
+               
         function closeMatchDetailModal() {
              document.getElementById('match-detail-modal').classList.remove('active');
         }
@@ -8286,6 +8560,126 @@ function openTrophyRoom() {
 
 function closeTrophyRoom() {
     document.getElementById('trophy-modal').classList.remove('active');
+}
+// ==========================================
+// FUNCIONES AUXILIARES PARA LA FICHA DE JUGADOR
+// (Pégalas al final de tu archivo JS)
+// ==========================================
+
+// 1. FUNCIÓN PARA CAMBIAR DE PESTAÑA
+function switchPlayerTab(tabName) {
+    const visualContent = document.getElementById('tab-content-visual');
+    const historyContent = document.getElementById('tab-content-history');
+    const btnVisual = document.getElementById('tab-btn-visual');
+    const btnHistory = document.getElementById('tab-btn-history');
+
+    if (!visualContent || !historyContent) return;
+
+    if (tabName === 'visual') {
+        visualContent.classList.remove('hidden');
+        historyContent.classList.add('hidden');
+        
+        btnVisual.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2";
+        btnHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2";
+    } else {
+        visualContent.classList.add('hidden');
+        historyContent.classList.remove('hidden');
+
+        btnHistory.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2";
+        btnVisual.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2";
+    }
+}
+
+// 3. GENERADOR DE LA PESTAÑA HISTORIAL (TABLA)
+function renderHistoryTab(player, matches) {
+    const isCoach = player.posicion === 'entrenador';
+    
+    // Helpers seguros
+    const safeDate = (d) => typeof formatDate === 'function' ? formatDate(d) : d;
+    const safeColor = (r) => typeof getRatingColor === 'function' ? getRatingColor(r) : '';
+
+    if (matches.length === 0) {
+        return `<div class="text-center py-10 text-gray-400 italic">No hay partidos registrados.</div>`;
+    }
+
+    return `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3">Fecha / Rival</th>
+                            <th class="px-4 py-3 text-center">Rol</th>
+                            <th class="px-4 py-3 text-center">Nota</th>
+                            <th class="px-4 py-3 text-center text-emerald-600">G</th>
+                            <th class="px-4 py-3 text-center text-blue-600">A</th>
+                            <th class="px-4 py-3 text-center">Min</th>
+                            <th class="px-4 py-3 text-center">T</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${matches.map(m => `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3">
+                                    <div class="font-bold text-slate-700">${m.opponent}</div>
+                                    <div class="text-xs text-gray-400">${safeDate(m.date)}</div>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    ${(m.isStarter === true || m.isStarter === 'true') 
+                                        ? '<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Titular</span>' 
+                                        : '<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase">Suplente</span>'}
+                                </td>
+                                <td class="px-4 py-3 text-center font-bold text-base ${safeColor(m.rating)}">
+                                    ${m.rating || '-'}
+                                </td>
+                                <td class="px-4 py-3 text-center font-medium ${m.goals > 0 ? 'text-emerald-600 font-bold' : 'text-gray-300'}">
+                                    ${isCoach ? '-' : (m.goals || '-')}
+                                </td>
+                                <td class="px-4 py-3 text-center font-medium ${m.assists > 0 ? 'text-blue-600 font-bold' : 'text-gray-300'}">
+                                    ${isCoach ? '-' : (m.assists || '-')}
+                                </td>
+                                <td class="px-4 py-3 text-center text-gray-500">
+                                    ${isCoach ? '-' : (m.minutes || 0)}'
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                     ${m.redCards > 0 ? '🟥' : (m.yellowCards > 0 ? '🟨' : '')}
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+// =========================================================
+// FUNCIÓN PARA CERRAR EL MODAL
+// =========================================================
+function closePlayerDetailsModal() {
+    const modal = document.getElementById('player-details-modal');
+    if (!modal) return;
+
+    // 1. Iniciamos la animación de salida (Opacity)
+    modal.classList.remove('opacity-100'); // Si usas esta clase para mostrar
+    modal.classList.add('opacity-0');
+
+    // 2. Esperamos a que termine la transición (300ms) para ocultarlo del todo
+    setTimeout(() => {
+        // Quitamos la clase .active que controla tu CSS
+        modal.classList.remove('active'); 
+        
+        // Quitamos display flex y ponemos hidden
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+
+        // 3. Limpiamos el contenido para que no parpadee información vieja al volver a abrir
+        const header = document.getElementById('player-modal-header-container');
+        const content = document.getElementById('player-details-content');
+        if(header) header.innerHTML = '';
+        if(content) content.innerHTML = '';
+
+        currentPlayerDetailsId = null;
+    }, 300);
 }
 
         // Global Modal Close Handler
