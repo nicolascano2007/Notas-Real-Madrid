@@ -450,6 +450,126 @@
             filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
             animation: bounce 2s infinite;
         }
+
+        /* ESTILOS CARTA FUT */
+.fut-card-wrapper {
+    perspective: 1000px;
+    width: 220px;
+    height: 320px;
+    margin: 0 auto;
+}
+.fut-card {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+    border: 2px solid #fbbf24;
+    border-radius: 18px;
+    color: #fbbf24;
+    position: relative;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.2), inset 0 0 20px rgba(0,0,0,0.5);
+    text-align: center;
+    padding-top: 25px;
+    overflow: hidden;
+    transition: transform 0.5s;
+    user-select: none;
+}
+.fut-card:hover { transform: rotateY(10deg) rotateX(5deg) scale(1.05); z-index: 50; }
+.fut-card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+    pointer-events: none;
+}
+.fut-rating { font-size: 3.5rem; font-weight: 900; line-height: 0.9; text-shadow: 2px 2px 0px #000; }
+.fut-pos { font-size: 1.2rem; font-weight: bold; opacity: 0.9; text-transform: uppercase; margin-bottom: 5px; }
+.fut-img { 
+    width: 130px; height: 130px; 
+    object-fit: cover; object-position: top; 
+    margin: 5px auto; 
+    border-radius: 50%; 
+    border: 3px solid #fbbf24; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    background-color: #000;
+}
+.fut-name { 
+    font-size: 1.3rem; font-weight: 800; text-transform: uppercase; 
+    margin-bottom: 12px; border-bottom: 1px solid rgba(251,191,36,0.3); 
+    padding-bottom: 5px; margin-left: 15px; margin-right: 15px;
+    text-shadow: 1px 1px 0px #000;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fut-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 15px; font-size: 0.85rem; padding: 0 25px; text-align: left; }
+.fut-stat-val { font-weight: 900; margin-right: 3px; color: #fff; }
+.fut-stat-label { font-weight: 500; font-size: 0.75rem; opacity: 0.8; }
+/* Estilo para jugadores Inactivos (Leyendas) */
+.player-card.legend-style {
+    filter: sepia(0.6) contrast(1.1); /* Efecto foto antigua */
+    border-color: #78350f; /* Borde color bronce/cuero */
+    background: #fffbf0;
+}
+.player-card.legend-style img {
+    filter: grayscale(100%); /* Foto en blanco y negro */
+    opacity: 0.9;
+}
+.player-card.legend-style .font-bold {
+    color: #78350f !important;
+    font-family: 'Georgia', serif; /* Fuente más clásica */
+}
+/* Pequeña etiqueta "LEYENDA" */
+.player-card.legend-style::after {
+    content: 'LEYENDA';
+    position: absolute;
+    top: 10px; right: 10px;
+    font-size: 8px; font-weight: bold;
+    background: #78350f; color: #fff;
+    padding: 2px 4px; border-radius: 4px;
+}
+/* --- ESTILOS DE ESTADO (ACTUALIZADO) --- */
+
+/* 1. INACTIVO (Gris y apagado) */
+.player-card.status-inactivo {
+    background-color: #f3f4f6;
+    border-color: #e5e7eb;
+    opacity: 0.75;
+}
+.player-card.status-inactivo img {
+    filter: grayscale(100%);
+    opacity: 0.8;
+}
+
+/* 2. LEYENDA (Blanco y Negro con Tono Dorado) */
+.player-card.status-leyenda {
+    background: linear-gradient(135deg, #fffbeb 0%, #fff7ed 100%);
+    border: 2px solid #d97706; /* Borde Ámbar Oscuro */
+    box-shadow: 0 4px 15px rgba(217, 119, 6, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+/* EFECTO FOTO LEYENDA: Blanco y Negro + Toque Sepia/Dorado */
+.player-card.status-leyenda img {
+    /* Esto hace la magia: quita el color y añade tono antiguo */
+    filter: grayscale(100%) sepia(50%) hue-rotate(5deg); 
+    opacity: 0.95;
+    border-color: #fbbf24 !important; /* El borde sigue siendo dorado brillante */
+}
+
+/* Etiqueta LEYENDA en la esquina */
+.player-card.status-leyenda::after {
+    content: '👑 LEYENDA';
+    position: absolute;
+    top: 0; right: 0;
+    background: #d97706;
+    color: white;
+    font-size: 9px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-bottom-left-radius: 8px;
+    z-index: 10;
+}
+
+/* Textos en color dorado/bronce para que combinen */
+.player-card.status-leyenda h3 { color: #92400e !important; }
+.player-card.status-leyenda .text-slate-700 { color: #b45309 !important; }
         /* --- SALA DE TROFEOS --- */
 .trophy-grid {
     display: grid;
@@ -857,7 +977,14 @@
                         </button>
                     </div>
                 </div>
-                
+                <div class="mb-4 relative">
+    <input type="text" id="player-search" placeholder="🔍 Buscar jugador por nombre o dorsal..." 
+           class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition-all"
+           onkeyup="renderPlayers()">
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </div>
+</div>
                 <!-- Filter by Position -->
                 <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
                     <div class="flex flex-wrap gap-2">
@@ -1083,6 +1210,14 @@
                                         <button type="button" onclick="goToStep1()" class="text-sm text-blue-600 hover:underline">⬅️ Volver</button>
                                     </div>
                                 </div>
+                                <div class="flex justify-center gap-3 mb-3 mt-1 animate-in fade-in slide-in-from-top-2">
+    <button type="button" onclick="loadLastLineup()" class="flex items-center gap-1 text-xs font-bold bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition shadow-sm">
+        ↺ Repetir Último Once
+    </button>
+    <button type="button" onclick="loadBestXILineup()" class="flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition shadow-sm">
+        ⭐ Cargar Once de Gala
+    </button>
+</div>
 
                                 <div id="mode-list-container" class="hidden">
                                     <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Selecciona "Titular" o "Suplente".</div>
@@ -1503,6 +1638,17 @@
                             <canvas id="chart-line-wars"></canvas>
                         </div>
                     </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <h4 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        📊 Histograma de Rigurosidad 
+        <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Distribución de tus notas</span>
+    </h4>
+    <div class="h-[250px] w-full">
+        <canvas id="chart-rating-histogram"></canvas>
+    </div>
+    <p class="text-xs text-center text-gray-400 mt-2">Muestra cuántas veces has puesto cada rango de nota.</p>
+</div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="flex flex-col md:flex-row justify-between items-center mb-4">
                             <div>
@@ -1792,14 +1938,14 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "p3", nombre: "Éder", apellido: "Militão", apodo: "Militão", posicion: "defensa", rol: "CT", dorsal: 3, nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p4", nombre: "David", apellido: "Alaba", apodo: "Alaba", posicion: "defensa", rol: "CT", dorsal: 4, nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", apodo: "Alexander-Arnold", posicion: "defensa", rol: "LD", dorsal: 12, nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
+            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
             { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "CT", dorsal: 17, nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p18", nombre: "Álvaro", apellido: "Carreras", apodo: "Carreras", posicion: "defensa", rol: "LI", dorsal: 18, nacionalidad: "España", fechaNacimiento: "2003-03-23", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARRERAS_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p20", nombre: "Fran", apellido: "García", apodo: "Fran García", posicion: "defensa", rol: "LI", dorsal: 20, nacionalidad: "España", fechaNacimiento: "1999-08-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20FRAN_GARCIA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p22", nombre: "Antonio", apellido: "Rüdiger", apodo: "Rüdiger", posicion: "defensa", rol: "CT", dorsal: 22, nacionalidad: "Alemania", fechaNacimiento: "1993-03-03", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RUDIGUER_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p23", nombre: "Ferland", apellido: "Mendy", apodo: "Mendy", posicion: "defensa", rol: "LI", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "1995-06-08", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MENDY_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
             { id: "p24", nombre: "Dean", apellido: "Huijsen", apodo: "Huijsen", posicion: "defensa", rol: "CT", dorsal: 24, nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201" },
-            { id: "p31", nombre: "Jacobo", apellido: "Ramón", apodo: "Jacobo Ramón", posicion: "defensa", rol: "CT", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
+            { id: "p31", nombre: "Jacobo", apellido: "Ramón", apodo: "Jacobo Ramón", posicion: "defensa", rol: "CT", dorsal: 31, nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
             { id: "p35", nombre: "David", apellido: "Jiménez", apodo: "David Jiménez", posicion: "defensa", rol: "LD", dorsal: 35, nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420" },
             { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40, nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
 
@@ -1807,7 +1953,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MC", dorsal: 5, nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p6", nombre: "Eduardo", apellido: "Camavinga", apodo: "Camavinga", posicion: "centrocampista", rol: "MC", dorsal: 6, nacionalidad: "Francia", fechaNacimiento: "2002-11-10", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CAMAVINGA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p8", nombre: "Federico", apellido: "Valverde", apodo: "Valverde", posicion: "centrocampista", rol: "MC", dorsal: 8, nacionalidad: "Uruguay", fechaNacimiento: "1998-07-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VALVERDE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p10b", nombre: "Luka", apellido: "Modrić", apodo: "Modrić", posicion: "centrocampista", rol: "MC", dorsal: 10, nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1" },
+            { id: "p10b", nombre: "Luka", apellido: "Modrić", apodo: "Modrić", posicion: "centrocampista", rol: "MC", dorsal: 10, nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Leyenda", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1" },
             { id: "p14", nombre: "Aurélien", apellido: "Tchouaméni", apodo: "Tchouaméni", posicion: "centrocampista", rol: "MCD", dorsal: 14, nacionalidad: "Francia", fechaNacimiento: "2000-01-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TCHOUAMENI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p15", nombre: "Arda", apellido: "Güler", apodo: "Arda Güler", posicion: "centrocampista", rol: "MC", dorsal: 15, nacionalidad: "Turquía", fechaNacimiento: "2005-02-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ARDA_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p19", nombre: "Dani", apellido: "Ceballos", apodo: "Ceballos", posicion: "centrocampista", rol: "MC", dorsal: 19, nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
@@ -1815,7 +1961,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
 
             // DELANTEROS Y EXTREMOS
             { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7, nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9, nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9, nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10, nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11, nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16, nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
@@ -3251,6 +3397,7 @@ function renderPerformanceMatrix(matches) {
                     </tr>
                 `;
             }).join('');
+            renderRatingHistogram();
         }
 
         // ==========================================
@@ -3637,49 +3784,96 @@ function renderPerformanceMatrix(matches) {
             event.target.classList.add('bg-slate-800', 'text-white');
             renderPlayers();
         }
+function renderPlayers() {
+    let players = getPlayers();
+    const searchTerm = document.getElementById('player-search')?.value.toLowerCase() || '';
+    if (searchTerm) {
+        players = players.filter(p => 
+            p.nombre.toLowerCase().includes(searchTerm) || 
+            p.apellido.toLowerCase().includes(searchTerm) || 
+            String(p.dorsal).includes(searchTerm) ||
+            (p.apodo && p.apodo.toLowerCase().includes(searchTerm))
+        );
+    }
+    // --- Filtros ---
+    if (currentPlayerFilter === 'active') {
+        players = players.filter(p => p.estado === 'Activo');
+    } else if (currentPlayerFilter === 'inactive') {
+        // En la pestaña "Inactivos" mostramos Inactivos Y Leyendas
+        players = players.filter(p => p.estado === 'Inactivo' || p.estado === 'Leyenda');
+    }
+    
+    if (currentPositionFilter) players = players.filter(p => p.posicion === currentPositionFilter);
+    
+    // --- Ordenación (ACTUALIZADA) ---
+    players.sort((a, b) => {
+        // 1. Entrenador siempre primero
+        if (a.posicion === 'entrenador') return -1;
+        if (b.posicion === 'entrenador') return 1;
+        
+        // 2. ELIMINADA la prioridad por estado. 
+        // Ahora ordena puramente por dorsal numérico (del 1 al 99)
+        // para que se queden "en su sitio".
+        return (parseInt(a.dorsal) || 999) - (parseInt(b.dorsal) || 999);
+    });
+    
+    const container = document.getElementById('players-list');
+    
+    container.innerHTML = players.map(player => {
+        // Asignación de clases de estilo
+        let statusClass = '';
+        let badgeClass = '';
+        let photoBorderClass = '';
 
-        function renderPlayers() {
-            let players = getPlayers();
-            if (currentPlayerFilter === 'active') players = players.filter(p => p.estado === 'Activo');
-            else if (currentPlayerFilter === 'inactive') players = players.filter(p => p.estado === 'Inactivo');
-            
-            if (currentPositionFilter) players = players.filter(p => p.posicion === currentPositionFilter);
-            
-            players.sort((a, b) => {
-                if (a.posicion === 'entrenador') return -1;
-                if (b.posicion === 'entrenador') return 1;
-                return a.dorsal - b.dorsal;
-            });
-            
-            const container = document.getElementById('players-list');
-            container.innerHTML = players.map(player => `
-                <div class="card bg-white rounded-xl shadow-sm p-4 ${player.estado === 'Inactivo' ? 'player-inactive' : ''} cursor-pointer" onclick="viewPlayerDetails('${player.id}')">
-                    <div class="flex items-start gap-4">
-                        <img src="${player.foto}" 
-                             class="player-photo border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-300'}" 
-                             onerror="this.src='https://via.placeholder.com/80x80?text=${player.dorsal}'"
-                             alt="${player.nombre}">
-                        <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="text-2xl font-bold text-slate-700">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
-                            </div>
-                            <h3 class="font-semibold text-gray-800 truncate">${player.nombre} ${player.apellido}</h3>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                <span class="position-badge pos-${player.posicion}">${capitalizeFirst(player.posicion)}</span>
-                                <button onclick="event.stopPropagation(); openPlayerStatusModal('${player.id}')" class="position-badge ${player.estado === 'Activo' ? 'status-active' : 'status-inactive'} cursor-pointer hover:opacity-80">
-                                    ${player.estado} ✏️
-                                </button>
-                            </div>
-                            <div class="mt-2 text-sm text-gray-500">
-                                <p>🎂 ${formatDate(player.fechaNacimiento)} (${calculateAge(player.fechaNacimiento)} años)</p>
-                                <p>🌍 ${player.nacionalidad}</p>
-                                <p>📋 ${player.categoria}</p>
-                            </div>
+        if (player.estado === 'Leyenda') {
+            statusClass = 'status-leyenda';
+            badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
+            photoBorderClass = 'border-amber-400'; 
+        } else if (player.estado === 'Inactivo' || player.estado === 'Retirado') {
+            statusClass = 'status-inactivo';
+            badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
+            photoBorderClass = 'border-gray-300';
+        } else {
+            // Activo
+            statusClass = 'status-activo'; 
+            badgeClass = 'status-active'; 
+            photoBorderClass = 'border-amber-400';
+        }
+
+        return `
+            <div class="card player-card bg-white rounded-xl shadow-sm p-4 ${statusClass} cursor-pointer relative transition-transform hover:-translate-y-1" onclick="viewPlayerDetails('${player.id}')">
+                <div class="flex items-start gap-4">
+                    <img src="${player.foto}" 
+                         class="player-photo border-4 ${photoBorderClass} rounded-full w-20 h-20 object-cover object-top" 
+                         onerror="this.src='https://via.placeholder.com/80x80?text=${player.dorsal}'"
+                         alt="${player.nombre}">
+                         
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-2xl font-bold text-slate-700">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
+                        </div>
+                        
+                        <h3 class="font-semibold text-gray-800 truncate text-lg leading-tight">${player.nombre} ${player.apellido}</h3>
+                        
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            <span class="position-badge pos-${player.posicion}">${capitalizeFirst(player.posicion)}</span>
+                            
+                            <button onclick="event.stopPropagation(); openPlayerStatusModal('${player.id}')" 
+                                    class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${badgeClass} hover:opacity-80 transition">
+                                ${player.estado} ✏️
+                            </button>
+                        </div>
+                        
+                        <div class="mt-2 text-sm text-gray-500 flex flex-col gap-0.5">
+                            <p class="flex items-center gap-1">🎂 ${calculateAge(player.fechaNacimiento)} años</p>
+                            <p class="flex items-center gap-1">🌍 ${player.nacionalidad}</p>
                         </div>
                     </div>
                 </div>
-            `).join('');
-        }
+            </div>
+        `;
+    }).join('');
+}
 
 
 // ==========================================
@@ -3708,26 +3902,27 @@ function viewPlayerDetails(playerId) {
     const matches = getData('matches');
     const playerMatches = [];
     
-    // Totales Generales
-    const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, totalRating: 0, ratingCount: 0, wins: 0 };
+    // Añadimos 'starts' (Titularidades) a los totales
+    const stats = { matchesPlayed: 0, goals: 0, assists: 0, minutes: 0, totalRating: 0, ratingCount: 0, wins: 0, starts: 0 };
     const ratingsHistory = [];
 
-    // Agrupación por Competición
     const statsByComp = {}; 
 
     matches.forEach(m => {
-        // Buscamos las estadísticas ESTE jugador en ESTE partido
         const ps = m.playerStats ? m.playerStats.find(s => String(s.playerId) === String(playerId)) : null;
         
-        // Si jugó o tuvo minutos
         if (ps && (ps.played || ps.minutes > 0)) {
             playerMatches.push({ ...m, ...ps });
+
+            // Detectar si fue titular (buscamos en ps o en m)
+            const isStarter = (ps.isStarter === true || ps.isStarter === 'true' || m.isStarter === true || m.isStarter === 'true');
             
-            // 1. Datos básicos
+            // 1. Datos básicos GLOBALES
             stats.matchesPlayed++;
             stats.goals += (Number(ps.goals) || 0);
             stats.assists += (Number(ps.assists) || 0);
             stats.minutes += (Number(ps.minutes) || 0);
+            if (isStarter) stats.starts++; // <--- NUEVO: Contamos titularidades totales
             
             if (ps.rating) {
                 const r = parseFloat(ps.rating);
@@ -3756,11 +3951,7 @@ function viewPlayerDetails(playerId) {
             c.ta += (Number(ps.yellowCards) || 0);
             c.tr += (Number(ps.redCards) || 0);
 
-            // CORRECCIÓN "UNDEFINED": Verificamos isStarter en ps (playerStats) o en m (match)
-            const isStarter = (ps.isStarter === true || ps.isStarter === 'true' || m.isStarter === true || m.isStarter === 'true');
-            if (isStarter) {
-                c.pi++;
-            }
+            if (isStarter) c.pi++;
 
             if (ps.rating && !isNaN(parseFloat(ps.rating))) {
                 c.sumRating += parseFloat(ps.rating);
@@ -3773,7 +3964,7 @@ function viewPlayerDetails(playerId) {
     const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
     const safeAge = (d) => typeof calculateAge === 'function' ? calculateAge(d) : '';
 
-    // Render Header
+    // Render Header (Sin cambios, solo añadimos el botón FUT al final)
     headerContainer.innerHTML = `
         <div class="px-6 pt-6 pb-2">
             <div class="flex justify-between items-start">
@@ -3810,6 +4001,9 @@ function viewPlayerDetails(playerId) {
                 <button onclick="switchPlayerTab('history')" id="tab-btn-history" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
                     <span>📋</span> Historial
                 </button>
+                <button onclick="switchPlayerTab('fut')" id="tab-btn-fut" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
+                    <span>🎴</span> Carta FUT
+                </button>
             </div>
         </div>
     `;
@@ -3820,7 +4014,11 @@ function viewPlayerDetails(playerId) {
     contentContainer.innerHTML = `
         <div id="tab-content-visual" class="animate-fade-in block space-y-6">${visualHTML}</div>
         <div id="tab-content-history" class="animate-fade-in hidden">${historyHTML}</div>
+        <div id="tab-content-fut" class="animate-fade-in hidden flex justify-center py-10"></div>
     `;
+
+    // Generar la Carta FUT con estadísticas REALES
+    renderFutTab(player, stats, avgRating);
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -8568,25 +8766,26 @@ function closeTrophyRoom() {
 
 // 1. FUNCIÓN PARA CAMBIAR DE PESTAÑA
 function switchPlayerTab(tabName) {
-    const visualContent = document.getElementById('tab-content-visual');
-    const historyContent = document.getElementById('tab-content-history');
-    const btnVisual = document.getElementById('tab-btn-visual');
-    const btnHistory = document.getElementById('tab-btn-history');
-
-    if (!visualContent || !historyContent) return;
-
-    if (tabName === 'visual') {
-        visualContent.classList.remove('hidden');
-        historyContent.classList.add('hidden');
+    // 1. Ocultar todos los contenidos y desactivar botones
+    ['visual', 'history', 'fut'].forEach(t => {
+        const content = document.getElementById(`tab-content-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
         
-        btnVisual.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2";
-        btnHistory.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2";
-    } else {
-        visualContent.classList.add('hidden');
-        historyContent.classList.remove('hidden');
+        if(content) content.classList.add('hidden');
+        if(btn) {
+            // Estilo inactivo
+            btn.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2";
+        }
+    });
 
-        btnHistory.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2";
-        btnVisual.className = "pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2";
+    // 2. Mostrar el seleccionado
+    const activeContent = document.getElementById(`tab-content-${tabName}`);
+    const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+
+    if (activeContent) activeContent.classList.remove('hidden');
+    if (activeBtn) {
+        // Estilo activo
+        activeBtn.className = "pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2";
     }
 }
 
@@ -8680,6 +8879,290 @@ function closePlayerDetailsModal() {
 
         currentPlayerDetailsId = null;
     }, 300);
+}
+
+// ==========================================
+// 1. LÓGICA DE AUTO-ALINEACIÓN
+// ==========================================
+
+function loadLastLineup() {
+    const matches = getData('matches');
+    if (matches.length === 0) { alert("No hay partidos previos para copiar."); return; }
+
+    // Intentamos buscar el último de la MISMA competición actual
+    const currentComp = document.getElementById('new-competition').value;
+    let lastMatch = matches.slice().reverse().find(m => m.competition === currentComp);
+    
+    // Si no hay de esta compe, cogemos el último absoluto
+    if (!lastMatch) lastMatch = matches[matches.length - 1];
+
+    if(confirm(`¿Cargar alineación del partido contra ${lastMatch.opponent}?`)) {
+        // Filtramos solo los que fueron titulares
+        const starterIds = lastMatch.playerStats
+            .filter(s => s.isStarter)
+            .map(s => s.playerId);
+            
+        applyAutoLineup(starterIds);
+    }
+}
+
+function loadBestXILineup() {
+    const players = getPlayers();
+    const matches = getData('matches');
+    
+    if (matches.length === 0) { alert("Necesitas jugar partidos para calcular el Once de Gala."); return; }
+
+    // Calcular media de todos los jugadores activos
+    const ratings = players
+        .filter(p => p.posicion !== 'entrenador' && p.estado === 'Activo')
+        .map(p => {
+            let sum = 0, count = 0;
+            matches.forEach(m => {
+                const ps = m.playerStats.find(s => s.playerId === p.id);
+                if (ps && ps.rating) { sum += parseFloat(ps.rating); count++; }
+            });
+            return { id: p.id, avg: count > 0 ? sum/count : 0, pos: p.posicion };
+        })
+        .sort((a, b) => b.avg - a.avg); // Ordenar por mejor nota
+
+    // Función auxiliar para coger los mejores por posición
+    const getBest = (pos, limit, excludeIds = []) => {
+        return ratings
+            .filter(r => r.pos === pos && !excludeIds.includes(r.id))
+            .slice(0, limit)
+            .map(r => r.id);
+    };
+    
+    // Construir un 4-3-3 genérico (o adáptalo si prefieres otra cosa)
+    const gk = getBest('portero', 1);
+    const defs = getBest('defensa', 4);
+    const mids = getBest('centrocampista', 3);
+    // Para delanteros unimos delanteros y extremos
+    const fwds = ratings
+        .filter(r => (r.pos === 'delantero' || r.pos === 'extremo') && !gk.includes(r.id) && !defs.includes(r.id) && !mids.includes(r.id))
+        .sort((a, b) => b.avg - a.avg)
+        .slice(0, 3)
+        .map(r => r.id);
+
+    const bestXI = [...gk, ...defs, ...mids, ...fwds];
+
+    if(bestXI.length < 11) { 
+        alert("No hay suficientes datos/jugadores para formar un once completo."); 
+        return; 
+    }
+    
+    if(confirm("¿Cargar el Once de Gala basado en nota media?")) {
+        applyAutoLineup(bestXI);
+    }
+}
+
+function applyAutoLineup(playerIds) {
+    // 1. Limpiar pizarra actual
+    currentPitchPlayers = {}; 
+    currentSubstitutes = [];
+    
+    const players = getPlayers();
+    
+    // 2. Ordenar jugadores entrantes por lógica posicional para que caigan en orden
+    // (Portero -> Defensas -> Medios -> Delanteros)
+    const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
+    
+    const sortedIds = playerIds.sort((a, b) => {
+        const pA = players.find(p => p.id === a);
+        const pB = players.find(p => p.id === b);
+        const orderA = pA ? posOrder[pA.posicion] : 5;
+        const orderB = pB ? posOrder[pB.posicion] : 5;
+        return orderA - orderB;
+    });
+
+    // 3. Asignar a los slots (0 al 10)
+    sortedIds.slice(0, 11).forEach((pid, index) => {
+        currentPitchPlayers[`slot-${index}`] = pid;
+    });
+
+    // 4. Los que sobren (si enviaste más de 11) o el resto de la plantilla van al banquillo
+    // La función renderBench se encarga de mostrar en el banquillo a quien no esté en el campo
+    
+    // 5. Repintar
+    renderAll(); 
+}
+// ==========================================
+// 2. LÓGICA HISTOGRAMA DE NOTAS
+// ==========================================
+let histogramChart = null;
+
+function renderRatingHistogram() {
+    const ctx = document.getElementById('chart-rating-histogram');
+    if (!ctx) return;
+
+    const matches = getData('matches');
+    
+    // Buckets: <5, 5-6, 6-7, 7-8, 8-9, 9-10
+    const buckets = [0, 0, 0, 0, 0, 0]; 
+    
+    matches.forEach(m => {
+        m.playerStats.forEach(ps => {
+            if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                const r = parseFloat(ps.rating);
+                if (r < 5) buckets[0]++;       // Suspenso
+                else if (r < 6) buckets[1]++;  // Suficiente
+                else if (r < 7) buckets[2]++;  // Bien
+                else if (r < 8) buckets[3]++;  // Notable
+                else if (r < 9) buckets[4]++;  // Notable Alto
+                else buckets[5]++;             // Sobresaliente
+            }
+        });
+    });
+
+    if (histogramChart) histogramChart.destroy();
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#cbd5e1' : '#4b5563';
+
+    histogramChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['< 5', '5 - 6', '6 - 7', '7 - 8', '8 - 9', '9 - 10'],
+            datasets: [{
+                label: 'Frecuencia',
+                data: buckets,
+                backgroundColor: [
+                    '#ef4444', // Rojo (Suspenso)
+                    '#f97316', // Naranja
+                    '#eab308', // Amarillo
+                    '#84cc16', // Lima
+                    '#10b981', // Verde
+                    '#3b82f6'  // Azul (Top)
+                ],
+                borderRadius: 6,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { 
+                legend: { display: false },
+                datalabels: {
+                    color: textColor,
+                    anchor: 'end',
+                    align: 'top',
+                    font: { weight: 'bold' }
+                }
+            },
+            scales: { 
+                y: { beginAtZero: true, display: false },
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: textColor, font: {weight: 'bold'} }
+                }
+            }
+        }
+    });
+}
+// ==========================================
+// 3. GENERADOR CARTA FUT (DATOS REALES)
+// ==========================================
+function renderFutTab(player, stats, avgRating) {
+    const container = document.getElementById('tab-content-fut');
+    if(!container) return;
+
+    // Posición
+    const posMap = {
+        'portero': 'POR', 'defensa': 'DFC', 'centrocampista': 'MC', 
+        'extremo': 'ED', 'delantero': 'DC', 'entrenador': 'ENT'
+    };
+    const futPos = posMap[player.posicion] || 'JUG';
+    
+    // MEDIA FUT (Big Number)
+    // Convertimos la nota media (ej: 7.50) a escala 0-99 para que parezca un juego
+    // Fórmula: (Nota * 10) + un pequeño boost para que quede "bonito"
+    let futRating = parseFloat(avgRating);
+    if(isNaN(futRating)) {
+        futRating = "?";
+    } else {
+        futRating = Math.min(99, Math.round(futRating * 10) + 15); 
+    }
+
+    // --- ESTADÍSTICAS REALES DE LA TEMPORADA ---
+    // Definimos qué mostrar en los 6 huecos de la carta
+    
+    // 1. Partidos Jugados
+    const v1 = stats.matchesPlayed || 0;
+    const l1 = "PJ";
+
+    // 2. Goles
+    const v2 = stats.goals || 0;
+    const l2 = "GOL";
+
+    // 3. Asistencias
+    const v3 = stats.assists || 0;
+    const l3 = "ASI";
+
+    // 4. Nota Media Real
+    const v4 = avgRating !== '-' ? avgRating : '-';
+    const l4 = "MED";
+
+    // 5. Titularidades (Starts)
+    const v5 = stats.starts || 0; 
+    const l5 = "TIT";
+
+    // 6. Victorias
+    const v6 = stats.wins || 0;
+    const l6 = "VIC";
+
+    // CSS para ajustar si el número es muy grande (ej: Minutos)
+    // Como usamos PJ, G, A... suelen ser números de 2-3 cifras, entran bien.
+
+    container.innerHTML = `
+        <div class="fut-card-wrapper animate-in zoom-in duration-300">
+            <div class="fut-card">
+                <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:-10px; padding-left:10px;">
+                    <div class="fut-rating">${futRating}</div>
+                    <div style="display:flex; flex-direction:column; align-items:start; line-height:1;">
+                        <div class="fut-pos">${futPos}</div>
+                        <div style="font-size:10px; opacity:0.7;">RM</div>
+                    </div>
+                </div>
+                
+                <img src="${player.foto}" class="fut-img" onerror="this.src='https://via.placeholder.com/150'">
+                
+                <div class="fut-name">${player.apodo || player.apellido}</div>
+                
+                <div class="fut-stats">
+                    <div title="Partidos Jugados">
+                        <span class="fut-stat-val text-green-400">${v1}</span><span class="fut-stat-label">${l1}</span>
+                    </div>
+                    <div title="Nota Media">
+                        <span class="fut-stat-val text-yellow-400">${v4}</span><span class="fut-stat-label">${l4}</span>
+                    </div>
+                    
+                    <div title="Goles">
+                        <span class="fut-stat-val text-blue-300">${v2}</span><span class="fut-stat-label">${l2}</span>
+                    </div>
+                    <div title="Titularidades">
+                        <span class="fut-stat-val text-gray-300">${v5}</span><span class="fut-stat-label">${l5}</span>
+                    </div>
+                    
+                    <div title="Asistencias">
+                        <span class="fut-stat-val text-purple-300">${v3}</span><span class="fut-stat-label">${l3}</span>
+                    </div>
+                    <div title="Victorias">
+                        <span class="fut-stat-val text-red-300">${v6}</span><span class="fut-stat-label">${l6}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <p class="text-center text-xs text-gray-400 mt-6 italic opacity-50">
+                Resumen de Temporada
+            </p>
+        </div>
+    `;
+}
+
+// Función dummy por si haces click (puedes implementarla con html2canvas más tarde)
+function downloadFutCard() {
+    alert("Para descargar la carta, haz una captura de pantalla.");
 }
 
         // Global Modal Close Handler
