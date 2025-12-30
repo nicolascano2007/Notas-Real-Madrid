@@ -913,45 +913,6 @@
 @keyframes fadeOutRight {
     to { transform: translateX(100%); opacity: 0; }
 }
-/* --- ANIMACIÓN GROW (CRECIMIENTO) --- */
-
-/* Crecer hacia arriba (para gráficos de barras) */
-@keyframes grow-up {
-    from { transform: scaleY(0); }
-    to { transform: scaleY(1); }
-}
-
-/* Crecer hacia la derecha (para barras de progreso horizontales) */
-@keyframes grow-right {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
-}
-
-.animate-bar-up {
-    transform-origin: bottom; /* Crece desde el suelo */
-    animation: grow-up 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; /* Efecto rebote suave */
-    transform: scaleY(0); /* Empieza invisible */
-}
-
-.animate-bar-right {
-    transform-origin: left; /* Crece desde la izquierda */
-    animation: grow-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    transform: scaleX(0);
-}
-/* --- ANIMACIÓN BARRAS COMPARADOR --- */
-@keyframes grow-width {
-    from { width: 0; }
-    to { width: 100%; } /* El 100% aquí será relativo al style inline que pongamos */
-}
-
-.animate-width {
-    animation: grow-width 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    transform-origin: left;
-}
-
-/* Para el jugador 2, queremos que la barra parezca crecer desde la derecha si usamos flex-direction row-reverse, 
-   o simplemente usamos la misma animación si maquetamos con absolute right */
-
    /* --- EFECTO JELLY (BOTONES GOMINOLA) 🍮 --- */
 
 @keyframes jelly-pop {
@@ -977,6 +938,235 @@ button, .btn, input[type="submit"], input[type="button"] {
 /* Efecto visual extra al presionar (antes de soltar) */
 button:active, .btn:active {
     transform: scale(0.95); /* Se encoge un poquito al mantener pulsado */
+}
+
+/* --- CORRECCIÓN DE CAPAS DE LA PIZARRA --- */
+
+/* 1. Aseguramos que el contenedor principal de la pizarra sea la referencia */
+/* Busca la clase o ID del div que envuelve todo el campo de fútbol */
+.tactical-board-container, /* Sustituye por la clase real de tu contenedor del campo */
+#tactical-pitch {          /* O el ID si usas uno */
+    position: relative !important;
+    /* overflow: hidden;  <-- Descomenta esto si las fichas se salen del campo al caer */
+}
+
+/* 2. Forzamos a que las DOS capas (huecos y jugadores) sean idénticas y se superpongan */
+/* Usamos un selector de atributo para que pille cualquier ID que termine en estos nombres */
+[id$="pitch-slots-layer"],
+[id$="pitch-players-layer"] {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none; /* Lo dejas pasar, ya lo gestionan los hijos */
+}
+
+/* El de los jugadores debe estar por encima */
+[id$="pitch-players-layer"] {
+    z-index: 10;
+}
+/* --- EFECTO CAÍDA CON REBOTE (CORREGIDO) --- */
+@keyframes drop-bounce {
+    0% { 
+        /* Empieza centrado en X, pero muy arriba en Y */
+        transform: translate(-50%, -400px); 
+        opacity: 0; 
+    }
+    40% { 
+        opacity: 1; 
+    }
+    70% { 
+        /* Rebote hacia abajo: Mantenemos X en -50%, Y baja un poco más del centro (-50% + 20px) */
+        transform: translate(-50%, calc(-50% + 20px)); 
+    }
+    85% { 
+        /* Rebote hacia arriba: X en -50%, Y sube un poco (-50% - 10px) */
+        transform: translate(-50%, calc(-50% - 10px)); 
+    }
+    100% { 
+        /* ESTADO FINAL: Perfectamente centrado */
+        transform: translate(-50%, -50%); 
+        opacity: 1; 
+    }
+}
+
+.animate-drop {
+    /* Mantenemos la configuración de tiempo */
+    animation: drop-bounce 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    /* Importante: para que el elemento acepte el transform, debe ser block o inline-block */
+    display: block; 
+    opacity: 0; 
+    /* Aseguramos que el origen de la transformación sea el centro */
+    transform-origin: center center;
+}
+
+/* =========================================
+   1. ANIMACIONES GENERALES (Gráficos y Barras)
+   ========================================= */
+
+/* Crecer hacia arriba (para el gráfico de historial) */
+@keyframes grow-up {
+    from { transform: scaleY(0); }
+    to { transform: scaleY(1); }
+}
+
+.animate-bar-up {
+    transform-origin: bottom;
+    animation: grow-up 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    transform: scaleY(0);
+}
+
+/* Crecer hacia la derecha (barras de progreso normales) */
+@keyframes grow-right {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.animate-bar-right {
+    transform-origin: left;
+    animation: grow-right 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform: scaleX(0);
+}
+
+/* =========================================
+   2. ANIMACIÓN COMPARADOR (LA SOLUCIÓN 🛠️)
+   ========================================= */
+
+@keyframes grow-scale-x {
+    0% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+}
+
+.animate-bar {
+    /* --- EL FIX IMPORTANTE --- */
+    /* !important obliga a que empiece invisible sí o sí */
+    transform: scaleX(0) !important; 
+    
+    /* Animación de 1.5s suave */
+    animation: grow-scale-x 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    
+    /* Optimización para el navegador */
+    will-change: transform;
+}
+
+
+/* Orígenes de crecimiento (con !important para asegurar prioridad) */
+.origin-left { transform-origin: left !important; }
+.origin-right { transform-origin: right !important; }
+
+
+/* =========================================
+   3. EFECTO VS (STREET FIGHTER)
+   ========================================= */
+
+.vs-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #0f172a; /* Fondo oscuro */
+    z-index: 50;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.vs-fighter {
+    width: 120px; 
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid #fbbf24; /* Borde dorado */
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+    
+    /* Ajuste perfecto de la foto */
+    object-fit: cover;        
+    object-position: top center; 
+    background-color: #333;   
+    
+    position: absolute;
+}
+
+.vs-text {
+    font-size: 80px; 
+    font-weight: 900;
+    color: #ef4444; 
+    text-shadow: 
+        0 0 10px rgba(0,0,0,0.8),
+        4px 4px 0 #7f1d1d;
+    z-index: 55;
+    opacity: 0;
+    transform: scale(0);
+    font-family: 'Arial Black', sans-serif;
+    font-style: italic;
+}
+
+/* --- KEYFRAMES DEL VS --- */
+
+@keyframes slide-crash-left {
+    0% { transform: translateX(-400%) scale(0.5); opacity: 0; }
+    60% { transform: translateX(30%) scale(1.2); opacity: 1; } 
+    100% { transform: translateX(-15%) scale(1); }
+}
+
+@keyframes slide-crash-right {
+    0% { transform: translateX(400%) scale(0.5); opacity: 0; }
+    60% { transform: translateX(-30%) scale(1.2); opacity: 1; }
+    100% { transform: translateX(15%) scale(1); }
+}
+
+@keyframes rumble {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(-10px, 10px) rotate(-5deg); }
+    40% { transform: translate(10px, -10px) rotate(5deg); }
+    60% { transform: translate(-5px, -5px) rotate(-3deg); }
+    80% { transform: translate(5px, 5px) rotate(3deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes pop-in {
+    0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+    50% { transform: scale(1.5) rotate(0deg); opacity: 1; }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-out-overlay {
+    to { opacity: 0; visibility: hidden; }
+}
+
+/* Clases de utilidad para activar animaciones JS */
+.anim-slide-left { animation: slide-crash-left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.anim-slide-right { animation: slide-crash-right 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.anim-rumble { animation: rumble 0.4s ease-in-out; }
+.anim-pop { animation: pop-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards; }
+.anim-fade-out { animation: fade-out-overlay 0.6s ease forwards; }
+/* --- BARRAS DE PLASMA (FLOWING ENERGY) --- */
+
+@keyframes plasma-flow {
+    0% { background-position: 0 0; }
+    100% { background-position: 50px 50px; } /* Mueve la textura */
+}
+
+.plasma-bar {
+    /* Creamos un patrón rayado sutil sobre el color base */
+    background-image: linear-gradient(
+        45deg, 
+        rgba(255, 255, 255, 0.15) 25%, 
+        transparent 25%, 
+        transparent 50%, 
+        rgba(255, 255, 255, 0.15) 50%, 
+        rgba(255, 255, 255, 0.15) 75%, 
+        transparent 75%, 
+        transparent
+    );
+    background-size: 20px 20px; /* Tamaño del patrón */
+    animation: plasma-flow 1s linear infinite; /* Animación continua y suave */
+}
+
+/* Opcional: Un brillo interno para que parezca cristal/gel */
+.plasma-glow {
+    box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
 }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
@@ -2325,42 +2515,42 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "dt_fem", nombre: "Pau", apellido: "Quesada", apodo: "Pau Quesada", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1992-10-31", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_QUESADA_CT_AV39125_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // PORTERAS
-            { id: "pf1", nombre: "Misa", apellido: "Rodríguez", apodo: "Misa", posicion: "portero", rol: "PT", dorsal: 1, nacionalidad: "España", fechaNacimiento: "1999-07-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MISA_AV38131_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf13", nombre: "Merle", apellido: "Frohms", apodo: "Frohms", posicion: "portero", rol: "PT", dorsal: 13, nacionalidad: "Alemania", fechaNacimiento: "1995-01-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/FROHMS_SG11686_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf1", nombre: "Misa", apellido: "Rodríguez", apodo: "Misa", posicion: "portero", rol: "POR", dorsal: 1, nacionalidad: "España", fechaNacimiento: "1999-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MISA_AV38131_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf13", nombre: "Merle", apellido: "Frohms", apodo: "Frohms", posicion: "portero", rol: "POR", dorsal: 13, nacionalidad: "Alemania", fechaNacimiento: "1995-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "135", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/FROHMS_SG11686_380x501?Desktop&fit=wrap&wid=288&hei=384" },
 
             // DEFENSAS
-            { id: "pf2", nombre: "Antônia", apellido: "Silva", apodo: "Antônia Silva", posicion: "defensa", rol: "LD", dorsal: 2, nacionalidad: "Brasil", fechaNacimiento: "1994-04-26", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANTONIA_AV38661_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf4", nombre: "Rocío", apellido: "Gálvez", apodo: "Rocío", posicion: "defensa", rol: "CT", dorsal: 4, nacionalidad: "España", fechaNacimiento: "1997-04-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ROCIO_SG11273_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf12", nombre: "Yasmim", apellido: "Ribeiro", apodo: "Yasmim", posicion: "defensa", rol: "LI", dorsal: 12, nacionalidad: "Brasil", fechaNacimiento: "1996-10-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/YASMIM_AV38779_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf14", nombre: "María", apellido: "Méndez", apodo: "María Méndez", posicion: "defensa", rol: "CT", dorsal: 14, nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf15", nombre: "Sheila", apellido: "García", apodo: "Sheila", posicion: "defensa", rol: "LD", dorsal: 15, nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf21", nombre: "Sara", apellido: "Holmgaard", apodo: "Holmgaard", posicion: "defensa", rol: "LI", dorsal: 21, nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Bella Andersson", posicion: "defensa", rol: "CT", dorsal: 22, nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", apodo: "Lakrar", posicion: "defensa", rol: "CT", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf27", nombre: "Noemí", apellido: "Bejarano", apodo: "Noe", posicion: "defensa", rol: "LD", dorsal: 27, nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "pf29", nombre: "Silvia", apellido: "Cristobal", apodo: "Silvi", posicion: "defensa", rol: "CT", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf2", nombre: "Antônia", apellido: "Silva", apodo: "Antônia Silva", posicion: "defensa", rol: "LD", dorsal: 2, nacionalidad: "Brasil", fechaNacimiento: "1994-04-26", categoria: "Primer Equipo", estado: "Activo", valorMercado: "190", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANTONIA_AV38661_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf4", nombre: "Rocío", apellido: "Gálvez", apodo: "Rocío", posicion: "defensa", rol: "DFC", dorsal: 4, nacionalidad: "España", fechaNacimiento: "1997-04-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ROCIO_SG11273_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf12", nombre: "Yasmim", apellido: "Ribeiro", apodo: "Yasmim", posicion: "defensa", rol: "LI", dorsal: 12, nacionalidad: "Brasil", fechaNacimiento: "1996-10-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/YASMIM_AV38779_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf14", nombre: "María", apellido: "Méndez", apodo: "María Méndez", posicion: "defensa", rol: "DFC", dorsal: 14, nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", valorMercado: "450", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf15", nombre: "Sheila", apellido: "García", apodo: "Sheila", posicion: "defensa", rol: "LD", dorsal: 15, nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "280", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf21", nombre: "Sara", apellido: "Holmgaard", apodo: "Holmgaard", posicion: "defensa", rol: "LI", dorsal: 21, nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "110", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Bella Andersson", posicion: "defensa", rol: "DFC", dorsal: 22, nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "125", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", apodo: "Lakrar", posicion: "defensa", rol: "DFC", dorsal: 23, nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "380", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf27", nombre: "Noemí", apellido: "Bejarano", apodo: "Noe", posicion: "defensa", rol: "LD", dorsal: 27, nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "pf29", nombre: "Silvia", apellido: "Cristobal", apodo: "Silvi", posicion: "defensa", rol: "DFC", dorsal: 29, nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", valorMercado: "80", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // CENTROCAMPISTAS
-            { id: "pf3", nombre: "Teresa", apellido: "Abelleira", apodo: "Tere", posicion: "centrocampista", rol: "MCD", dorsal: 3, nacionalidad: "España", fechaNacimiento: "2000-01-09", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/TERESA_AV38432_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf6", nombre: "Sandie", apellido: "Toletti", apodo: "Toletti", posicion: "centrocampista", rol: "MCD", dorsal: 6, nacionalidad: "Francia", fechaNacimiento: "1995-07-13", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/TOLETTI__AV39153_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf8", nombre: "Sara", apellido: "Däbritz", apodo: "Däbritz", posicion: "centrocampista", rol: "MC", dorsal: 8, nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf10", nombre: "Caroline", apellido: "Weir", apodo: "Weir", posicion: "centrocampista", rol: "MC", dorsal: 10, nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", apodo: "Angeldahl", posicion: "centrocampista", rol: "MC", dorsal: 16, nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Hanna Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17, nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf28", nombre: "Irune", apellido: "Dorado", apodo: "Irune", posicion: "centrocampista", rol: "MCD", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf3", nombre: "Teresa", apellido: "Abelleira", apodo: "Tere", posicion: "centrocampista", rol: "MCD", dorsal: 3, nacionalidad: "España", fechaNacimiento: "2000-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "390", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/TERESA_AV38432_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf6", nombre: "Sandie", apellido: "Toletti", apodo: "Toletti", posicion: "centrocampista", rol: "MCD", dorsal: 6, nacionalidad: "Francia", fechaNacimiento: "1995-07-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "365", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/TOLETTI__AV39153_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf8", nombre: "Sara", apellido: "Däbritz", apodo: "Däbritz", posicion: "centrocampista", rol: "MCO", dorsal: 8, nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "400", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf10", nombre: "Caroline", apellido: "Weir", apodo: "Weir", posicion: "centrocampista", rol: "MCO", dorsal: 10, nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "800", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", apodo: "Angeldahl", posicion: "centrocampista", rol: "MC", dorsal: 16, nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "575", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Hanna Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17, nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", valorMercado: "260", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf28", nombre: "Irune", apellido: "Dorado", apodo: "Irune", posicion: "centrocampista", rol: "MCD", dorsal: 28, nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33, nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // DELANTERAS Y EXTREMOS
-            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5, nacionalidad: "España", fechaNacimiento: "2007-06-18", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7, nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9, nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11, nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf18", nombre: "Linda", apellido: "Caicedo", apodo: "Linda Caicedo", posicion: "extremo", rol: "EI", dorsal: 18, nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf19", nombre: "Eva", apellido: "Navarro", apodo: "Eva Navarro", posicion: "extremo", rol: "ED", dorsal: 19, nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf20", nombre: "Naomie", apellido: "Feller", apodo: "Feller", posicion: "extremo", rol: "ED", dorsal: 20, nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf24", nombre: "Lotte", apellido: "Keukelaar", apodo: "Keukelaar", posicion: "extremo", rol: "ED", dorsal: 24, nacionalidad: "Países Bajos", fechaNacimiento: "2005-09-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/KEUKELAAR_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "extremo", rol: "EI", dorsal: 38, nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=420" }
+            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5, nacionalidad: "España", fechaNacimiento: "2007-06-18", categoria: "Cantera", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7, nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "650", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9, nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", valorMercado: "325", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11, nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "480", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf18", nombre: "Linda", apellido: "Caicedo", apodo: "Linda Caicedo", posicion: "extremo", rol: "EI", dorsal: 18, nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "1", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf19", nombre: "Eva", apellido: "Navarro", apodo: "Eva Navarro", posicion: "extremo", rol: "ED", dorsal: 19, nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf20", nombre: "Naomie", apellido: "Feller", apodo: "Feller", posicion: "extremo", rol: "ED", dorsal: 20, nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", valorMercado: "275", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf24", nombre: "Lotte", apellido: "Keukelaar", apodo: "Keukelaar", posicion: "extremo", rol: "ED", dorsal: 24, nacionalidad: "Países Bajos", fechaNacimiento: "2005-09-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/KEUKELAAR_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "extremo", rol: "EI", dorsal: 38, nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43, nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=420" }
             ];
         // Coordenadas para la Pizarra Táctica (top%, left%)
         // El portero siempre es el índice 0.
@@ -6560,18 +6750,16 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             }
         }
 
-            function renderTacticalBoard(prefix = '') {
+function renderTacticalBoard(prefix = '') {
     const slotsLayer = document.getElementById(prefix + 'pitch-slots-layer');
     const playersLayer = document.getElementById(prefix + 'pitch-players-layer');
     
     if (!slotsLayer || !playersLayer) return;
 
-    const coords = FORMACIONES[currentFormation] || []; // Seguridad
+    const coords = FORMACIONES[currentFormation] || []; 
 
     slotsLayer.innerHTML = coords.map((pos, index) => {
-        // Obtenemos el nombre bonito de la posición
         const posName = getPositionName(currentFormation, index);
-        
         return `
         <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
              id="${prefix}slot-${index}"
@@ -6579,37 +6767,46 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
              ondragover="allowDrop(event)" 
              ondrop="drop(event)"
              onclick="openPlayerSelector('${prefix}slot-${index}')"
-             title="${posName}"> <span class="heatmap-label" style="position:absolute; bottom:-15px; font-size:7px; opacity:0.7; width:60px; text-align:center;">${posName}</span>
+             title="${posName}"> 
+             <span class="heatmap-label" style="position:absolute; bottom:-15px; font-size:7px; opacity:0.7; width:60px; text-align:center;">${posName}</span>
         </div>
     `}).join('');
 
     playersLayer.innerHTML = ''; 
     
-    Object.keys(currentPitchPlayers).forEach(slotId => {
+    // Convertimos a array para tener el índice (i)
+    Object.keys(currentPitchPlayers).forEach((slotId, i) => {
         if (slotId.startsWith(prefix)) {
             const playerId = currentPitchPlayers[slotId];
             const player = getPlayers().find(p => p.id === playerId);
             if (player) {
-                renderPlayerOnPitch(player, slotId, playersLayer);
+                // Pasamos 'i' como tercer argumento para el retraso de la animación
+                renderPlayerOnPitch(player, slotId, playersLayer, i);
             }
         }
     });
 }
 
-            function renderPlayerOnPitch(player, slotId, container) {
+// AÑADIDO: Nuevo parámetro 'delayIndex' al final (por defecto 0)
+function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
     const slotEl = document.getElementById(slotId);
     if (!slotEl) return;
 
     const div = document.createElement('div');
-    // AÑADIDO: 'pointer-events-auto' para contrarrestar el 'pointer-events-none' del padre
-    div.className = 'player-token hover:scale-110 transition-transform cursor-pointer pointer-events-auto'; 
+    
+    // AÑADIDO: Clase 'animate-drop' para activar la animación CSS
+    div.className = 'player-token hover:scale-110 transition-transform cursor-pointer pointer-events-auto animate-drop'; 
     
     div.style.position = 'absolute';
     div.style.top = slotEl.style.top;
     div.style.left = slotEl.style.left;
-    div.style.zIndex = '50'; // AÑADIDO: Asegurar que flota por encima de los slots
-    div.style.pointerEvents = 'auto'; // AÑADIDO: Fuerza bruta para asegurar click
+    div.style.zIndex = '50'; 
+    div.style.pointerEvents = 'auto';
     
+    // AÑADIDO: Retraso dinámico. Cada ficha cae 0.05s después de la anterior.
+    // Si prefieres que caigan TODAS a la vez, cambia esto a '0s'.
+    div.style.animationDelay = `${delayIndex * 0.05}s`;
+
     div.draggable = true;
     div.id = `token-${player.id}`;
     
@@ -6618,13 +6815,11 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     
     div.ondragstart = drag;
     
-    // Evitar que al hacer click se propague al slot de abajo
     div.onclick = (e) => {
         e.stopPropagation();
         openPlayerSelector(slotId);
     };
     
-    // IMPORTANTE: Permitir soltar encima de otro jugador para hacer Swap
     div.ondragover = allowDrop;
     div.ondrop = drop;
 
@@ -6635,7 +6830,6 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     
     container.appendChild(div);
 }
-
         function renderBench(prefix = '') {
             const benchZone = document.getElementById(prefix + 'bench-zone');
             const subsZone = document.getElementById(prefix + 'subs-zone');
@@ -7332,16 +7526,32 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
                 updateComparatorChart(); // Dibujar inicial
             }
         }
-
-            function updateComparatorChart() {
+let comparatorTimeouts = [];
+function updateComparatorChart() {
     const id1 = document.getElementById('radar-p1').value;
     const id2 = document.getElementById('radar-p2').value;
     const tableContainer = document.getElementById('radar-stats-table');
+    const ctxEl = document.getElementById('chart-radar-vs');
     
-    // Si no hay selección, limpiar gráfico
+    // --- 1. GESTIÓN DE TIMEOUTS ---
+    // Limpiamos cualquier animación pendiente si el usuario cambia rápido
+    if (typeof comparatorTimeouts !== 'undefined') {
+        comparatorTimeouts.forEach(t => clearTimeout(t));
+        comparatorTimeouts = [];
+    } else {
+        // Si no has declarado la variable global, la creamos al vuelo para evitar errores
+        window.comparatorTimeouts = []; 
+    }
+
+    // Limpieza visual inicial
+    if(tableContainer) tableContainer.innerHTML = '';
+    if(typeof radarChart !== 'undefined' && radarChart) {
+        radarChart.destroy();
+        radarChart = null;
+    }
+
     if (!id1 || !id2) {
         if(tableContainer) tableContainer.innerHTML = '<p class="text-center text-gray-400 italic py-4">Selecciona dos jugadores.</p>';
-        if(radarChart) radarChart.destroy();
         return;
     }
 
@@ -7350,153 +7560,182 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     const p1 = players.find(p => p.id === id1);
     const p2 = players.find(p => p.id === id2);
 
-    // 1. Calcular Estadísticas (Mantenido igual)
-    const getStats = (pid) => {
-        let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
-        matches.forEach(m => {
-            const ps = m.playerStats.find(s => String(s.playerId) === String(pid));
-            if (ps) {
-                g += ps.goals || 0;
-                a += ps.assists || 0;
-                mins += ps.minutes || 0;
-                matchesCount++;
-                if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
-            }
-            if (String(m.mvp) === String(pid)) mvp++;
-        });
-        return { 
-            goals: g, 
-            assists: a, 
-            minutes: mins, 
-            mvp: mvp, 
-            avg: rateCount > 0 ? (rateSum / rateCount) : 0,
-            matches: matchesCount
-        };
-    };
+    // ===============================================
+    // 🥊 EFECTO VS (STREET FIGHTER)
+    // ===============================================
+    const parentContainer = ctxEl ? ctxEl.parentElement : null;
 
-    const s1 = getStats(id1);
-    const s2 = getStats(id2);
+    if (parentContainer) {
+        // Limpiar overlays viejos
+        const oldOverlay = parentContainer.querySelector('.vs-overlay');
+        if (oldOverlay) oldOverlay.remove();
 
-    // 2. Normalización y Límites (Ceilings)
-    const ceilings = { 
-        goals: 15,    
-        assists: 10, 
-        minutes: (matches.length * 80) || 1000, 
-        avg: 10,       // Nota máxima 10
-        mvp: 5,
-        matches: matches.length || 1 // Añadido para la barra de partidos
-    };
-
-    const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
-
-    const data1 = [
-        normalize(s1.goals, ceilings.goals),
-        normalize(s1.assists, ceilings.assists),
-        normalize(s1.avg, ceilings.avg),
-        normalize(s1.minutes, ceilings.minutes),
-        normalize(s1.mvp, ceilings.mvp)
-    ];
-    
-    const data2 = [
-        normalize(s2.goals, ceilings.goals),
-        normalize(s2.assists, ceilings.assists),
-        normalize(s2.avg, ceilings.avg),
-        normalize(s2.minutes, ceilings.minutes),
-        normalize(s2.mvp, ceilings.mvp)
-    ];
-
-    // 3. Dibujar Gráfico (Con animación suavizada)
-    const ctx = document.getElementById('chart-radar-vs').getContext('2d');
-    if (radarChart) radarChart.destroy();
-
-    const isDark = document.body.classList.contains('dark-mode');
-    const textColor = isDark ? '#e2e8f0' : '#4b5563';
-    const gridColor = isDark ? '#334155' : '#e5e7eb';
-
-    radarChart = new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: ['Goles', 'Asistencias', 'Nota Media', 'Minutos', 'MVPs'],
-            datasets: [
-                {
-                    label: p1.apodo || p1.apellido,
-                    data: data1,
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                    pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2
-                },
-                {
-                    label: p2.apodo || p2.apellido,
-                    data: data2,
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    pointBackgroundColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 2
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: {
-                duration: 2000, // 2 segundos de animación
-                easing: 'easeOutQuart' // Efecto suave al final
-            },
-            scales: {
-                r: {
-                    angleLines: { color: gridColor },
-                    grid: { color: gridColor },
-                    pointLabels: { font: { size: 12, weight: 'bold' }, color: textColor },
-                    suggestedMin: 0, suggestedMax: 100, ticks: { display: false }
-                }
-            },
-            plugins: { legend: { labels: { color: textColor } } }
-        }
-    });
-
-    // 4. Tabla de Datos (AHORA CON BARRAS QUE CRECEN 📊)
-    const row = (label, v1, v2, maxVal, isFloat=false) => {
-        const val1 = isFloat ? v1.toFixed(2) : v1;
-        const val2 = isFloat ? v2.toFixed(2) : v2;
+        // Crear Overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'vs-overlay';
         
-        // Colores de texto (ganador en negrita)
-        const c1 = Number(val1) > Number(val2) ? 'text-blue-600 font-black' : (Number(val1) === Number(val2) ? 'text-gray-500' : 'text-gray-400');
-        const c2 = Number(val2) > Number(val1) ? 'text-red-600 font-black' : (Number(val2) === Number(val1) ? 'text-gray-500' : 'text-gray-400');
+        // Asegurar posición relativa
+        if (getComputedStyle(parentContainer).position === 'static') {
+            parentContainer.style.position = 'relative';
+        }
 
-        // Cálculo de porcentaje para las barras de fondo
-        // Usamos un pequeño mínimo (5%) para que siempre se vea algo de color si tiene > 0
-        const pct1 = Math.min(100, Math.max(0, (v1 / maxVal) * 100));
-        const pct2 = Math.min(100, Math.max(0, (v2 / maxVal) * 100));
-
-        return `
-        <div class="relative flex justify-between items-center py-2 mb-2 border-b border-gray-100 last:border-0 overflow-hidden">
-            
-            <div class="absolute left-0 top-0 bottom-0 bg-blue-50 animate-width opacity-70 rounded-r-md" 
-                 style="width: ${pct1}%; max-width: 48%; z-index:0;"></div>
-            
-            <div class="absolute right-0 top-0 bottom-0 bg-red-50 animate-width opacity-70 rounded-l-md" 
-                 style="width: ${pct2}%; max-width: 48%; z-index:0;"></div>
-
-            <div class="z-10 w-full flex justify-between items-center px-2">
-                <span class="text-base ${c1}">${val1}</span>
-                <span class="text-xs text-slate-400 uppercase tracking-widest font-bold text-center bg-white/50 px-2 rounded backdrop-blur-sm">${label}</span>
-                <span class="text-base ${c2}">${val2}</span>
-            </div>
-        </div>`;
-    };
-    
-    if(tableContainer) {
-        tableContainer.innerHTML = `
-            ${row('Nota Media', s1.avg, s2.avg, ceilings.avg, true)}
-            ${row('Goles', s1.goals, s2.goals, ceilings.goals)}
-            ${row('Asistencias', s1.assists, s2.assists, ceilings.assists)}
-            ${row('MVPs', s1.mvp, s2.mvp, ceilings.mvp)}
-            ${row('Minutos', s1.minutes, s2.minutes, ceilings.minutes)}
-            ${row('Partidos', s1.matches, s2.matches, ceilings.matches)}
+        overlay.innerHTML = `
+            <img src="${p1.foto}" class="vs-fighter anim-slide-left" style="left: 20%; z-index:1;" onerror="this.src='https://via.placeholder.com/100'">
+            <div class="vs-text">VS</div>
+            <img src="${p2.foto}" class="vs-fighter anim-slide-right" style="right: 20%; z-index:1;" onerror="this.src='https://via.placeholder.com/100'">
         `;
+
+        parentContainer.appendChild(overlay);
+
+        const vsText = overlay.querySelector('.vs-text');
+        
+        // Secuencia de animación
+        comparatorTimeouts.push(setTimeout(() => {
+            overlay.classList.add('anim-rumble');
+            vsText.classList.add('anim-pop');
+        }, 400));
+
+        comparatorTimeouts.push(setTimeout(() => {
+            overlay.classList.add('anim-fade-out');
+            // PINTAMOS LOS DATOS CUANDO EL TELÓN SE LEVANTA
+            renderChartAndTable(); 
+        }, 1600));
+
+        comparatorTimeouts.push(setTimeout(() => {
+            overlay.remove();
+        }, 2200));
+
+    } else {
+        renderChartAndTable(); // Fallback si no hay contenedor gráfico
     }
-}
+
+    // ===============================================
+    //  FUNCIÓN INTERNA DE PINTADO (Closure)
+    // ===============================================
+    function renderChartAndTable() {
+        const getStats = (pid) => {
+            let g = 0, a = 0, mins = 0, mvp = 0, rateSum = 0, rateCount = 0, matchesCount = 0;
+            matches.forEach(m => {
+                const ps = m.playerStats.find(s => String(s.playerId) === String(pid));
+                if (ps) {
+                    g += ps.goals || 0; a += ps.assists || 0; mins += ps.minutes || 0;
+                    matchesCount++;
+                    if (ps.rating) { rateSum += parseFloat(ps.rating); rateCount++; }
+                }
+                if (String(m.mvp) === String(pid)) mvp++;
+            });
+            return { 
+                goals: g, assists: a, minutes: mins, mvp: mvp, 
+                avg: rateCount > 0 ? (rateSum / rateCount) : 0, matches: matchesCount
+            };
+        };
+
+        const s1 = getStats(id1);
+        const s2 = getStats(id2);
+
+        const ceilings = { 
+            goals: 15, assists: 10, minutes: (matches.length * 80) || 1000, 
+            avg: 10, mvp: 5, matches: matches.length || 1 
+        };
+
+        const normalize = (val, max) => Math.min(100, Math.round((val / max) * 100));
+        
+        const data1 = [
+            normalize(s1.goals, ceilings.goals), normalize(s1.assists, ceilings.assists),
+            normalize(s1.avg, ceilings.avg), normalize(s1.minutes, ceilings.minutes),
+            normalize(s1.mvp, ceilings.mvp)
+        ];
+        const data2 = [
+            normalize(s2.goals, ceilings.goals), normalize(s2.assists, ceilings.assists),
+            normalize(s2.avg, ceilings.avg), normalize(s2.minutes, ceilings.minutes),
+            normalize(s2.mvp, ceilings.mvp)
+        ];
+
+        // --- CHART JS CON DELAY ---
+        const isDark = document.body.classList.contains('dark-mode');
+        const textColor = isDark ? '#e2e8f0' : '#4b5563';
+        const gridColor = isDark ? '#334155' : '#e5e7eb';
+
+        if (ctxEl) {
+            radarChart = new Chart(ctxEl.getContext('2d'), {
+                type: 'radar',
+                data: {
+                    labels: ['Goles', 'Asistencias', 'Nota Media', 'Minutos', 'MVPs'],
+                    datasets: [
+                        {
+                            label: p1.apodo || p1.apellido, data: data1,
+                            borderColor: 'rgba(59, 130, 246, 1)', backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                            pointBackgroundColor: 'rgba(59, 130, 246, 1)', borderWidth: 2
+                        },
+                        {
+                            label: p2.apodo || p2.apellido, data: data2,
+                            borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            pointBackgroundColor: 'rgba(239, 68, 68, 1)', borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { 
+                        duration: 1500, 
+                        easing: 'easeOutQuart',
+                        delay: 500 
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: gridColor }, grid: { color: gridColor },
+                            pointLabels: { font: { size: 12, weight: 'bold' }, color: textColor },
+                            suggestedMin: 0, suggestedMax: 100, ticks: { display: false }
+                        }
+                    },
+                    plugins: { legend: { labels: { color: textColor } } }
+                }
+            });
+        }
+
+        // --- TABLA HTML CON PLASMA ⚡ Y DELAY ---
+        const row = (label, v1, v2, maxVal, isFloat=false) => {
+            const val1 = isFloat ? v1.toFixed(2) : v1;
+            const val2 = isFloat ? v2.toFixed(2) : v2;
+            
+            // Colores de texto ajustados para verse bien con las barras de plasma
+            const c1 = Number(val1) > Number(val2) ? 'text-blue-600 font-black' : (Number(val1) === Number(val2) ? 'text-gray-400' : 'text-gray-400');
+            const c2 = Number(val2) > Number(val1) ? 'text-red-600 font-black' : (Number(val2) === Number(val1) ? 'text-gray-400' : 'text-gray-400');
+
+            const pct1 = Math.min(100, Math.max(2, (v1 / maxVal) * 100));
+            const pct2 = Math.min(100, Math.max(2, (v2 / maxVal) * 100));
+
+            return `
+            <div class="relative flex justify-between items-center py-2 mb-2 border-b border-gray-100 last:border-0 overflow-hidden">
+                <div class="absolute left-0 top-0 bottom-0 bg-blue-500 plasma-bar animate-bar origin-left opacity-80 rounded-r-md" 
+                     style="width: ${pct1}%; max-width: 48%; z-index:0; animation-delay: 0.5s;"></div>
+                
+                <div class="absolute right-0 top-0 bottom-0 bg-red-500 plasma-bar animate-bar origin-right opacity-80 rounded-l-md" 
+                     style="width: ${pct2}%; max-width: 48%; z-index:0; animation-delay: 0.5s;"></div>
+
+                <div class="z-10 w-full flex justify-between items-center px-2">
+                    <span class="text-base ${c1} drop-shadow-sm mix-blend-multiply">${val1}</span>
+                    <span class="text-xs text-slate-500 uppercase tracking-widest font-bold text-center bg-white/90 px-2 rounded backdrop-blur-sm shadow-sm">${label}</span>
+                    <span class="text-base ${c2} drop-shadow-sm mix-blend-multiply">${val2}</span>
+                </div>
+            </div>`;
+        };
+        
+        if(tableContainer) {
+            tableContainer.innerHTML = `
+                ${row('Nota Media', s1.avg, s2.avg, ceilings.avg, true)}
+                ${row('Goles', s1.goals, s2.goals, ceilings.goals)}
+                ${row('Asistencias', s1.assists, s2.assists, ceilings.assists)}
+                ${row('MVPs', s1.mvp, s2.mvp, ceilings.mvp)}
+                ${row('Minutos', s1.minutes, s2.minutes, ceilings.minutes)}
+                ${row('Partidos', s1.matches, s2.matches, ceilings.matches)}
+            `;
+        }
+    } // FIN de renderChartAndTable
+
+} // FIN de updateComparatorChart (¡Esta es la llave que faltaba!)
+
         // ==========================================
         // AI PREDICTION ENGINE
         // ==========================================
