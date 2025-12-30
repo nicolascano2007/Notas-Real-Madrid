@@ -9780,7 +9780,7 @@ function renderFutTab(player, stats, avgRating) {
     // --- LÓGICA DE VALOR DE MERCADO Y UNIDAD ---
     const marketValue = player.valorMercado || 0; // Coge el valor manual
     const unitShort = player.unidad || 'M€';      // Por defecto Millones
-    const unitLong = unitShort === 'K€' ? 'MILES DE €' : 'MILLONES DE €'; // Texto trasero
+    const unitLong = unitShort === 'K€' ? 'MIL €' : 'MILLONES DE €'; // Texto trasero
 
     container.innerHTML = `
         <div class="fut-card-wrapper animate-in zoom-in duration-300">
