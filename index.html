@@ -651,7 +651,7 @@
 
 /* Clase que aplicaremos a la carta */
 .player-card.status-on-fire {
-    animation: fire-pulse 2s infinite; /* El borde brilla */
+    animation: fadeInUp 0.5s ease-out forwards, fire-pulse 2s infinite;
     z-index: 10; /* Que sobresalga un poco */
 }
 
@@ -1167,6 +1167,34 @@ button:active, .btn:active {
 /* Opcional: Un brillo interno para que parezca cristal/gel */
 .plasma-glow {
     box-shadow: inset 0 0 10px rgba(255,255,255,0.3);
+}
+
+/* --- ESTADO ON FIRE (Lógica idéntica al Hielo) --- */
+
+/* Clase base para fondo cálido */
+.status-on-fire {
+    /* Degradado naranja muy suave, igual que el azul suave del hielo */
+    background: linear-gradient(to bottom right, #fff7ed, #ffedd5) !important;
+    border-color: #fb923c !important; /* Borde naranja */
+}
+
+/* El overlay naranja (borde interior) */
+.fire-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+    z-index: 10;
+    pointer-events: none;
+    /* Box-shadow naranja, igual que el azul del hielo */
+    box-shadow: inset 0 0 0 1px #f97316, inset 0 0 15px rgba(249, 115, 22, 0.2);
+}
+
+/* Al pasar el ratón, el jugador "vibra" de energía */
+.status-on-fire:hover {
+    /* Reutilizamos la animación de temblor o creamos una de pulso */
+    animation: shiver 0.3s infinite ease-in-out; 
+    opacity: 1 !important; /* CLAVE PARA QUE NO DESAPAREZCA */
+    z-index: 20;
 }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
@@ -4359,17 +4387,12 @@ function renderPlayers() {
     const container = document.getElementById('players-list');
     
     container.innerHTML = players.map((player, index) => {
-        
-        // --- CÁLCULO WATERFALL (Retraso) ---
         const delay = index < 20 ? index * 50 : 0; 
         const styleDelay = `style="animation-delay: ${delay}ms"`;
 
-        // --- LÓGICA DE ESTILOS ---
         let statusClass = '';
         let badgeClass = '';
         let photoBorderClass = '';
-        
-        // Variables para los efectos visuales
         let fireIconHTML = '';      
         let fireOverlayHTML = '';   
         let holoClass = '';         
@@ -4384,12 +4407,10 @@ function renderPlayers() {
             badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
             photoBorderClass = 'border-gray-300';
         } else {
-            // --- JUGADOR ACTIVO ---
             statusClass = 'status-activo';
             badgeClass = 'status-active';
             photoBorderClass = 'border-amber-400';
 
-            // Calcular Racha
             const pMatches = matches
                 .filter(m => m.playerStats && m.playerStats.some(s => s.playerId === player.id && s.rating))
                 .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -4403,21 +4424,19 @@ function renderPlayers() {
                 });
                 const avg = sum / pMatches.length;
 
-                // TIER S (>= 9.0) -> Diamante + Holo
                 if (avg >= 9.0) {
                     holoClass = 'holo-effect'; 
                     fireOverlayHTML = `<div class="fire-overlay" style="border-color: #8b5cf6; box-shadow: inset 0 0 0 1px #8b5cf6;"></div>`;
                     fireIconHTML = `<div class="fire-badge-icon" style="background:#8b5cf6; border-color:#fff; color:white;" title="TIER S: ${avg.toFixed(1)}">💎</div>`;
                 } 
-                // ON FIRE (>= 8.0) -> Fuego
                 else if (avg >= 8.0) {
+                    statusClass += ' status-on-fire'; 
                     fireOverlayHTML = `<div class="fire-overlay"></div>`;
                     fireIconHTML = `<div class="fire-badge-icon" title="Racha: ${avg.toFixed(1)}">🔥</div>`;
                 }
-                // FROZEN (< 5.0) -> Hielo ❄️ (NUEVO)
                 else if (avg < 6.0) {
-                    statusClass += ' status-frozen'; // Fondo azulado
-                    fireOverlayHTML = `<div class="frozen-overlay"></div>`; // Borde azul
+                    statusClass += ' status-frozen'; 
+                    fireOverlayHTML = `<div class="frozen-overlay"></div>`;
                     fireIconHTML = `<div class="fire-badge-icon" style="background:#eff6ff; border-color:#93c5fd; color:#2563eb;" title="Mala Racha: ${avg.toFixed(1)}">❄️</div>`;
                 }
             }
@@ -4431,7 +4450,7 @@ function renderPlayers() {
                 ${fireOverlayHTML}
                 ${fireIconHTML}
 
-                <div class="flex items-start gap-4">
+                <div class="flex items-start gap-4 relative z-10">
                     <img src="${player.foto}" 
                          class="player-photo border-4 ${photoBorderClass} rounded-full w-20 h-20 object-cover object-top" 
                          onerror="this.src='https://via.placeholder.com/80x80?text=${player.dorsal}'"
