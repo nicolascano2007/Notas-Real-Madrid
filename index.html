@@ -6780,7 +6780,7 @@ function renderTacticalBoard(prefix = '') {
     slotsLayer.innerHTML = coords.map((pos, index) => {
         const posName = getPositionName(currentFormation, index);
         return `
-        <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors" 
+                <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors pointer-events-auto" 
              id="${prefix}slot-${index}"
              style="top: ${pos.top}%; left: ${pos.left}%;"
              ondragover="allowDrop(event)" 
