@@ -1201,6 +1201,8 @@ button:active, .btn:active {
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 </head>
 <body class="bg-gray-100 min-h-screen">
 
@@ -1772,14 +1774,21 @@ button:active, .btn:active {
                                         <button type="button" onclick="goToStep1()" class="text-sm text-blue-600 hover:underline">⬅️ Volver</button>
                                     </div>
                                 </div>
-                                <div class="flex justify-center gap-3 mb-3 mt-1 animate-in fade-in slide-in-from-top-2">
-    <button type="button" onclick="loadLastLineup()" class="flex items-center gap-1 text-xs font-bold bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition shadow-sm">
-        ↺ Repetir Último Once
-    </button>
-    <button type="button" onclick="loadBestXILineup()" class="flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition shadow-sm">
-        ⭐ Cargar Once de Gala
-    </button>
-</div>
+                                <div class="flex justify-center gap-3 mb-3 mt-1 animate-in fade-in slide-in-from-top-2 no-capture">
+    
+                                <button type="button" onclick="loadLastLineup()" class="flex items-center gap-1 text-xs font-bold bg-white text-slate-700 px-3 py-1.5 rounded-full border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition shadow-sm">
+                                ↺ Repetir Último Once
+                                </button>
+
+                                <button type="button" onclick="loadBestXILineup()" class="flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200 hover:bg-amber-100 hover:border-amber-300 transition shadow-sm">
+                                ⭐ Cargar Once de Gala
+                                </button>
+
+                                <button type="button" onclick="exportLineupToImage()" class="flex items-center gap-1 text-xs font-bold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition shadow-sm">
+                                📸 Foto
+                                </button>
+
+                                </div>
 
                                 <div id="mode-list-container" class="hidden">
                                     <div class="mb-2 text-sm text-amber-700 bg-amber-50 p-2 rounded">⚠️ Selecciona "Titular" o "Suplente".</div>
@@ -1798,8 +1807,8 @@ button:active, .btn:active {
                                         </select>
                                     </div>
 
-                                    <div class="flex flex-col md:flex-row gap-4 h-[550px]"> 
-                                        
+                                        <div id="tactical-board-container" class="flex flex-col md:flex-row gap-4 h-[550px]">
+
                                         <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
                                             <div class="pitch-container w-full h-full" id="tactical-pitch" style="margin: 0; border: none; border-radius: 0;">
                                                 <div class="pitch-line-mid"></div>
@@ -6817,7 +6826,7 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
 
     const div = document.createElement('div');
     
-    // AÑADIDO: Clase 'animate-drop' para activar la animación CSS
+    // Clases de animación y estilo
     div.className = 'player-token hover:scale-110 transition-transform cursor-pointer pointer-events-auto animate-drop'; 
     
     div.style.position = 'absolute';
@@ -6825,9 +6834,6 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
     div.style.left = slotEl.style.left;
     div.style.zIndex = '50'; 
     div.style.pointerEvents = 'auto';
-    
-    // AÑADIDO: Retraso dinámico. Cada ficha cae 0.05s después de la anterior.
-    // Si prefieres que caigan TODAS a la vez, cambia esto a '0s'.
     div.style.animationDelay = `${delayIndex * 0.05}s`;
 
     div.draggable = true;
@@ -6846,8 +6852,14 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
     div.ondragover = allowDrop;
     div.ondrop = drop;
 
+    // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE PARA LAS FOTOS ---
+    // Añadimos 'crossorigin="anonymous"' a la etiqueta img
     div.innerHTML = `
-        <img src="${player.foto}" draggable="false" style="pointer-events: none;" onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
+        <img src="${player.foto}" 
+             crossorigin="anonymous" 
+             draggable="false" 
+             style="pointer-events: none;" 
+             onerror="this.src='https://via.placeholder.com/40x40?text=${player.dorsal}'">
         <div class="player-token-name" style="pointer-events: none;">${player.apodo || player.apellido}</div>
     `;
     
@@ -10048,6 +10060,141 @@ function showToast(message, type = 'success') {
             toast.remove();
         });
     }, 3000);
+}
+async function exportLineupToImage() {
+    const boardElement = document.getElementById('tactical-board-container'); 
+    
+    if (!boardElement) {
+        console.error("No se encuentra el contenedor de la pizarra");
+        return;
+    }
+
+    if(typeof showToast === 'function') showToast("📸 Procesando imagen...", "info");
+
+    // 1. Ocultar botones
+    const uiElements = document.querySelectorAll('.no-capture, .player-remove-btn');
+    uiElements.forEach(el => el.style.display = 'none');
+
+    try {
+        // Espera mínima técnica para carga de imágenes
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const canvas = await html2canvas(boardElement, {
+            useCORS: true,       
+            allowTaint: true,    
+            scale: 2,            
+            backgroundColor: null, 
+            logging: false,
+            
+            // --- LA SOLUCIÓN "NUCLEAR" ---
+            onclone: (clonedDoc) => {
+                const tokens = clonedDoc.querySelectorAll('.player-token');
+                
+                tokens.forEach(t => {
+                    // 1. Eliminamos la clase de animación
+                    t.classList.remove('animate-drop'); 
+                    
+                    // 2. FORZAMOS EL ESTADO FINAL CON !important
+                    // Esto aplasta cualquier residuo del "rebote"
+                    t.style.setProperty('animation', 'none', 'important');
+                    t.style.setProperty('transition', 'none', 'important');
+                    
+                    // CRUCIAL: 'transform: none' elimina el efecto de escala/rebote
+                    // y deja al jugador plano en su sitio (definido por top/left).
+                    t.style.setProperty('transform', 'none', 'important'); 
+                    
+                    // Aseguramos visibilidad total
+                    t.style.setProperty('opacity', '1', 'important');
+                });
+            }
+        });
+
+        // 3. Descargar
+        const link = document.createElement('a');
+        link.download = `Alineacion_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        if(typeof showToast === 'function') showToast("✅ Imagen guardada", "success");
+
+    } catch (err) {
+        console.error("Error al exportar:", err);
+        if(typeof showToast === 'function') showToast("⚠️ Error al crear la imagen.", "error");
+    } finally {
+        // 4. Restaurar botones
+        uiElements.forEach(el => el.style.display = '');
+    }
+}
+async function exportLineupToImage() {
+    const boardElement = document.getElementById('tactical-board-container'); 
+    
+    if (!boardElement) {
+        console.error("No se encuentra el contenedor de la pizarra");
+        return;
+    }
+
+    if(typeof showToast === 'function') showToast("📸 Capturando...", "info");
+
+    // 1. Ocultar botones
+    const uiElements = document.querySelectorAll('.no-capture, .player-remove-btn');
+    uiElements.forEach(el => el.style.display = 'none');
+
+    // --- CONGELADO SEGURO (SAFE FREEZE) ---
+    const realTokens = boardElement.querySelectorAll('.player-token');
+    
+    realTokens.forEach(t => {
+        // 1. Quitamos la clase que provoca el movimiento de caída
+        t.classList.remove('animate-drop'); 
+        
+        // 2. Anulamos transiciones suaves (hover, efectos)
+        t.style.setProperty('transition', 'none', 'important');
+        
+        // 3. CAMBIO IMPORTANTE: En vez de quitar el transform (que rompía el centrado),
+        // forzamos a que la animación sea NULA.
+        t.style.setProperty('animation', 'none', 'important');
+        
+        // 4. Aseguramos que se vean
+        t.style.setProperty('opacity', '1', 'important');
+    });
+
+    try {
+        // Esperamos un instante para que el navegador aplique el "frenazo"
+        await new Promise(resolve => setTimeout(resolve, 150));
+
+        const canvas = await html2canvas(boardElement, {
+            useCORS: true,       
+            allowTaint: true,    
+            scale: 2,            
+            backgroundColor: null, 
+            logging: false
+        });
+
+        // Descargar
+        const link = document.createElement('a');
+        link.download = `Alineacion_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        if(typeof showToast === 'function') showToast("✅ Foto guardada", "success");
+
+    } catch (err) {
+        console.error("Error al exportar:", err);
+        if(typeof showToast === 'function') showToast("⚠️ Error al crear la imagen.", "error");
+    } finally {
+        // Restaurar botones
+        uiElements.forEach(el => el.style.display = '');
+
+        // Limpiar estilos forzados para que el usuario pueda seguir interactuando
+        realTokens.forEach(t => {
+            t.style.transition = '';
+            t.style.animation = '';
+            t.style.opacity = '';
+        });
+    }
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
