@@ -1796,52 +1796,67 @@ button:active, .btn:active {
                                 </div>
 
                                 <div id="mode-pitch-container" class="flex flex-col h-full">
-                                    
-                                    <div class="mb-2 flex items-center justify-center gap-2">
-                                        <label class="text-sm font-bold text-gray-700">Esquema:</label>
-                                        <select id="formation-select" class="border rounded px-2 py-1 bg-white text-gray-800 focus:ring-2 focus:ring-green-500 text-sm" onchange="updatePitchFormation()">
-                                             <option value="4-3-3">4-3-3</option>
-                                             <option value="4-4-2">4-4-2</option>
-                                             <option value="4-2-3-1" selected>4-2-3-1</option> 
-                                             <option value="3-5-2">3-5-2</option>
-                                        </select>
-                                    </div>
 
-                                        <div id="tactical-board-container" class="flex flex-col md:flex-row gap-4 h-[550px]">
+    <div class="mb-3 flex flex-col md:flex-row items-center justify-between gap-3 bg-white p-2 rounded-xl border border-gray-200 shadow-sm mx-1">
+        
+        <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-gray-500 uppercase tracking-wider">Esquema</label>
+            <select id="formation-select" class="border-gray-300 rounded text-sm font-bold text-slate-700 focus:ring-indigo-500 focus:border-indigo-500 py-1 cursor-pointer bg-gray-50" onchange="updatePitchFormation()">
+                 <option value="4-3-3">4-3-3</option>
+                 <option value="4-4-2">4-4-2</option>
+                 <option value="4-2-3-1" selected>4-2-3-1</option> 
+                 <option value="3-5-2">3-5-2</option>
+            </select>
+        </div>
+    
+        <div class="flex items-center gap-4 text-sm">
+            <div class="flex flex-col items-end leading-tight">
+                <span class="text-[10px] text-gray-400 font-bold uppercase">Once Inicial</span>
+                <span id="value-starters" class="font-black text-emerald-600">0 M€</span>
+            </div>
+            <div class="w-px h-6 bg-gray-200"></div> <div class="flex flex-col items-end leading-tight">
+                <span class="text-[10px] text-gray-400 font-bold uppercase">Total Plantilla</span>
+                <span id="value-total" class="font-black text-slate-700">0 M€</span>
+            </div>
+        </div>
+    
+    </div>
 
-                                        <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
-                                            <div class="pitch-container w-full h-full" id="tactical-pitch" style="margin: 0; border: none; border-radius: 0;">
-                                                <div class="pitch-line-mid"></div>
-                                                <div class="pitch-circle"></div>
-                                                <div class="pitch-box-left" style="left:0; border-left:none;"></div>
-                                                <div class="pitch-box-right" style="right:0; border-right:none;"></div>
-                                                
-                                                <div id="pitch-slots-layer"></div>
-                                                <div id="pitch-players-layer"></div>
-                                            </div>
-                                        </div>
+    <div id="tactical-board-container" class="flex flex-col md:flex-row gap-4 h-[550px]">
 
-                                        <div class="w-full md:w-72 flex flex-col gap-2 h-full">
-                                            
-                                            <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
-                                                <div class="bg-gray-100 p-2 border-b border-gray-200">
-                                                    <h5 class="text-xs font-bold text-gray-600 uppercase text-center">Plantilla Disponible</h5>
-                                                </div>
-                                                <div id="bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start">
-                                                    </div>
-                                            </div>
-                                            
-                                            <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
-                                                <div class="bg-blue-100 p-1 border-b border-blue-200">
-                                                    <h5 class="text-[10px] font-bold text-blue-600 uppercase text-center">Suplentes Convocados</h5>
-                                                </div>
-                                                <div id="subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start">
-                                                    </div>
-                                            </div>
+        <div class="flex-1 relative bg-gray-800 rounded-xl border-4 border-gray-800 overflow-hidden shadow-xl">
+            <div class="pitch-container w-full h-full" id="tactical-pitch" style="margin: 0; border: none; border-radius: 0;">
+                <div class="pitch-line-mid"></div>
+                <div class="pitch-circle"></div>
+                <div class="pitch-box-left" style="left:0; border-left:none;"></div>
+                <div class="pitch-box-right" style="right:0; border-right:none;"></div>
+                
+                <div id="pitch-slots-layer"></div>
+                <div id="pitch-players-layer"></div>
+            </div>
+        </div>
 
-                                        </div>
-                                    </div>
-                                </div>
+        <div class="w-full md:w-72 flex flex-col gap-2 h-full">
+            
+            <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
+                <div class="bg-gray-100 p-2 border-b border-gray-200">
+                    <h5 class="text-xs font-bold text-gray-600 uppercase text-center">Plantilla Disponible</h5>
+                </div>
+                <div id="bench-zone" class="bench-container flex-1 overflow-y-auto p-2 bg-gray-50 content-start">
+                    </div>
+            </div>
+            
+            <div class="h-32 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
+                <div class="bg-blue-100 p-1 border-b border-blue-200">
+                    <h5 class="text-[10px] font-bold text-blue-600 uppercase text-center">Suplentes Convocados</h5>
+                </div>
+                <div id="subs-zone" class="flex-1 p-2 overflow-y-auto flex flex-wrap gap-2 content-start">
+                    </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
                                 <div class="flex gap-3 pt-4 border-t mt-4">
                                     <button type="button" onclick="goToStep1()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Atrás</button>
@@ -6817,6 +6832,9 @@ function renderTacticalBoard(prefix = '') {
             }
         }
     });
+    if (typeof updateSquadValueDisplay === 'function') {
+        updateSquadValueDisplay();
+    }
 }
 
 // AÑADIDO: Nuevo parámetro 'delayIndex' al final (por defecto 0)
@@ -7019,21 +7037,40 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
 }
 
         // Función auxiliar para limpiar de suplentes si estaba ahí
-        function removeFromSubs(playerId) {
-            const idx = currentSubstitutes.indexOf(playerId);
-            if (idx > -1) currentSubstitutes.splice(idx, 1);
+function removeFromSubs(playerId) {
+    const idx = currentSubstitutes.indexOf(playerId);
+    
+    if (idx > -1) {
+        currentSubstitutes.splice(idx, 1);
+        
+        // --- NUEVO: Actualizar valor si se elimina a alguien ---
+        // (Solo si quieres que se actualice al borrar sin renderizar todo de nuevo)
+        if (typeof updateSquadValueDisplay === 'function') {
+            setTimeout(updateSquadValueDisplay, 50);
         }
-
+    }
+}
         // Soltar en SUPLENTES
-        function dropToSubs(ev) {
-            ev.preventDefault();
-            const playerId = ev.dataTransfer.getData("playerId");
-            
-            removePlayerFromAllZones(playerId);
-            currentSubstitutes.push(playerId); // Añadir a lista de suplentes
-            
-            renderAll();
-        }
+            function dropToSubs(ev) {
+    ev.preventDefault();
+    const playerId = ev.dataTransfer.getData("playerId");
+    
+    // 1. Limpiamos al jugador de donde viniera
+    removePlayerFromAllZones(playerId);
+    
+    // 2. Lo metemos en el array de suplentes
+    currentSubstitutes.push(playerId); 
+    
+    // 3. Pintamos todo de nuevo
+    renderAll();
+
+    // --- NUEVO: Recalcular dinero DESPUÉS de pintar ---
+    // El setTimeout(..., 50) asegura que el HTML ya se ha actualizado
+    // antes de contar cuánto valen los suplentes.
+    if (typeof updateSquadValueDisplay === 'function') {
+        setTimeout(updateSquadValueDisplay, 50);
+    }
+}
 
         // Soltar en DISPONIBLES (Quitar de convocatoria)
         function dropToBench(ev) {
@@ -7044,6 +7081,9 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
             // Al no estar en pitch ni subs, renderBench lo pondrá en disponibles automáticamente
             
             renderAll();
+            if (typeof updateSquadValueDisplay === 'function') {
+    setTimeout(updateSquadValueDisplay, 50);
+}
         }
 
         function renderAll() {
@@ -10195,6 +10235,105 @@ async function exportLineupToImage() {
             t.style.opacity = '';
         });
     }
+}
+function calculateSquadValue() {
+    let startingValue = 0;
+    let benchValue = 0;
+
+    // 1. Obtenemos todos los jugadores disponibles
+    // Si usas 'getActivePlayers()' úsalo, si no, usa 'getPlayers()'
+    const allPlayers = typeof getActivePlayers === 'function' ? getActivePlayers() : getPlayers();
+
+    // 2. Identificamos quiénes están en el campo ahora mismo
+    // currentPitchPlayers es el objeto { "slot-0": "id_jugador", ... }
+    const starterIds = Object.values(currentPitchPlayers);
+
+    allPlayers.forEach(p => {
+        // Convertimos el texto "18" o "18.5" a número real. Si no tiene, es 0.
+        const val = parseFloat(p.valorMercado || 0);
+        
+        // Si el ID del jugador está en la lista de titulares...
+        if (starterIds.includes(p.id)) {
+            startingValue += val;
+        } else {
+            // Si no está en el campo, asumimos que es suplente/no convocado
+            benchValue += val;
+        }
+    });
+
+    // Función pequeña para formatear bonito (ej: 150,5 M€)
+    const formatMoney = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' M€';
+
+    // 3. Crear el mensaje
+    const message = `
+💰 INFORME FINANCIERO
+
+🔷 Once Inicial:  ${formatMoney(startingValue)}
+🔸 Banquillo:     ${formatMoney(benchValue)}
+━━━━━━━━━━━━━━━━━━
+🏆 VALOR TOTAL:   ${formatMoney(startingValue + benchValue)}
+    `;
+
+    // 4. Mostrar alerta
+    alert(message);
+}
+function updateSquadValueDisplay() {
+    // 1. Verificar HTML
+    const startersLabel = document.getElementById('value-starters');
+    const totalLabel = document.getElementById('value-total');
+    
+    if (!startersLabel || !totalLabel) return;
+
+    // 2. Obtener listas de IDs (Quién está dónde)
+    
+    // A) Titulares: IDs en el objeto de la pizarra
+    const starterIds = Object.values(currentPitchPlayers || {});
+
+    // B) Suplentes: Miramos qué fichas hay en la zona 'subs-zone'
+    // Buscamos los elementos que tengan el atributo data-player-id dentro del div de suplentes
+    const subElements = document.querySelectorAll('#subs-zone [data-player-id]');
+    const subIds = Array.from(subElements).map(el => el.getAttribute('data-player-id'));
+
+    // 3. Calcular Valores
+    let startingValue = 0;
+    let benchValue = 0;
+
+    const allPlayers = getPlayers();
+
+    allPlayers.forEach(p => {
+        // Convertir valor a número (ej: "18,5" -> 18.5)
+        let valString = String(p.valorMercado || "0").replace(',', '.');
+        let val = parseFloat(valString);
+        if (isNaN(val)) val = 0;
+
+        const pId = String(p.id);
+
+        // Si es Titular
+        if (starterIds.some(id => String(id) === pId)) {
+            startingValue += val;
+        }
+        // Si es Suplente (está en el banquillo de convocados)
+        else if (subIds.some(id => String(id) === pId)) {
+            benchValue += val;
+        }
+    });
+
+    // Total Convocatoria = Titulares + Suplentes
+    const totalSquadValue = startingValue + benchValue;
+
+    // 4. Escribir en pantalla
+    const format = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' M€';
+
+    startersLabel.innerText = format(startingValue);
+    totalLabel.innerText = format(totalSquadValue);
+    
+    // Cambiamos el texto de la etiqueta para que sea más preciso
+    // Opcional: Si quieres cambiar el texto HTML por código:
+    // totalLabel.previousElementSibling.innerText = "CONVOCATORIA";
+    
+    // Estilos dinámicos
+    startersLabel.className = startingValue > 0 ? "font-black text-emerald-600" : "font-black text-gray-400";
+    totalLabel.className = totalSquadValue > 0 ? "font-black text-slate-700" : "font-black text-gray-400";
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
