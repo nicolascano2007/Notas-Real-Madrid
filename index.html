@@ -1196,6 +1196,25 @@ button:active, .btn:active {
     opacity: 1 !important; /* CLAVE PARA QUE NO DESAPAREZCA */
     z-index: 20;
 }
+/* Brazalete de Capitán */
+.captain-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    background-color: #fbbf24; /* Amarillo */
+    color: #000;
+    border: 2px solid white;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 60;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -1809,16 +1828,24 @@ button:active, .btn:active {
             </select>
         </div>
     
-        <div class="flex items-center gap-4 text-sm">
-            <div class="flex flex-col items-end leading-tight">
-                <span class="text-[10px] text-gray-400 font-bold uppercase">Once Inicial</span>
-                <span id="value-starters" class="font-black text-emerald-600">0 M€</span>
-            </div>
-            <div class="w-px h-6 bg-gray-200"></div> <div class="flex flex-col items-end leading-tight">
-                <span class="text-[10px] text-gray-400 font-bold uppercase">Total Plantilla</span>
-                <span id="value-total" class="font-black text-slate-700">0 M€</span>
-            </div>
-        </div>
+<div class="flex items-center gap-3 text-sm">
+    
+    <div class="flex flex-col items-end leading-tight">
+        <span class="text-[10px] text-gray-400 font-bold uppercase">Once Inicial</span>
+        <span id="value-starters" class="font-black text-emerald-600">0 M€</span>
+    </div>
+
+    <div class="w-px h-6 bg-gray-200"></div> <div class="flex flex-col items-end leading-tight">
+        <span class="text-[10px] text-gray-400 font-bold uppercase">Convocatoria</span>
+        <span id="value-total" class="font-black text-slate-700">0 M€</span>
+    </div>
+
+    <div class="w-px h-6 bg-gray-200"></div> <div class="flex flex-col items-end leading-tight">
+        <span class="text-[10px] text-gray-400 font-bold uppercase">Edad Media (XI)</span>
+        <span id="value-age" class="font-black text-blue-600">0.0 años</span>
+    </div>
+
+</div>
     
     </div>
 
@@ -2308,6 +2335,32 @@ button:active, .btn:active {
                             </table>
                         </div>
                     </div>
+                    <div class="mt-6 mb-8">
+    <h3 class="text-lg font-bold text-gray-700 mb-3 border-l-4 border-indigo-500 pl-3">
+        🧩 Rendimiento por Esquema
+    </h3>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Esquema</th>
+                        <th class="px-4 py-3 text-center">PJ</th>
+                        <th class="px-4 py-3 text-center text-emerald-600">V</th>
+                        <th class="px-4 py-3 text-center text-amber-600">E</th>
+                        <th class="px-4 py-3 text-center text-red-600">D</th>
+                        <th class="px-4 py-3 text-center">Efectividad</th>
+                    </tr>
+                </thead>
+                <tbody id="formation-stats-body" class="divide-y divide-gray-100">
+                    </tbody>
+            </table>
+        </div>
+        <div id="formation-no-data" class="hidden p-8 text-center text-gray-400 text-sm">
+            No hay datos suficientes para generar estadísticas tácticas.
+        </div>
+    </div>
+</div>
                 </div>
 
                 <!-- SUB-SECTION: H2H -->
@@ -3517,6 +3570,7 @@ function renderTopPerformances() {
     if(typeof renderScatterChart === 'function') renderScatterChart();
     if(typeof renderRegularityAnalysis === 'function') renderRegularityAnalysis();
     if(typeof renderTopPerformances === 'function') renderTopPerformances();
+    if(typeof renderFormationStats === 'function') renderFormationStats();
 }
 /* ==========================================================================
    ANÁLISIS DE REGULARIDAD (DESVIACIÓN TÍPICA)
@@ -5488,10 +5542,16 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     });
     
     const mvp = calculateAutoMVP(playerStats);
+
+    // --- NUEVO: CALCULAMOS EL VALOR Y EDAD ANTES DE GUARDAR ---
+    // Usamos la función auxiliar que creamos anteriormente
+    const squadStats = getSquadStats(); 
+    // -----------------------------------------------------------
     
     const matchData = {
         id: generateId(),
         calendarEventId: calendarEventId,
+        formation: document.getElementById('formation-select').value,
         competition: compName,
         roundId: roundId,
         round: roundInfo.nombre,
@@ -5502,6 +5562,12 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
         result: result,
         outcome: outcome,
         mvp: mvp,
+        
+        // --- NUEVO: GUARDAMOS LOS DATOS FINANCIEROS Y EDAD ---
+        valorPlantilla: squadStats.valorTotal,
+        edadMedia: squadStats.edadMedia,
+        // -----------------------------------------------------
+
         playerStats: playerStats
     };
     
@@ -5516,10 +5582,8 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     
     if (!triggered) {
         // --- AQUÍ ESTÁ LA MAGIA DE LA CELEBRACIÓN 🎉 ---
-        // 1. Comprobamos si alguien sacó un 10
         const hasPerfectRating = playerStats.some(p => p.rating === 10);
         
-        // 2. Si ganamos o hay un 10 -> CONFETI
         if (outcome === 'victoria' || hasPerfectRating) {
             triggerConfetti(); 
         }
@@ -6110,88 +6174,114 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             
             return '#6b7280';
         }
-        function renderMatches(matchesData = null) { // 1. Aceptamos un dato opcional
-             // 2. Si nos pasan datos (del buscador), usamos esos. Si no, cargamos todos.
-            let matches = matchesData || getData('matches');
-            const players = getPlayers();
-            const container = document.getElementById('matches-list');
-            const noMatches = document.getElementById('no-matches');
-            
-            const competitionFilter = document.getElementById('filter-competition').value;
-            const venueFilter = document.getElementById('filter-venue').value;
-            const resultFilter = document.getElementById('filter-result').value;
-            
-            if (competitionFilter) matches = matches.filter(m => m.competition === competitionFilter);
-            if (venueFilter) matches = matches.filter(m => m.venue === venueFilter);
-            if (resultFilter) matches = matches.filter(m => m.outcome === resultFilter);
-            
-            if (matches.length === 0) {
-                container.innerHTML = '';
-                noMatches.classList.remove('hidden');
-                return;
-            }
-            
-            noMatches.classList.add('hidden');
-            matches.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            container.innerHTML = matches.map(match => {
-                const mvpPlayer = players.find(p => p.id === match.mvp);
-                const totalGoals = match.playerStats.reduce((sum, ps) => sum + (ps.goals || 0), 0);
-                const outcomeClass = getResultClass(match.outcome);
-                const compColor = COMPETICIONES_ACTUALES[match.competition]?.color || 'bg-gray-200';
-                
-                // Cálculo de nota media
-                let totalRating = 0;
-                let ratedCount = 0;
-                match.playerStats.forEach(ps => {
-                    if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
-                        totalRating += parseFloat(ps.rating);
-                        ratedCount++;
-                    }
-                });
-                const teamAvg = ratedCount > 0 ? (totalRating / ratedCount).toFixed(2) : '-';
-                const ratingColor = getTeamRatingColor(teamAvg);
-
-                return `
-                    <div class="card bg-white rounded-xl shadow-sm p-4">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                            <div class="flex-1">
-                                <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <span class="text-gray-500 text-sm">${formatDate(match.date)}</span>
-                                    <span class="${compColor} px-2 py-0.5 rounded text-xs font-medium">${match.competition}</span>
-                                    <span class="text-xs text-gray-500">${match.venue}</span>
-                                    <span class="text-xs text-gray-500">${match.round}</span>
-                                    ${match.result ? `<span class="${outcomeClass} px-2 py-0.5 rounded text-sm font-semibold">${match.result}</span>` : ''}
-                                </div>
-                                <h3 class="text-lg font-bold text-gray-800">vs ${match.opponent}</h3>
-                                
-                                <div class="flex flex-wrap gap-3 text-sm text-gray-600 mt-2 items-center">
-                                    <span>⚽ ${totalGoals} goles</span>
-                                    
-                                    ${mvpPlayer ? `<span class="text-amber-600 border-l border-gray-300 pl-3">🏆 MVP: ${mvpPlayer.apodo || mvpPlayer.nombre}</span>` : ''}
-                                    
-                                    <span class="border-l border-gray-300 pl-3 font-bold" style="color: ${ratingColor}">
-                                        📊 Nota Equipo: ${teamAvg}
-                                    </span>
-                                </div>
-
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="viewMatchDetails('${match.id}')" class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                                    👁️ Ver
-                                </button>
-                                <button onclick="editMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100">
-                                    ✏️ Editar
-                                </button>
-                                <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
-                                    🗑️
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+function renderMatches(matchesData = null) {
+    let matches = matchesData || getData('matches');
+    const players = getPlayers();
+    const container = document.getElementById('matches-list');
+    const noMatches = document.getElementById('no-matches');
+    
+    const competitionFilter = document.getElementById('filter-competition').value;
+    const venueFilter = document.getElementById('filter-venue').value;
+    const resultFilter = document.getElementById('filter-result').value;
+    
+    if (competitionFilter) matches = matches.filter(m => m.competition === competitionFilter);
+    if (venueFilter) matches = matches.filter(m => m.venue === venueFilter);
+    if (resultFilter) matches = matches.filter(m => m.outcome === resultFilter);
+    
+    if (!matches || matches.length === 0) {
+        container.innerHTML = '';
+        if(noMatches) noMatches.classList.remove('hidden');
+        return;
+    }
+    
+    if(noMatches) noMatches.classList.add('hidden');
+    
+    // Ordenar por fecha descendente
+    matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    container.innerHTML = matches.map(match => {
+        const mvpPlayer = players.find(p => p.id === match.mvp);
+        const totalGoals = match.playerStats ? match.playerStats.reduce((sum, ps) => sum + (ps.goals || 0), 0) : 0;
+        const outcomeClass = getResultClass(match.outcome);
+        const compColor = COMPETICIONES_ACTUALES[match.competition]?.color || 'bg-gray-200';
+        
+        // Cálculo de nota media
+        let totalRating = 0;
+        let ratedCount = 0;
+        if (match.playerStats) {
+            match.playerStats.forEach(ps => {
+                if (ps.rating !== null && ps.rating !== "" && ps.rating !== undefined) {
+                    totalRating += parseFloat(ps.rating);
+                    ratedCount++;
+                }
+            });
         }
+        const teamAvg = ratedCount > 0 ? (totalRating / ratedCount).toFixed(2) : '-';
+        const ratingColor = getTeamRatingColor(teamAvg);
+
+        // --- VALORES NUEVOS (Con protección para partidos antiguos) ---
+        const squadValue = match.valorPlantilla || 0;
+        const squadAge = match.edadMedia || '-';
+
+        return `
+            <div class="card bg-white rounded-xl shadow-sm p-4 mb-3 border border-gray-100">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="text-gray-500 text-xs font-mono">${formatDate(match.date)}</span>
+                            <span class="${compColor} px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">${match.competition}</span>
+                            <span class="text-xs text-gray-400">📍 ${match.venue}</span>
+                            ${match.round ? `<span class="text-xs text-gray-400">• ${match.round}</span>` : ''}
+                            ${match.result ? `<span class="${outcomeClass} px-2 py-0.5 rounded text-xs font-bold ml-auto sm:ml-2">${match.result}</span>` : ''}
+                        </div>
+
+                        <h3 class="text-xl font-black text-gray-800 tracking-tight leading-none mb-3">
+                            <span class="text-gray-400 font-normal text-base">vs</span> ${match.opponent}
+                        </h3>
+                        
+                        <div class="flex flex-wrap gap-3 text-xs text-gray-600 items-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            
+                            <span class="font-bold flex items-center gap-1">
+                                ⚽ ${totalGoals}
+                            </span>
+                            
+                            <span class="border-l border-gray-300 pl-3 font-bold flex items-center gap-1" style="color: ${ratingColor}">
+                                📊 ${teamAvg}
+                            </span>
+
+                            <span class="border-l border-gray-300 pl-3 flex items-center gap-1 text-emerald-700" title="Valor Convocatoria">
+                                💰 <span class="font-bold">${squadValue} M€</span>
+                            </span>
+
+                            <span class="border-l border-gray-300 pl-3 flex items-center gap-1 text-blue-700" title="Edad Media XI Inicial">
+                                🎂 <span class="font-bold">${squadAge} años</span>
+                            </span>
+                            
+                            ${mvpPlayer ? `
+                                <span class="text-amber-600 border-l border-gray-300 pl-3 flex items-center gap-1 font-bold">
+                                    🏆 ${mvpPlayer.apodo || mvpPlayer.nombre}
+                                </span>` : ''}
+                        </div>
+
+                    </div>
+
+                    <div class="flex sm:flex-col gap-2 border-t sm:border-t-0 sm:border-l border-gray-100 pt-3 sm:pt-0 sm:pl-3 justify-end">
+                        <button onclick="viewMatchDetails('${match.id}')" class="flex-1 px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition text-center">
+                            👁️ VER
+                        </button>
+                        <button onclick="editMatch('${match.id}')" class="flex-1 px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-center">
+                            ✏️ EDIT
+                        </button>
+                        <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-center" title="Eliminar">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
         
         // --- FUNCIÓN CORREGIDA PARA VER DETALLES (SOLO LECTURA) ---
         function viewMatchDetails(matchId) {
@@ -6794,6 +6884,7 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             if (select) {
                 currentFormation = select.value;
                 renderTacticalBoard(prefix);
+                updateFormationStats();
             }
         }
 
@@ -6862,6 +6953,14 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
     
     div.ondragstart = drag;
     
+    // --- NUEVO: CLIC DERECHO PARA CAPITÁN © ---
+    div.oncontextmenu = (e) => {
+        e.preventDefault();  // Evita que salga el menú del navegador
+        e.stopPropagation(); // Evita conflictos con el fondo
+        toggleCaptain(player.id); // Llama a tu función de capitán
+    };
+
+    // CLIC IZQUIERDO (NORMAL) PARA CAMBIAR JUGADOR
     div.onclick = (e) => {
         e.stopPropagation();
         openPlayerSelector(slotId);
@@ -6870,8 +6969,7 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
     div.ondragover = allowDrop;
     div.ondrop = drop;
 
-    // --- AQUÍ ESTÁ EL CAMBIO IMPORTANTE PARA LAS FOTOS ---
-    // Añadimos 'crossorigin="anonymous"' a la etiqueta img
+    // FOTOS CON CROSSORIGIN
     div.innerHTML = `
         <img src="${player.foto}" 
              crossorigin="anonymous" 
@@ -6881,6 +6979,15 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
         <div class="player-token-name" style="pointer-events: none;">${player.apodo || player.apellido}</div>
     `;
     
+    // --- LÓGICA DEL BRAZALETE ---
+    // Se añade DESPUÉS del innerHTML para que no se borre
+    if (typeof currentCaptainId !== 'undefined' && currentCaptainId === player.id) {
+        const badge = document.createElement('div');
+        badge.className = 'captain-badge'; // Asegúrate de tener el CSS que te pasé
+        badge.innerText = 'C';
+        div.appendChild(badge);
+    }
+
     container.appendChild(div);
 }
         function renderBench(prefix = '') {
@@ -7095,6 +7202,7 @@ function removeFromSubs(playerId) {
             
             renderTacticalBoard(prefix);
             renderBench(prefix);
+            updateFormationStats();
         }
 
         // ==========================================
@@ -10278,62 +10386,285 @@ function calculateSquadValue() {
     alert(message);
 }
 function updateSquadValueDisplay() {
-    // 1. Verificar HTML
+    // 1. Verificar HTML (Ahora buscamos también el de la edad)
     const startersLabel = document.getElementById('value-starters');
     const totalLabel = document.getElementById('value-total');
+    const ageLabel = document.getElementById('value-age');
     
     if (!startersLabel || !totalLabel) return;
 
-    // 2. Obtener listas de IDs (Quién está dónde)
-    
-    // A) Titulares: IDs en el objeto de la pizarra
+    // 2. Listas de IDs
     const starterIds = Object.values(currentPitchPlayers || {});
-
-    // B) Suplentes: Miramos qué fichas hay en la zona 'subs-zone'
-    // Buscamos los elementos que tengan el atributo data-player-id dentro del div de suplentes
+    
+    // Suplentes (zona subs-zone)
     const subElements = document.querySelectorAll('#subs-zone [data-player-id]');
     const subIds = Array.from(subElements).map(el => el.getAttribute('data-player-id'));
 
-    // 3. Calcular Valores
+    // 3. Variables para cálculo
     let startingValue = 0;
     let benchValue = 0;
+    
+    // Variables para Edad
+    let totalAgeXI = 0;
+    let countXI = 0;
 
     const allPlayers = getPlayers();
 
     allPlayers.forEach(p => {
-        // Convertir valor a número (ej: "18,5" -> 18.5)
+        // --- CALCULO DINERO ---
         let valString = String(p.valorMercado || "0").replace(',', '.');
         let val = parseFloat(valString);
         if (isNaN(val)) val = 0;
-
+        
         const pId = String(p.id);
 
         // Si es Titular
         if (starterIds.some(id => String(id) === pId)) {
             startingValue += val;
+            
+            // --- CALCULO EDAD (Solo titulares) ---
+            if (p.fechaNacimiento) {
+                const age = calculateAgeFromDate(p.fechaNacimiento);
+                totalAgeXI += age;
+                countXI++;
+            }
         }
-        // Si es Suplente (está en el banquillo de convocados)
+        // Si es Suplente
         else if (subIds.some(id => String(id) === pId)) {
             benchValue += val;
         }
     });
 
-    // Total Convocatoria = Titulares + Suplentes
-    const totalSquadValue = startingValue + benchValue;
+    // 4. Escribir resultados
+    const formatMoney = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' M€';
 
-    // 4. Escribir en pantalla
-    const format = (v) => v.toLocaleString('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' M€';
+    // Dinero
+    startersLabel.innerText = formatMoney(startingValue);
+    totalLabel.innerText = formatMoney(startingValue + benchValue);
+    
+    // Edad (Media aritmética)
+    if (ageLabel) {
+        if (countXI > 0) {
+            const avgAge = (totalAgeXI / countXI).toFixed(1); // Un decimal (ej: 26.5)
+            ageLabel.innerText = avgAge + " años";
+        } else {
+            ageLabel.innerText = "-";
+        }
+    }
 
-    startersLabel.innerText = format(startingValue);
-    totalLabel.innerText = format(totalSquadValue);
-    
-    // Cambiamos el texto de la etiqueta para que sea más preciso
-    // Opcional: Si quieres cambiar el texto HTML por código:
-    // totalLabel.previousElementSibling.innerText = "CONVOCATORIA";
-    
-    // Estilos dinámicos
+    // Colores dinámicos
     startersLabel.className = startingValue > 0 ? "font-black text-emerald-600" : "font-black text-gray-400";
-    totalLabel.className = totalSquadValue > 0 ? "font-black text-slate-700" : "font-black text-gray-400";
+}
+
+// Función auxiliar para calcular edad exacta
+function calculateAgeFromDate(dateString) {
+    if (!dateString) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+let currentCaptainId = null;
+
+function toggleCaptain(playerId) {
+    // 1. Si ya es capitán, se lo quitamos
+    if (currentCaptainId === playerId) {
+        currentCaptainId = null;
+    } else {
+        // 2. Si no, lo nombramos nuevo capitán
+        currentCaptainId = playerId;
+    }
+    // 3. Repintamos para actualizar iconos
+    renderAll(); 
+}
+function getSquadStats() {
+    // 1. Obtener IDs
+    const starterIds = Object.values(currentPitchPlayers || {});
+    // Buscamos suplentes en la variable global (asegúrate de que currentSubstitutes esté actualizada)
+    // Si no usas la variable global, usamos el DOM como plan B:
+    let subIds = currentSubstitutes || [];
+    if (subIds.length === 0) {
+         const subElements = document.querySelectorAll('#subs-zone [data-player-id]');
+         subIds = Array.from(subElements).map(el => el.getAttribute('data-player-id'));
+    }
+
+    let startingValue = 0;
+    let benchValue = 0;
+    let totalAgeXI = 0;
+    let countXI = 0;
+
+    const allPlayers = getPlayers();
+
+    allPlayers.forEach(p => {
+        let val = parseFloat(String(p.valorMercado || "0").replace(',', '.')) || 0;
+        const pId = String(p.id);
+
+        // Titulares
+        if (starterIds.some(id => String(id) === pId)) {
+            startingValue += val;
+            if (p.fechaNacimiento) {
+                totalAgeXI += calculateAgeFromDate(p.fechaNacimiento);
+                countXI++;
+            }
+        }
+        // Suplentes
+        else if (subIds.some(id => String(id) === pId)) {
+            benchValue += val;
+        }
+    });
+
+    const avgAge = countXI > 0 ? (totalAgeXI / countXI).toFixed(1) : "0.0";
+    const totalValue = (startingValue + benchValue).toFixed(1);
+
+    // Devolvemos un objeto con los dos datos
+    return {
+        valorTotal: totalValue, // Ej: "150.5"
+        edadMedia: avgAge       // Ej: "24.5"
+    };
+}
+function updateFormationStats() {
+    const selector = document.getElementById('formation-select');
+    const display = document.getElementById('formation-stats-display');
+    
+    if (!selector || !display) return;
+
+    const currentFormation = selector.value; // ej: "4-2-3-1"
+    const matches = getData('matches') || [];
+
+    // 1. Filtrar partidos jugados con ESTA formación
+    // (Nota: Los partidos antiguos que no tengan 'formation' guardada no contarán)
+    const formationMatches = matches.filter(m => m.formation === currentFormation);
+    const totalPlayed = formationMatches.length;
+
+    if (totalPlayed === 0) {
+        // Si no hay datos, ocultamos o mostramos gris
+        display.innerHTML = `<span class="w-2 h-2 rounded-full bg-gray-300"></span><span class="text-gray-400">Sin datos registrados</span>`;
+        display.classList.remove('hidden');
+        return;
+    }
+
+    // 2. Calcular Victorias
+    const wins = formationMatches.filter(m => m.outcome === 'victoria').length;
+    const winRate = Math.round((wins / totalPlayed) * 100);
+
+    // 3. Decidir color según porcentaje
+    let colorClass = 'bg-gray-400'; // Por defecto
+    let textClass = 'text-gray-500';
+
+    if (winRate >= 60) {
+        colorClass = 'bg-emerald-500'; // Verde (Bueno)
+        textClass = 'text-emerald-700 font-bold';
+    } else if (winRate >= 35) {
+        colorClass = 'bg-amber-500';   // Naranja (Regular)
+        textClass = 'text-amber-700 font-bold';
+    } else {
+        colorClass = 'bg-red-500';     // Rojo (Malo)
+        textClass = 'text-red-700 font-bold';
+    }
+
+    // 4. Mostrar Resultado
+    display.classList.remove('hidden');
+    display.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${colorClass}"></span>
+        <span class="${textClass}">${winRate}% Victorias</span>
+        <span class="text-gray-400 ml-1">(${wins}/${totalPlayed}P)</span>
+    `;
+}
+function renderFormationStats() {
+    const tbody = document.getElementById('formation-stats-body');
+    const noData = document.getElementById('formation-no-data');
+    
+    if (!tbody) return;
+
+    // 1. Obtener partidos
+    const matches = getData('matches') || [];
+    
+    // Si no hay partidos, mostrar aviso
+    if (matches.length === 0) {
+        tbody.innerHTML = '';
+        if(noData) noData.classList.remove('hidden');
+        return;
+    }
+    if(noData) noData.classList.add('hidden');
+
+    // 2. Agrupar datos
+    const stats = {};
+
+    matches.forEach(m => {
+        // Si es un partido antiguo sin formación guardada, lo llamamos 'Desconocido'
+        const form = m.formation || 'Desconocido';
+        
+        if (!stats[form]) {
+            stats[form] = { played: 0, win: 0, draw: 0, loss: 0 };
+        }
+
+        stats[form].played++;
+        
+        if (m.outcome === 'victoria') stats[form].win++;
+        else if (m.outcome === 'empate') stats[form].draw++;
+        else stats[form].loss++; // derrota
+    });
+
+    // 3. Convertir a array y ordenar por % de victoria (Win Rate)
+    const statsArray = Object.keys(stats).map(key => {
+        const s = stats[key];
+        const winRate = s.played > 0 ? ((s.win / s.played) * 100) : 0;
+        return {
+            name: key,
+            ...s,
+            winRate: winRate
+        };
+    }).sort((a, b) => b.winRate - a.winRate); // Ordenar: Mejor % primero
+
+    // 4. Generar HTML
+    tbody.innerHTML = statsArray.map(item => {
+        // Colores para la barra de porcentaje
+        let colorClass = 'bg-gray-400';
+        let textClass = 'text-gray-600';
+
+        if (item.winRate >= 60) {
+            colorClass = 'bg-emerald-500';
+            textClass = 'text-emerald-700 font-bold';
+        } else if (item.winRate >= 35) {
+            colorClass = 'bg-amber-500';
+            textClass = 'text-amber-700 font-bold';
+        } else {
+            colorClass = 'bg-red-500';
+            textClass = 'text-red-700 font-bold';
+        }
+
+        return `
+            <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-4 py-3 font-bold text-gray-800">
+                    ${item.name}
+                </td>
+                <td class="px-4 py-3 text-center font-mono text-gray-600">
+                    ${item.played}
+                </td>
+                <td class="px-4 py-3 text-center font-mono text-emerald-600 bg-emerald-50 rounded-lg">
+                    ${item.win}
+                </td>
+                <td class="px-4 py-3 text-center font-mono text-amber-600">
+                    ${item.draw}
+                </td>
+                <td class="px-4 py-3 text-center font-mono text-red-600">
+                    ${item.loss}
+                </td>
+                <td class="px-4 py-3 text-center">
+                    <div class="flex items-center gap-2 justify-end">
+                        <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full ${colorClass}" style="width: ${item.winRate}%"></div>
+                        </div>
+                        <span class="text-xs w-10 text-right ${textClass}">${Math.round(item.winRate)}%</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
