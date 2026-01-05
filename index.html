@@ -2452,7 +2452,7 @@ button:active, .btn:active {
     </div>
 
     <!-- PLAYER STATUS MODAL -->
-    <div id="player-status-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
+   <div id="player-status-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md">
             <div class="p-6 border-b bg-slate-800 text-white rounded-t-2xl">
                 <div class="flex justify-between items-center">
@@ -2467,6 +2467,7 @@ button:active, .btn:active {
             <div id="player-status-content" class="p-6"></div>
         </div>
     </div>
+
     <div id="extra-round-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl w-full max-w-md">
             <div class="p-6 border-b bg-slate-800 text-white rounded-t-2xl">
@@ -2492,14 +2493,15 @@ button:active, .btn:active {
             </div>
         </div>
     </div>
-        <div id="player-selector-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center p-4 backdrop-blur-sm" style="z-index: 9999 !important;">
+
+    <div id="player-selector-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center p-4 backdrop-blur-sm" style="z-index: 9999 !important;">
         <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh] relative z-[10000]">
             <div class="p-4 border-b bg-slate-900 text-white flex justify-between items-center">
                 <h3 class="font-bold">Seleccionar Jugador</h3>
                 <button onclick="closePlayerSelector()" class="text-gray-400 hover:text-white text-xl font-bold">✕</button>
             </div>
             
-           <div class="p-3 bg-gray-50 border-b">
+            <div class="p-3 bg-gray-50 border-b">
                 <input type="text" id="player-selector-search" 
                        onkeyup="filterSelectorList()" 
                        onkeydown="handleSelectorKey(event)"
@@ -2517,38 +2519,70 @@ button:active, .btn:active {
             </div>
         </div>
     </div>
+
     <div id="trophy-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
-    <div class="bg-white w-full max-w-5xl h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col m-4">
-        <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-white">
-            <div class="flex items-center gap-3">
-                <span class="text-3xl">🏆</span>
-                <div>
-                    <h2 class="text-xl font-bold text-gray-800">Sala de Trofeos</h2>
-                    <p class="text-xs text-gray-500 font-medium">Logros desbloqueados: <span id="trophy-count" class="text-amber-600 font-bold">0/0</span></p>
+        <div class="bg-white w-full max-w-5xl h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col m-4">
+            <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-amber-50 to-white">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🏆</span>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Sala de Trofeos</h2>
+                        <p class="text-xs text-gray-500 font-medium">Logros desbloqueados: <span id="trophy-count" class="text-amber-600 font-bold">0/0</span></p>
+                    </div>
                 </div>
+                <button onclick="closeTrophyRoom()" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-            <button onclick="closeTrophyRoom()" class="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
+            
+            <div class="flex-1 overflow-y-auto bg-slate-50 p-4">
+                <div id="trophy-container" class="trophy-grid"></div>
+            </div>
         </div>
-        
-        <div class="flex-1 overflow-y-auto bg-slate-50 p-4">
-            <div id="trophy-container" class="trophy-grid">
-                </div>
+    </div>
+
+        <div id="minute-modal" class="modal fixed inset-0 z-[99999] hidden flex items-center justify-center" style="z-index: 99999 !important;">
+    <div class="absolute inset-0 bg-black bg-opacity-60 transition-opacity backdrop-blur-sm" onclick="closeMinuteModal()"></div>
+    
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm m-4 relative z-[100000] overflow-hidden border border-gray-200 h-auto">
+        <div class="bg-slate-800 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
+            <h3 class="font-bold text-white flex items-center gap-2">
+                <span>⏱️</span> 
+                <span id="minute-modal-title">Registrar Minutos</span>
+            </h3>
+            <button onclick="closeMinuteModal()" class="text-gray-400 hover:text-white font-bold text-xl">&times;</button>
+        </div>
+        <div class="p-5">
+            <p class="text-xs text-gray-500 mb-4 font-medium">
+                Introduce los minutos separados por comas.
+            </p>
+            <input type="text" id="minute-input-field" 
+                   class="w-full border-2 border-gray-200 rounded-lg px-3 py-3 text-xl font-mono text-center font-bold text-slate-700 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all placeholder-gray-300" 
+                   placeholder="Ej: 15, 67" autocomplete="off">
+            <div class="flex gap-2 mt-4 justify-center">
+                <button onclick="addMinuteToInput('45')" class="px-3 py-1.5 bg-gray-100 rounded hover:bg-gray-200 text-xs font-bold text-gray-600">45'</button>
+                <button onclick="addMinuteToInput('90')" class="px-3 py-1.5 bg-gray-100 rounded hover:bg-gray-200 text-xs font-bold text-gray-600">90'</button>
+                <button onclick="addMinuteToInput('120')" class="px-3 py-1.5 bg-gray-100 rounded hover:bg-gray-200 text-xs font-bold text-gray-600">120'</button>
+                <button onclick="addMinuteToInput('+')" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 text-xs font-bold">+</button>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 border-t border-gray-100 flex justify-end gap-2">
+            <button onclick="closeMinuteModal()" class="px-4 py-2 text-sm text-gray-600 font-bold hover:bg-gray-200 rounded">Cancelar</button>
+            <button onclick="saveMinutesFromModal()" class="px-4 py-2 text-sm bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-lg transform active:scale-95 transition-all">✅ Guardar</button>
         </div>
     </div>
 </div>
-    </div>
-    </div>
 
-    <script>
+</div> </div> 
+
+<script>
 
 // Variables de Estado de la Aplicación
 let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
 
 
 
-// --- RESTO DE FUNCIONES (switchAppMode, getData, saveData...) ---
+//RESTO DE FUNCIONES (switchAppMode, getData, saveData...) 
 // (Mantenlas igual que en el paso anterior, ya funcionan con este nuevo CLOUD_API)
         // ==========================================
         // DATA & CONSTANTS
@@ -5036,6 +5070,8 @@ function renderPlayerHistoryTab(player, matches) {
 
             document.getElementById('wizard-step-1').classList.add('hidden');
             document.getElementById('wizard-step-2').classList.remove('hidden');
+            document.getElementById('wizard-step-3').classList.add('hidden');
+
             currentPitchPlayers = {}; // Reseteamos alineación
             currentSubstitutes = [];
             editingMatchPlayersPool = null;
@@ -5307,102 +5343,130 @@ function renderPlayerHistoryTab(player, matches) {
             }
         }
 
-        function renderPlayerStatsForm(containerId, currentCompetition) {
+function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlayers = null) {
     const container = document.getElementById(containerId);
-    let players = getActivePlayers();
     
-    // SUSPENSION LOGIC
-    const matches = getData('matches')
-        .filter(m => m.competition === currentCompetition)
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    const lastMatch = matches[0];
+    // Si nos pasan jugadores ya preparados (desde el Paso 3), los usamos.
+    // Si no (edición posterior), cargamos todos.
+    let players = preSelectedPlayers || getActivePlayers().map(p => ({...p, rol: 'Jugador', specificPos: p.posicion, isStarter: false}));
+
+    // Lógica de Sanciones (Visual)
+    const matches = getData('matches').filter(m => m.competition === currentCompetition);
+    const lastMatch = matches.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
     const suspendedPlayers = [];
-    
     if (lastMatch) {
-        lastMatch.playerStats.forEach(ps => {
-            if (ps.redCards > 0) suspendedPlayers.push(ps.playerId);
-        });
+        lastMatch.playerStats.forEach(ps => { if (ps.redCards > 0) suspendedPlayers.push(ps.playerId); });
     }
 
-    // ORDER LOGIC
-    if (currentTeam === 'masculino' || currentTeam === 'femenino') {
-        const orderList = currentTeam === 'masculino' ? CUSTOM_ORDER_MASCULINO : CUSTOM_ORDER_FEMENINO;
-        players.sort((a, b) => {
-            const idxA = orderList.indexOf(a.id);
-            const idxB = orderList.indexOf(b.id);
-            if (idxA === -1 && idxB === -1) return 0;
-            if (idxA === -1) return 1;
-            if (idxB === -1) return -1;
-            return idxA - idxB;
-        });
-    } else {
-        players.sort((a, b) => {
-            if (a.posicion === 'entrenador') return -1;
-            if (b.posicion === 'entrenador') return 1;
-            return a.dorsal - b.dorsal;
-        });
-    }
+    // ORDENAR: Titulares primero, luego suplentes, luego entrenador
+    // (Solo si no vienen ya ordenados, pero por seguridad lo hacemos)
+    players.sort((a, b) => {
+        if (a.rol === 'Entrenador') return 1; 
+        if (b.rol === 'Entrenador') return -1;
+        if (a.isStarter && !b.isStarter) return -1;
+        if (!a.isStarter && b.isStarter) return 1;
+        return 0;
+    });
 
-    container.innerHTML = players.map(player => {
-        const isCoach = player.posicion === 'entrenador';
-        const isSuspended = suspendedPlayers.includes(player.id) && !isCoach;
+    container.innerHTML = players.map(p => {
+        const isCoach = p.rol === 'Entrenador';
+        const isSuspended = suspendedPlayers.includes(p.id) && !isCoach;
         
+        // IDs únicos para los modales
+        const goalId = `goals-${p.id}`;
+        const assistId = `assists-${p.id}`;
+        const yellowId = `yellow-${p.id}`;
+        const redId = `red-${p.id}`;
+
+        // Determinar Badge de Posición (El diseño verde de la foto)
+        let badgeHtml = '';
+        if (isCoach) {
+            badgeHtml = '<span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-1 rounded uppercase">STAFF</span>';
+        } else if (p.isStarter) {
+            badgeHtml = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200 uppercase">${p.specificPos || 'TITULAR'}</span>`;
+        } else {
+            badgeHtml = '<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100 uppercase">SUPLENTE</span>';
+        }
+
+        // Estilos para los botones del modal (Haciendo que parezcan inputs limpios)
+        const btnClass = "w-full h-9 bg-white border border-gray-300 rounded text-sm text-gray-700 font-bold hover:border-indigo-400 hover:text-indigo-600 transition-colors flex items-center justify-center";
+
         return `
-        <div class="bg-gray-50 rounded-lg p-3 ${isSuspended ? 'player-suspended' : ''}" data-player-id="${player.id}">
-            <div class="flex items-center gap-3 mb-3">
-                <img src="${player.foto}" class="player-photo-xs" onerror="this.src='https://via.placeholder.com/32x32?text=${player.dorsal}'">
+        <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4 mb-2 ${isSuspended ? 'opacity-70 bg-gray-50' : ''}" 
+             data-player-id="${p.id}" 
+             data-rol="${p.rol}"
+             data-specific-pos="${p.specificPos}"> 
+             
+            <div class="flex items-center gap-3 w-full md:w-1/3 min-w-[200px]">
+                <div class="relative">
+                    <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/40x40'">
+                    ${isSuspended ? '<div class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] px-1 rounded-full font-bold">EXP</div>' : ''}
+                </div>
                 <div class="flex-1">
-                <span class="font-medium text-gray-800">${player.apodo || player.nombre + ' ' + player.apellido}</span>
-                    <span class="text-gray-500 text-sm ml-1">${player.dorsal === "DT" ? "DT" : "#" + player.dorsal}</span>
-                    ${isSuspended ? '<span class="text-xs text-red-600 font-bold ml-2">⛔ SUSPENDIDO (Roja directa)</span>' : ''}
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-sm truncate pr-2">${p.apodo || p.apellido}</span>
+                        ${badgeHtml}
+                    </div>
+                    <span class="text-xs text-gray-400">#${p.dorsal} - ${p.posicion}</span>
                 </div>
+            </div>
+
+            <div class="flex-1 grid grid-cols-5 gap-3 w-full" style="${isCoach ? 'display:none' : ''}">
                 
-                ${!isCoach ? `
-                <label class="flex items-center gap-1 text-sm cursor-pointer">
-                <input type="checkbox" class="chk-starter w-4 h-4 text-green-600" onchange="handleRoleCheck(this, 'starter')" ${isSuspended ? 'disabled' : ''}>
-                <span>Titular</span>
-                </label>
-                <label class="flex items-center gap-1 text-sm cursor-pointer">
-                <input type="checkbox" class="chk-sub w-4 h-4 text-blue-600" onchange="handleRoleCheck(this, 'sub')" ${isSuspended ? 'disabled' : ''}>
-                <span>Suplente</span>
-                </label>
-                ` : `
-                <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded">Staff Técnico</span>
-                `}
+                <div class="flex flex-col">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Nota</label>
+                    <input type="number" class="stat-rating w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" min="0" max="10" step="0.25" placeholder="-">
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Gol</label>
+                    <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="">
+                    <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnClass}">
+                        0
+                    </button>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Asis</label>
+                    <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="">
+                    <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnClass}">
+                        0
+                    </button>
+                </div>
+
+                <div class="flex flex-col">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Min</label>
+                    <input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-mono text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none" min="0" max="120" value="${p.isStarter ? 90 : 0}">
+                </div>
+
+                <div class="flex flex-col items-center">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Tarj</label>
+                    <div class="flex gap-1 w-full">
+                        <div class="flex-1">
+                            <input type="hidden" class="stat-yellow-minutes" id="${yellowId}" value="">
+                            <button type="button" id="btn-${yellowId}" onclick="openMinuteModal('${yellowId}', 'Amarilla 🟨')" 
+                                    class="w-full h-9 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700 font-bold hover:bg-yellow-100 flex items-center justify-center" title="Amarillas">
+                                0
+                            </button>
+                        </div>
+                        <div class="flex-1">
+                            <input type="hidden" class="stat-red-minutes" id="${redId}" value="">
+                            <button type="button" id="btn-${redId}" onclick="openMinuteModal('${redId}', 'Roja 🟥')" 
+                                    class="w-full h-9 bg-red-50 border border-red-200 rounded text-xs text-red-700 font-bold hover:bg-red-100 flex items-center justify-center" title="Rojas">
+                                0
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             
-            <div class="player-performance-inputs grid grid-cols-2 md:grid-cols-4 gap-2" style="${isCoach ? 'display:grid' : 'display:none'}">
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Nota (0-10)</label>
-                    <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm" min="0" max="10" step="0.25" placeholder="–">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Goles</label>
-                    ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Asist.</label>
-                    ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm" min="0" value="0">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">Minutos</label>
-                    ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm" min="0" max="120" value="90">` : `<span class="block text-center text-gray-400 mt-1">-</span>`}
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-200">
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">🟨 Amarillas</label>
-                    <input type="number" class="stat-yellow w-full px-2 py-1 border rounded text-sm" min="0" max="2" value="0" oninput="checkAutoRedCard(this)" ${isSuspended ? 'disabled' : ''}>
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-1">🟥 Rojas</label>
-                    <input type="number" class="stat-red w-full px-2 py-1 border rounded text-sm" min="0" max="1" value="0" ${isSuspended ? 'disabled' : ''}>
-                </div>
+            <div class="flex-1 flex justify-center text-xs text-gray-400 italic" style="${!isCoach ? 'display:none' : ''}">
+                Sin estadísticas de juego
             </div>
         </div>
-        `}).join('');
+        `;
+    }).join('');
 }
         
         // Handles mutual exclusion for Starter/Sub checkboxes
@@ -5453,6 +5517,8 @@ function renderPlayerHistoryTab(player, matches) {
             // Reset Wizard
             document.getElementById('wizard-step-1').classList.remove('hidden');
             document.getElementById('wizard-step-2').classList.add('hidden');
+            document.getElementById('wizard-step-3').classList.add('hidden');
+
             document.getElementById('new-match-players-stats').innerHTML = '';
         }
         
@@ -5475,33 +5541,32 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     
     // Lógica de Penaltis
     const chkPenalties = document.getElementById('chk-penalties');
-    if (chkPenalties.checked) {
-            const outcomeRadio = document.querySelector('input[name="penalties-outcome"]:checked');
-            if (outcomeRadio) {
-                const isWin = outcomeRadio.value === 'win';
-                const parts = result.split('-').map(Number);
-                let usIndex = 0;
-                if (venue === 'visitante') usIndex = 1;
-                
-                if (isWin) {
-                    parts[usIndex]++;
-                } else {
-                    parts[usIndex === 0 ? 1 : 0]++;
-                }
-                result = `${parts[0]}-${parts[1]}*`;
-            }
+    if (chkPenalties && chkPenalties.checked) {
+        const outcomeRadio = document.querySelector('input[name="penalties-outcome"]:checked');
+        if (outcomeRadio) {
+            const isWin = outcomeRadio.value === 'win';
+            const parts = result.split('-').map(Number);
+            let usIndex = (venue === 'visitante') ? 1 : 0;
+            
+            if (isWin) parts[usIndex]++;
+            else parts[usIndex === 0 ? 1 : 0]++;
+            
+            result = `${parts[0]}-${parts[1]}*`;
+        }
     }
 
     const comp = COMPETICIONES_ACTUALES[compName];
-    let roundInfo = null;
-    comp.fases.forEach(fase => {
-        const found = fase.rondas.find(r => r.id === roundId);
-        if (found) roundInfo = { ...found, faseTipo: fase.tipo };
-    });
+    let roundInfo = { nombre: roundId }; // Fallback
+    if (comp) {
+        comp.fases.forEach(fase => {
+            const found = fase.rondas.find(r => r.id === roundId);
+            if (found) roundInfo = { ...found, faseTipo: fase.tipo };
+        });
+    }
     
     const outcome = calculateMatchOutcome(result, venue);
     
-    // --- RECOGIDA DE DATOS (PASO 3) ---
+    // --- RECOGIDA DE DATOS ---    
     const statsContainer = document.getElementById('final-stats-container');
     const playerStats = [];
     
@@ -5509,49 +5574,73 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
         const playerId = row.getAttribute('data-player-id');
         const rol = row.getAttribute('data-rol'); 
         const specificPos = row.getAttribute('data-specific-pos');
-        const isCoach = rol === 'Entrenador';
-        const isStarter = (rol === 'Titular');
         
-        let yellow = parseInt(row.querySelector('.stat-yellow').value) || 0;
-        let red = parseInt(row.querySelector('.stat-red').value) || 0;
-        if (yellow >= 2) red = 1;
+        // Detectar si es entrenador o titular
+        const isCoach = (rol === 'Entrenador' || rol === 'Staff');
+        // Para saber si es titular, miramos si tiene la clase verde en el badge
+        // O mejor: usamos el dato que guardamos en renderPlayerStatsForm
+        const badge = row.querySelector('span.bg-emerald-100'); 
+        const isStarter = !!badge; // Si hay badge verde, es titular
 
-        let rating = null;
-        let goals = 0;
-        let assists = 0;
-        let minutes = 0;
+        // --- AQUÍ ESTÁ LA CLAVE DEL ARREGLO ---
+        // 1. Leemos los inputs OCULTOS (donde guardaste "15, 67")
+        const goalsStr = row.querySelector('.stat-goals-minutes')?.value || "";
+        const assistsStr = row.querySelector('.stat-assists-minutes')?.value || "";
+        const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
+        const redStr = row.querySelector('.stat-red-minutes')?.value || "";
 
+        // 2. Función para contar (Si hay texto "15, 67" -> devuelve 2)
+        const countItems = (str) => str.trim() === "" ? 0 : str.split(',').filter(s=>s.trim()!=='').length;
+
+        const goals = isCoach ? 0 : countItems(goalsStr);
+        const assists = isCoach ? 0 : countItems(assistsStr);
+        const yellow = countItems(yellowStr);
+        const red = countItems(redStr);
+
+        // 3. Leemos los inputs NORMALES (Nota y Minutos)
         const ratingInput = row.querySelector('.stat-rating').value;
-        rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
-        goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals').value) || 0);
-        assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists').value) || 0);
-        minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes').value) || 0);
+        const rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
+        
+        const minutesInput = row.querySelector('.stat-minutes');
+        const minutes = (isCoach || !minutesInput) ? 0 : (parseInt(minutesInput.value) || 0);
 
-        playerStats.push({
-            playerId: playerId,
-            isStarter: isStarter,
-            specificPosition: specificPos,
-            rating: rating,
-            goals: goals,
-            assists: assists,
-            minutes: minutes,
-            yellowCards: yellow,
-            redCards: red,
-            played: true
-        });
+        // 4. Guardamos todo
+        // Si jugó (tiene minutos, goles o es titular/suplente marcado) o es entrenador
+        if (true) { // Guardamos todos los de la lista para no perder datos
+            playerStats.push({
+                playerId: playerId,
+                isStarter: isStarter,
+                specificPosition: specificPos,
+                rating: rating,
+                goals: goals,
+                assists: assists,
+                minutes: minutes,
+                yellowCards: yellow,
+                redCards: red,
+                played: minutes > 0, // Solo cuenta como jugado si tiene minutos > 0
+                
+                // IMPORTANTE: Guardamos el detalle de minutos
+                detailGoals: goalsStr,
+                detailAssists: assistsStr,
+                detailYellow: yellowStr,
+                detailRed: redStr
+            });
+        }
     });
     
     const mvp = calculateAutoMVP(playerStats);
-
-    // --- NUEVO: CALCULAMOS EL VALOR Y EDAD ANTES DE GUARDAR ---
-    // Usamos la función auxiliar que creamos anteriormente
-    const squadStats = getSquadStats(); 
-    // -----------------------------------------------------------
     
+    // Calcular Finanzas y Edad (si tienes la función)
+    let squadStats = { valorTotal: 0, edadMedia: 0 };
+    if (typeof getSquadStats === 'function') {
+        squadStats = getSquadStats();
+    }
+
     const matchData = {
         id: generateId(),
         calendarEventId: calendarEventId,
-        formation: document.getElementById('formation-select').value,
+        // Asegúrate de que este ID existe en tu HTML
+        formation: document.getElementById('formation-select') ? document.getElementById('formation-select').value : '4-3-3',
         competition: compName,
         roundId: roundId,
         round: roundInfo.nombre,
@@ -5562,12 +5651,8 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
         result: result,
         outcome: outcome,
         mvp: mvp,
-        
-        // --- NUEVO: GUARDAMOS LOS DATOS FINANCIEROS Y EDAD ---
         valorPlantilla: squadStats.valorTotal,
         edadMedia: squadStats.edadMedia,
-        // -----------------------------------------------------
-
         playerStats: playerStats
     };
     
@@ -5575,26 +5660,22 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     matches.push(matchData);
     saveData('matches', matches);
     
-    checkEliminationAfterMatch(matchData);
+    if (typeof checkEliminationAfterMatch === 'function') checkEliminationAfterMatch(matchData);
 
-    // Lógica de Ronda Extra
-    const triggered = checkExtraRoundTrigger(matchData);
+    const triggered = (typeof checkExtraRoundTrigger === 'function') ? checkExtraRoundTrigger(matchData) : false;
     
     if (!triggered) {
-        // --- AQUÍ ESTÁ LA MAGIA DE LA CELEBRACIÓN 🎉 ---
         const hasPerfectRating = playerStats.some(p => p.rating === 10);
-        
-        if (outcome === 'victoria' || hasPerfectRating) {
+        if ((outcome === 'victoria' || hasPerfectRating) && typeof triggerConfetti === 'function') {
             triggerConfetti(); 
         }
-        // -----------------------------------------------
 
-        resetNewMatchForm();
-        renderCompetitionStatus();
-        populateCompetitionSelect();
+        if (typeof resetNewMatchForm === 'function') resetNewMatchForm();
+        if (typeof renderCompetitionStatus === 'function') renderCompetitionStatus();
+        if (typeof populateCompetitionSelect === 'function') populateCompetitionSelect();
         
-        showToast('Partido registrado correctamente', 'success');
-        showTab('partidos');
+        if (typeof showToast === 'function') showToast('Partido registrado correctamente', 'success');
+        if (typeof showTab === 'function') showTab('partidos');
     }
 });
         
@@ -6644,6 +6725,39 @@ function renderMatches(matchesData = null) {
             </div>
         </div>
     `;
+    match.playerStats.forEach(ps => {
+    // Buscamos la fila del jugador
+    const row = document.querySelector(`#edit-stats-list [data-player-id="${ps.playerId}"]`);
+    if (row) {
+        // Rellenar Roles (Checkbox)
+        // ... tu lógica de checkboxes ...
+
+        // RELLENAR MINUTOS Y BOTONES
+        // Helper para rellenar
+        const fillStat = (type, valStr, count) => {
+            const hidden = row.querySelector(`.stat-${type}-minutes`);
+            const btn = row.querySelector(`#btn-${type}-${ps.playerId}`); // Nota: Asegúrate que el ID coincida con renderPlayerStatsForm
+            
+            if(hidden && btn) {
+                // Si guardamos el string "15, 88", lo usamos. Si no (partido viejo), usamos un número y lo dejamos vacío por ahora.
+                const finalStr = valStr || ""; 
+                hidden.value = finalStr;
+                
+                // Actualizar botón visual
+                const finalCount = count || (finalStr ? finalStr.split(',').length : 0);
+                btn.innerText = finalCount;
+                if(finalCount > 0) {
+                     btn.classList.add('bg-indigo-100', 'text-indigo-700', 'font-bold');
+                }
+            }
+        };
+
+        fillStat('goals', ps.detailGoals, ps.goals);
+        fillStat('assists', ps.detailAssists, ps.assists);
+        fillStat('yellow', ps.detailYellow, ps.yellowCards);
+        fillStat('red', ps.detailRed, ps.redCards);
+    }
+});
 
     document.getElementById('edit-match-modal').classList.add('active');
     updatePitchFormation();
@@ -7365,113 +7479,56 @@ function removeFromSubs(playerId) {
                 }
             });
         }
-            function goToStep3() {
+function goToStep3() {
     const titularesIds = Object.values(currentPitchPlayers).filter(id => id);
     
+    // Validación
     if (titularesIds.length !== 11) {
         alert(`⚠️ Tienes ${titularesIds.length} jugadores en el campo. Deben ser exactamente 11.`);
         return;
     }
     
-    const suplentesIds = currentSubstitutes || [];
-    const container = document.getElementById('final-stats-container');
-    const allPlayers = getPlayers();
+    // Preparar UI
+    document.getElementById('wizard-step-2').classList.add('hidden');
+    document.getElementById('wizard-step-3').classList.remove('hidden');
 
-    let selectedPlayers = [];
+    const suplentesIds = currentSubstitutes || [];
+    const allPlayers = getPlayers();
+    let playersToRender = [];
     
-    // 1. PROCESAR TITULARES Y SUS POSICIONES EXACTAS
+    // 1. PROCESAR TITULARES Y SUS POSICIONES EXACTAS (Para las etiquetas verdes)
     titularesIds.forEach(id => {
         const p = allPlayers.find(pl => pl.id === id);
         if (p) {
-            // Buscar en qué slot estaba este jugador
+            // Buscar en qué slot estaba este jugador para saber si es "Lateral" o "Central"
             const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === id);
-            let specificPos = 'Titular'; // Valor por defecto
+            let specificPos = 'Titular'; 
             
             if (slotKey) {
-                // Extraer índice del slot (ej: 'slot-4' -> 4)
                 const indexMatch = slotKey.match(/-(\d+)$/);
                 if (indexMatch) {
                     const idx = parseInt(indexMatch[1]);
-                    // Usar la función helper para sacar el nombre (ej: "Lateral Der")
-                    specificPos = getPositionName(currentFormation, idx);
+                    // Usamos tu función auxiliar para sacar el nombre bonito
+                    specificPos = getPositionName(currentFormation, idx); 
                 }
             }
-            
-            selectedPlayers.push({ ...p, rol: 'Titular', specificPos: specificPos });
+            playersToRender.push({ ...p, rol: 'Titular', specificPos: specificPos, isStarter: true });
         }
     });
     
     // 2. Procesar Suplentes
     suplentesIds.forEach(id => {
         const p = allPlayers.find(pl => pl.id === id);
-        if(p) selectedPlayers.push({ ...p, rol: 'Suplente', specificPos: 'Suplente' });
+        if(p) playersToRender.push({ ...p, rol: 'Suplente', specificPos: 'Suplente', isStarter: false });
     });
     
     // 3. Entrenador
     const coach = allPlayers.find(p => p.posicion === 'entrenador');
-    if(coach) selectedPlayers.push({ ...coach, rol: 'Entrenador', specificPos: 'Entrenador' });
+    if(coach) playersToRender.push({ ...coach, rol: 'Entrenador', specificPos: 'Entrenador', isStarter: false });
 
-    // 4. Renderizar
-    container.innerHTML = selectedPlayers.map(p => {
-        const isCoach = p.posicion === 'entrenador';
-        const rolBadge = p.rol === 'Titular' 
-            ? `<span class="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded border border-green-200">${p.specificPos.toUpperCase()}</span>`
-            : (isCoach ? '<span class="bg-gray-200 text-gray-800 text-xs font-bold px-2 py-1 rounded">STAFF</span>' 
-            : '<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded border border-blue-200">SUPLENTE</span>');
-
-        // AÑADIMOS data-specific-pos AQUÍ ABAJO ↓↓↓
-        return `
-        <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" 
-             data-player-id="${p.id}" 
-             data-rol="${p.rol}"
-             data-specific-pos="${p.specificPos}"> 
-             
-            <div class="flex items-center gap-3 w-full md:w-1/3">
-                <img src="${p.foto}" class="player-photo-xs border border-gray-200" onerror="this.src='https://via.placeholder.com/40x40'">
-                <div class="flex-1">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-800 text-sm">${p.apodo || p.apellido}</span>
-                        ${rolBadge}
-                    </div>
-                    <span class="text-xs text-gray-500">#${p.dorsal} - ${p.posicion}</span>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-4 gap-2 w-full md:flex-1">
-                <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Nota</label>
-                    <input type="number" class="stat-rating w-full px-2 py-1 border rounded text-sm text-center font-bold focus:ring-2 focus:ring-amber-500 outline-none" min="0" max="10" step="0.25" placeholder="-">
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Goles</label>
-                    ${!isCoach ? `<input type="number" class="stat-goals w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Asist</label>
-                    ${!isCoach ? `<input type="number" class="stat-assists w-full px-2 py-1 border rounded text-sm text-center" min="0" value="0">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] uppercase font-bold text-gray-500 mb-1">Min</label>
-                    ${!isCoach ? `<input type="number" class="stat-minutes w-full px-2 py-1 border rounded text-sm text-center" min="0" max="120" value="${p.rol === 'Titular' ? 90 : 45}">` : `<span class="text-center text-gray-300 py-1">-</span>`}
-                </div>
-            </div>
-
-            <div class="flex gap-2 w-full md:w-auto border-t md:border-t-0 md:border-l border-gray-100 pt-2 md:pt-0 md:pl-3 justify-center">
-                <div class="flex flex-col items-center">
-                    <label class="text-[10px] mb-1">🟨</label>
-                    <input type="number" class="stat-yellow w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="2" value="0">
-                </div>
-                <div class="flex flex-col items-center">
-                    <label class="text-[10px] mb-1">🟥</label>
-                    <input type="number" class="stat-red w-12 px-1 py-1 border rounded text-sm text-center" min="0" max="1" value="0">
-                </div>
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    document.getElementById('wizard-step-2').classList.add('hidden');
-    document.getElementById('wizard-step-3').classList.remove('hidden');
+    // 4. LLAMAR A LA FUNCIÓN DE PINTADO CON ESTOS DATOS ESPECÍFICOS
+    const currentComp = document.getElementById('new-competition').value;
+    renderPlayerStatsForm('final-stats-container', currentComp, playersToRender);
 }
 
         // ==========================================
@@ -9208,13 +9265,20 @@ function renderLineWarsChart() {
             let rating = null;
             const ratingInput = row.querySelector('.stat-rating');
             if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
+           
+            const goalsStr = row.querySelector('.stat-goals-minutes')?.value || "";
+            const assistsStr = row.querySelector('.stat-assists-minutes')?.value || "";
+            const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
+            const redStr = row.querySelector('.stat-red-minutes')?.value || "";
 
-            const goals = isCoach ? 0 : (parseInt(row.querySelector('.stat-goals')?.value) || 0);
-            const assists = isCoach ? 0 : (parseInt(row.querySelector('.stat-assists')?.value) || 0);
+            // Función auxiliar para contar elementos separados por coma
+            const countItems = (str) => str.trim() === "" ? 0 : str.split(',').length;
+
+            const goals = isCoach ? 0 : countItems(goalsStr);
+            const assists = isCoach ? 0 : countItems(assistsStr);
+            const yellow = countItems(yellowStr);
+            const red = countItems(redStr);
             const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
-            const yellow = parseInt(row.querySelector('.stat-yellow')?.value) || 0;
-            const red = parseInt(row.querySelector('.stat-red')?.value) || 0;
-
             newPlayerStats.push({
                 playerId,
                 isStarter,
@@ -9225,7 +9289,11 @@ function renderLineWarsChart() {
                 minutes,
                 yellowCards: yellow,
                 redCards: red,
-                played: true
+                played: true,
+                detailGoals: goalsStr,
+                detailAssists: assistsStr,
+                detailYellow: yellowStr,
+                detailRed: redStr
             });
         });
 
@@ -10665,6 +10733,111 @@ function renderFormationStats() {
             </tr>
         `;
     }).join('');
+}
+
+/* ========================================== */
+/* LÓGICA DEL MODAL DE MINUTOS (CON DEPURACIÓN) */
+/* ========================================== */
+let currentMinuteTarget = null;
+
+// 1. FUNCIÓN DE APERTURA
+function openMinuteModal(targetId, title) {
+    console.log("🔓 Abriendo modal para:", targetId);
+
+    const input = document.getElementById(targetId);
+    if(!input) return console.error("❌ No existe el input oculto con ID:", targetId);
+
+    // TRUCO: Guardamos el ID en el propio HTML del modal (data-target)
+    // Así no dependemos de variables globales que pueden fallar.
+    const modal = document.getElementById('minute-modal');
+    modal.dataset.targetId = targetId; 
+
+    // Rellenar datos
+    const modalInput = document.getElementById('minute-input-field');
+    modalInput.value = input.value;
+    
+    document.getElementById('minute-modal-title').innerText = title || "Minutos";
+    
+    // Mostrar
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex'; // Forzar visibilidad
+    
+    setTimeout(() => modalInput.focus(), 100);
+}
+
+// 2. FUNCIÓN DE CIERRE
+function closeMinuteModal() {
+    const modal = document.getElementById('minute-modal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none'; // Forzar ocultado
+    }
+    currentMinuteTarget = null;
+}
+
+// 3. FUNCIÓN DE GUARDADO
+function saveMinutesFromModal() {
+    const modal = document.getElementById('minute-modal');
+    // Recuperar el ID guardado
+    const targetId = modal.dataset.targetId; 
+    
+    if(!targetId) {
+        console.error("❌ ERROR: No hay targetId en el modal");
+        closeMinuteModal();
+        return;
+    }
+    
+    const val = document.getElementById('minute-input-field').value.trim();
+    
+    // 1. GUARDAR EN EL INPUT OCULTO
+    const hiddenInput = document.getElementById(targetId);
+    if(hiddenInput) hiddenInput.value = val;
+    
+    // 2. ACTUALIZAR EL BOTÓN VISUAL (FORZANDO ESTILOS)
+    const btn = document.getElementById('btn-' + targetId);
+    
+    if(btn) {
+        // Contar elementos
+        const parts = val === '' ? [] : val.split(',').filter(s => s.trim() !== '');
+        const count = parts.length;
+        
+        // Poner el número
+        btn.innerText = count;
+        
+        // Clases base del botón (tamaño, borde, fuente)
+        const baseClasses = "w-full h-9 border rounded text-sm font-bold flex items-center justify-center transition-colors ";
+        
+        // SI TIENE DATOS (>0) -> AZUL INTENSO
+        // SI NO TIENE DATOS (0) -> BLANCO/GRIS
+        if (count > 0) {
+            btn.className = baseClasses + "bg-indigo-100 text-indigo-700 border-indigo-300 shadow-sm";
+        } else {
+            btn.className = baseClasses + "bg-white text-gray-400 border-gray-300 hover:border-indigo-300 hover:text-indigo-400";
+        }
+        
+        console.log(`✅ Botón ${targetId} actualizado a ${count}`);
+    } else {
+        console.error(`❌ No encuentro el botón visual: btn-${targetId}`);
+    }
+
+    closeMinuteModal();
+}
+
+// 4. BOTONES RÁPIDOS (+45, +90)
+function addMinuteToInput(text) {
+    const field = document.getElementById('minute-input-field');
+    if(!field) return;
+    
+    const val = field.value.trim();
+    if (val === "") {
+        field.value = text;
+    } else {
+        if (!val.endsWith(',') && !val.endsWith(' ')) {
+             if (text !== '+') field.value += ', ';
+        }
+        field.value += text;
+    }
+    field.focus();
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
