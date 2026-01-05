@@ -5543,62 +5543,65 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     const statsContainer = document.getElementById('final-stats-container');
     const playerStats = [];
     
+    // --- DENTRO DEL LISTENER DE 'new-match-form' ---
+    // (Sustituye el bloque donde rellenas playerStats)
+
     statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
         const playerId = row.getAttribute('data-player-id');
-        const rol = row.getAttribute('data-rol'); 
         const specificPos = row.getAttribute('data-specific-pos');
+        const isBadgeStarter = row.querySelector('.bg-emerald-100') !== null;
         
-        // Detectar si es entrenador o titular
-        const isCoach = (rol === 'Entrenador' || rol === 'Staff');
-        // Para saber si es titular, miramos si tiene la clase verde en el badge
-        // O mejor: usamos el dato que guardamos en renderPlayerStatsForm
-        const badge = row.querySelector('span.bg-emerald-100'); 
-        const isStarter = !!badge; // Si hay badge verde, es titular
-
-        // --- AQUÍ ESTÁ LA CLAVE DEL ARREGLO ---
-        // 1. Leemos los inputs OCULTOS (donde guardaste "15, 67")
+        // Inputs Ocultos (Minutos/Goles)
         const goalsStr = row.querySelector('.stat-goals-minutes')?.value || "";
         const assistsStr = row.querySelector('.stat-assists-minutes')?.value || "";
         const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
         const redStr = row.querySelector('.stat-red-minutes')?.value || "";
 
-        // 2. Función para contar (Si hay texto "15, 67" -> devuelve 2)
-        const countItems = (str) => str.trim() === "" ? 0 : str.split(',').filter(s=>s.trim()!=='').length;
+        const countItems = (str) => (!str || str.trim() === "") ? 0 : str.split(',').filter(s => s.trim() !== '').length;
 
-        const goals = isCoach ? 0 : countItems(goalsStr);
-        const assists = isCoach ? 0 : countItems(assistsStr);
+        const goals = countItems(goalsStr);
+        const assists = countItems(assistsStr);
         const yellow = countItems(yellowStr);
         const red = countItems(redStr);
 
-        // 3. Leemos los inputs NORMALES (Nota y Minutos)
-        const ratingInput = row.querySelector('.stat-rating').value;
-        const rating = (ratingInput === "" || ratingInput === null) ? null : parseFloat(ratingInput);
-        
-        const minutesInput = row.querySelector('.stat-minutes');
-        const minutes = (isCoach || !minutesInput) ? 0 : (parseInt(minutesInput.value) || 0);
+        const ratingVal = row.querySelector('.stat-rating')?.value;
+        const rating = (ratingVal === "" || ratingVal === null) ? null : parseFloat(ratingVal);
+        const minVal = row.querySelector('.stat-minutes')?.value;
+        const minutes = (parseInt(minVal) || 0);
 
-        // 4. Guardamos todo
-        // Si jugó (tiene minutos, goles o es titular/suplente marcado) o es entrenador
-        if (true) { // Guardamos todos los de la lista para no perder datos
-            playerStats.push({
-                playerId: playerId,
-                isStarter: isStarter,
-                specificPosition: specificPos,
-                rating: rating,
-                goals: goals,
-                assists: assists,
-                minutes: minutes,
-                yellowCards: yellow,
-                redCards: red,
-                played: minutes > 0, // Solo cuenta como jugado si tiene minutos > 0
-                
-                // IMPORTANTE: Guardamos el detalle de minutos
-                detailGoals: goalsStr,
-                detailAssists: assistsStr,
-                detailYellow: yellowStr,
-                detailRed: redStr
-            });
+        // =======================================================
+        // NUEVO: DETECTAR POSICIÓN EXACTA EN LA PIZARRA
+        // =======================================================
+        let savedSlot = null;
+        // Buscamos si este jugador está en alguna casilla de la pizarra actual
+        // currentPitchPlayers suele ser {"wizard-slot-0": "idJugador", ...}
+        if (typeof currentPitchPlayers !== 'undefined') {
+            const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+            if (slotKey) {
+                // Extraemos solo el número (ej: de "wizard-slot-5" sacamos "5")
+                const match = slotKey.match(/(\d+)$/); 
+                if (match) savedSlot = parseInt(match[1]);
+            }
         }
+        // =======================================================
+
+        playerStats.push({
+            playerId: playerId,
+            isStarter: isBadgeStarter,
+            pitchSlot: savedSlot, // <--- AQUÍ GUARDAMOS LA COORDENADA
+            specificPosition: specificPos,
+            rating: rating,
+            goals: goals,
+            assists: assists,
+            minutes: minutes,
+            yellowCards: yellow,
+            redCards: red,
+            played: minutes > 0,
+            detailGoals: goalsStr,
+            detailAssists: assistsStr,
+            detailYellow: yellowStr,
+            detailRed: redStr
+        });
     });
     
     const mvp = calculateAutoMVP(playerStats);
@@ -6450,16 +6453,60 @@ function renderMatches(matchesData = null) {
         }
         
             // --- 1. FUNCIÓN EDITAR PARTIDO (CORRECCIÓN CSV: SOBRANTES AL BANQUILLO) ---
+// Variable global temporal para la edición
+let editPitchPlayers = {}; 
+
+// Asegúrate de tener estas variables globales accesibles o usa las que ya tengas en tu sistema
+// Si tu sistema usa 'currentPitchPlayers' para todo, las usaremos, pero cuidado de no borrar un partido a medias en el wizard.
+// Lo ideal es reutilizar las mismas variables pero limpiándolas antes.
+
 function editMatch(matchId) {
+    console.log("👉 Abriendo Editor (Reutilizando motor táctico):", matchId);
+
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
-    if (!match) return;
+    if (!match) { alert("❌ Error: Partido no encontrado."); return; }
 
-    // --- CONFIGURACIÓN BÁSICA ---
-    const idInput = document.getElementById('edit-match-id');
-    if (idInput) idInput.value = match.id;
+    const modal = document.getElementById('edit-match-modal');
+    const content = document.getElementById('edit-match-content');
+    if (!modal || !content) { alert("Error HTML modal"); return; }
+
+    modal.dataset.matchId = matchId; 
+    document.body.appendChild(modal); 
+
+    // --- 1. PREPARAR ESTADO (Mapear DB -> Variables Globales) ---
+    // Importante: Usamos las mismas variables que usa tu Drag & Drop (Paso 6)
+    // Asumo que 'currentPitchPlayers' es un objeto { "prefijo-slot-N": "id" }
     
-    // Configurar Rondas
+    currentPitchPlayers = {}; 
+    currentSubstitutes = []; 
+    currentFormation = match.formation || "4-3-3"; // Recuperar formación
+
+    const allPlayers = getPlayers();
+    
+    match.playerStats.forEach(ps => {
+        // A. JUGADOR EN CAMPO (Tiene slot guardado)
+        if (ps.isStarter && ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
+            // Reconstruimos la clave exacta que espera el Drag & Drop: "edit-slot-5"
+            currentPitchPlayers[`edit-slot-${ps.pitchSlot}`] = ps.playerId;
+        }
+        // B. JUGADOR TITULAR PERO SIN SLOT (Legacy/Importados)
+        else if (ps.isStarter) {
+            // Buscamos primer hueco libre
+            for(let i=0; i<11; i++) {
+                if (!currentPitchPlayers[`edit-slot-${i}`]) {
+                    currentPitchPlayers[`edit-slot-${i}`] = ps.playerId;
+                    break;
+                }
+            }
+        }
+        // C. SUPLENTE
+        else {
+            if (ps.rol !== 'Entrenador') currentSubstitutes.push(ps.playerId);
+        }
+    });
+
+    // --- 2. PREPARAR RONDAS (Código estándar) ---
     let roundOptionsHtml = '<option value="">-- Sin asignar --</option>';
     let compConfig = null;
     if (match.competition && typeof COMPETICIONES_ACTUALES !== 'undefined') {
@@ -6470,14 +6517,10 @@ function editMatch(matchId) {
         });
         if (compKey) compConfig = COMPETICIONES_ACTUALES[compKey];
     }
-
     if (compConfig) {
         let allRounds = [];
-        compConfig.fases.forEach(fase => {
-            fase.rondas.forEach(r => allRounds.push({ ...r, faseTipo: fase.tipo }));
-        });
+        compConfig.fases.forEach(fase => { fase.rondas.forEach(r => allRounds.push({ ...r, faseTipo: fase.tipo })); });
         allRounds.sort((a, b) => a.orden - b.orden);
-        
         roundOptionsHtml = allRounds.map(r => {
             const isCurrent = (match.roundId === r.id) || (match.round === r.id) || (match.round === r.nombre);
             return `<option value="${r.id}" ${isCurrent ? 'selected' : ''}>${r.nombre}</option>`;
@@ -6486,55 +6529,108 @@ function editMatch(matchId) {
         roundOptionsHtml = `<option value="${match.round}" selected>${match.round}</option>`;
     }
 
-    // --- INYECTAR HTML ESTRUCTURAL ---
-    const content = document.getElementById('edit-match-content');
+    // --- 3. INYECTAR HTML (ESTRUCTURA QUE ESPERA TU MOTOR) ---
+    // Nota: Aquí usamos los IDs que tus funciones 'renderTacticalBoard' y 'renderBench' esperan.
+    // Normalmente esperan: [prefix]pitch-formation, [prefix]bench-container, etc.
     
     content.innerHTML = `
-        <div class="h-full flex flex-col bg-gray-50">
-            <div class="bg-white p-4 border-b border-gray-200 flex flex-col gap-4 shadow-sm shrink-0">
-                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Resultado</label>
-                        <input type="text" id="edit-result-val" value="${match.result}" class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-xl font-bold text-center text-slate-800 focus:border-indigo-500 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Ronda</label>
-                        <select id="edit-round-select" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-slate-700 bg-white">${roundOptionsHtml}</select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Rival</label>
-                        <input type="text" value="${match.opponent}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 font-medium">
-                    </div>
-                    <div>
-                         <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Sede</label>
-                         <input type="text" value="${match.venue}" readonly class="w-full bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-gray-500 font-medium">
-                    </div>
+        <div class="h-full flex flex-col bg-gray-50" x-data="{ activeTab: 'lineup' }">
+            
+            <div class="bg-white px-4 pt-4 border-b border-gray-200 shadow-sm shrink-0 flex justify-between items-center">
+                <div class="flex space-x-4">
+                    <button onclick="switchEditTab('lineup')" id="tab-btn-lineup" class="pb-2 px-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">
+                        🏟️ Pizarra
+                    </button>
+                    <button onclick="switchEditTab('stats')" id="tab-btn-stats" class="pb-2 px-2 text-sm font-bold text-gray-500 hover:text-indigo-600 border-b-2 border-transparent transition-colors">
+                        📊 Estadísticas
+                    </button>
+                </div>
+                <div>
+                     <select id="edit-formation-select" onchange="updatePitchFormation('edit-')" class="text-xs border rounded p-1 bg-gray-100 font-bold">
+                        <option value="4-3-3" ${currentFormation==='4-3-3'?'selected':''}>4-3-3</option>
+                        <option value="4-4-2" ${currentFormation==='4-4-2'?'selected':''}>4-4-2</option>
+                        <option value="4-2-3-1" ${currentFormation==='4-2-3-1'?'selected':''}>4-2-3-1</option>
+                        <option value="3-5-2" ${currentFormation==='3-5-2'?'selected':''}>3-5-2</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-4 space-y-2" id="edit-stats-list">
-                </div>
+            <div id="edit-tab-lineup" class="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-800">
+                 
+                 <div class="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col z-10">
+                    <div class="p-2 bg-gray-100 border-b text-xs font-bold text-gray-500 uppercase">Plantilla / Banquillo</div>
+                    <div id="edit-bench-container" 
+                         class="flex-1 overflow-y-auto p-2 space-y-1"
+                         ondragover="allowDrop(event)" 
+                         ondrop="dropToBench(event, 'edit-')">
+                         </div>
+                 </div>
 
-            <div class="p-4 border-t border-gray-200 bg-white flex justify-end gap-3 shrink-0">
-                <button type="button" onclick="closeEditMatchModal()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 font-bold hover:bg-gray-50">Cancelar</button>
-                <button id="edit-save-match-btn" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-8 rounded-lg shadow-lg transition-all transform hover:-translate-y-0.5">
-                    💾 GUARDAR CAMBIOS
-                </button>
+                 <div class="flex-1 relative overflow-hidden flex items-center justify-center p-4 bg-emerald-800">
+                    <div id="edit-pitch-wrapper" class="relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-green-600 rounded-xl shadow-2xl border-4 border-white/20 overflow-hidden">
+                        <div class="absolute inset-0 opacity-30 bg-[length:50px_50px] bg-[linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)]"></div>
+                        <div class="absolute inset-x-0 top-1/2 h-0.5 bg-white/40"></div>
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/40 rounded-full"></div>
+                        
+                        <div id="edit-pitch-formation" class="absolute inset-0 z-10"></div>
+                    </div>
+                 </div>
+            </div>
+
+            <div id="edit-tab-stats" class="hidden flex-col flex-1 overflow-hidden bg-gray-50">
+                <div class="bg-white p-4 border-b border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400">Resultado</label>
+                        <input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 text-center font-bold">
+                    </div>
+                     <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400">Ronda</label>
+                        <select id="edit-round-select" class="w-full border rounded px-2 py-1">${roundOptionsHtml}</select>
+                    </div>
+                     <div>
+                        <label class="text-[10px] uppercase font-bold text-gray-400">Rival</label>
+                        <input type="text" value="${match.opponent}" class="w-full bg-gray-50 border rounded px-2 py-1 text-gray-500" readonly>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-2" id="edit-stats-list"></div>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 bg-white flex justify-end gap-3 shrink-0 z-20">
+                <button onclick="closeEditMatchModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancelar</button>
+                <button onclick="executeEditSave()" class="px-6 py-2 bg-emerald-600 text-white rounded shadow font-bold hover:bg-emerald-700">💾 GUARDAR CAMBIOS</button>
             </div>
         </div>
     `;
 
-    // --- RENDERIZAR JUGADORES ---
+    // --- 4. LLAMAR A TUS FUNCIONES EXISTENTES ---
+    
+    // A) Renderizar Pizarra y Banquillo usando el prefijo 'edit-'
+    // Asegúrate de que tus funciones renderTacticalBoard y renderBench acepten el prefijo como argumento
+    // Si no aceptan argumentos, tendrás que modificarlas ligeramente para que busquen `prefix + 'id'`
+    if (typeof renderTacticalBoard === 'function') renderTacticalBoard('edit-'); 
+    if (typeof renderBench === 'function') renderBench('edit-');
+
+    // B) Renderizar Lista Stats
+    renderEditStatsList(match, allPlayers);
+
+    // Mostrar Modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
+    modal.style.zIndex = '99999';
+
+    switchEditTab('lineup');
+}
+function renderEditStatsList(match, allPlayers) {
     const statsList = document.getElementById('edit-stats-list');
-    const allPlayers = getPlayers();
+    
+    // Combinamos los jugadores del campo + banquillo actuales para asegurar consistencia
+    // OJO: Usamos los datos guardados en 'match' como base, pero la lista debe reflejar todos
     
     let participants = match.playerStats.map(ps => {
-        const pInfo = allPlayers.find(pl => pl.id === ps.playerId) || { 
-            apodo: 'Jugador Borrado', apellido: '?', dorsal: '?', foto: 'https://via.placeholder.com/40', posicion: '?' 
-        };
-        return { ...pInfo, ...ps, rol: ps.isStarter ? 'Titular' : 'Suplente' };
+        const pInfo = allPlayers.find(pl => pl.id === ps.playerId) || { apodo: '?', foto: '' };
+        return { ...pInfo, ...ps };
     });
-
     participants.sort((a, b) => (b.isStarter - a.isStarter));
 
     statsList.innerHTML = participants.map(p => {
@@ -6544,98 +6640,225 @@ function editMatch(matchId) {
         const yellowId = `${prefix}yellow-${p.playerId}`;
         const redId = `${prefix}red-${p.playerId}`;
 
-        let badgeHtml = '';
-        if (p.isStarter) badgeHtml = `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200 uppercase">${p.specificPosition || 'TITULAR'}</span>`;
-        else badgeHtml = '<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100 uppercase">SUPLENTE</span>';
+        const isStarter = p.isStarter; // Esto se actualizará al guardar según la pizarra
+        let badgeHtml = isStarter 
+            ? `<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200 uppercase">TITULAR</span>`
+            : '<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100 uppercase">SUPLENTE</span>';
 
-        const btnClass = "w-full h-9 bg-white border border-gray-300 rounded text-sm text-gray-700 font-bold hover:border-indigo-400 hover:text-indigo-600 transition-colors flex items-center justify-center";
-        const getBtnStyle = (count) => count > 0 ? "bg-indigo-100 text-indigo-700 border-indigo-300 font-bold" : "bg-white text-gray-700 border-gray-300";
+        const btnClass = "w-full h-8 bg-white border border-gray-300 rounded text-xs font-bold hover:border-indigo-400 flex items-center justify-center";
+        const getStyle = (c) => c > 0 ? "bg-indigo-100 text-indigo-700 border-indigo-300" : "text-gray-600";
+        const getCardStyle = (c, color) => c > 0 ? `bg-${color}-100 text-${color}-700 border-${color}-300` : `bg-${color}-50 text-${color}-700/50 border-${color}-100`;
 
         return `
-        <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" 
-             data-player-id="${p.playerId}" 
-             data-rol="${p.rol}"
-             data-specific-pos="${p.specificPosition}"> 
+        <div class="bg-white rounded p-2 border border-gray-200 flex flex-col md:flex-row items-center gap-3 shadow-sm" 
+             data-player-id="${p.playerId}"> 
              
-            <div class="flex items-center gap-3 w-full md:w-1/3 min-w-[200px]">
-                <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
-                <div class="flex-1">
-                    <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-800 text-sm truncate pr-2">${p.apodo || p.apellido}</span>
+            <div class="flex items-center gap-2 w-full md:w-1/3">
+                <img src="${p.foto}" class="w-8 h-8 rounded-full border">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-800 text-sm truncate">${p.apodo}</span>
                         ${badgeHtml}
                     </div>
-                    <span class="text-xs text-gray-400">#${p.dorsal}</span>
                 </div>
             </div>
 
-            <div class="flex-1 grid grid-cols-5 gap-3 w-full">
-                <div class="flex flex-col">
-                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Nota</label>
-                    <input type="number" class="stat-rating w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" 
-                           min="0" max="10" step="0.25" value="${p.rating || ''}" placeholder="-">
-                </div>
+            <div class="flex-1 grid grid-cols-5 gap-2 w-full">
+                <div><label class="text-[8px] font-bold text-gray-400">NOTA</label>
+                <input type="number" class="stat-rating w-full h-8 px-1 border rounded text-center text-sm font-bold" min="0" max="10" step="0.1" value="${p.rating || ''}"></div>
 
-                <div class="flex flex-col">
-                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Gol</label>
-                    <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${p.detailGoals || ''}">
-                    <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" 
-                            class="${btnClass} ${getBtnStyle(p.goals)}">${p.goals}</button>
-                </div>
+                <div><label class="text-[8px] font-bold text-gray-400">GOL</label>
+                <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${p.detailGoals || ''}">
+                <button onclick="openMinuteModal('${goalId}', 'Goles')" class="${btnClass} ${getStyle(p.goals)}">${p.goals}</button></div>
 
-                <div class="flex flex-col">
-                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Asis</label>
-                    <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${p.detailAssists || ''}">
-                    <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" 
-                            class="${btnClass} ${getBtnStyle(p.assists)}">${p.assists}</button>
-                </div>
+                <div><label class="text-[8px] font-bold text-gray-400">ASIS</label>
+                <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${p.detailAssists || ''}">
+                <button onclick="openMinuteModal('${assistId}', 'Asistencias')" class="${btnClass} ${getStyle(p.assists)}">${p.assists}</button></div>
+                
+                <div><label class="text-[8px] font-bold text-gray-400">MIN</label>
+                <input type="number" class="stat-minutes w-full h-8 px-1 border rounded text-center text-sm font-mono" value="${p.minutes}"></div>
 
-                <div class="flex flex-col">
-                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Min</label>
-                    <input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-mono text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none" 
-                           min="0" max="120" value="${p.minutes}">
-                </div>
-
-                <div class="flex flex-col items-center">
-                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Tarj</label>
-                    <div class="flex gap-1 w-full">
-                        <div class="flex-1">
-                            <input type="hidden" class="stat-yellow-minutes" id="${yellowId}" value="${p.detailYellow || ''}">
-                            <button type="button" id="btn-${yellowId}" onclick="openMinuteModal('${yellowId}', 'Amarilla 🟨')" 
-                                    class="w-full h-9 border rounded text-xs font-bold flex items-center justify-center ${p.yellowCards > 0 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}">
-                                ${p.yellowCards}
-                            </button>
-                        </div>
-                        <div class="flex-1">
-                            <input type="hidden" class="stat-red-minutes" id="${redId}" value="${p.detailRed || ''}">
-                            <button type="button" id="btn-${redId}" onclick="openMinuteModal('${redId}', 'Roja 🟥')" 
-                                    class="w-full h-9 border rounded text-xs font-bold flex items-center justify-center ${p.redCards > 0 ? 'bg-red-100 text-red-700 border-red-300' : 'bg-red-50 text-red-700 border-red-200'}">
-                                ${p.redCards}
-                            </button>
-                        </div>
-                    </div>
+                <div class="flex gap-1">
+                    <div class="flex-1"><label class="text-[8px] font-bold text-gray-400">AMA</label>
+                    <input type="hidden" class="stat-yellow-minutes" id="${yellowId}" value="${p.detailYellow || ''}">
+                    <button onclick="openMinuteModal('${yellowId}', 'Amarilla')" class="${btnClass} ${getCardStyle(p.yellowCards, 'yellow')}">${p.yellowCards}</button></div>
+                    
+                    <div class="flex-1"><label class="text-[8px] font-bold text-gray-400">ROJ</label>
+                    <input type="hidden" class="stat-red-minutes" id="${redId}" value="${p.detailRed || ''}">
+                    <button onclick="openMinuteModal('${redId}', 'Roja')" class="${btnClass} ${getCardStyle(p.redCards, 'red')}">${p.redCards}</button></div>
                 </div>
             </div>
-        </div>
-        `;
+        </div>`;
     }).join('');
+}
 
-    // --- VINCULAR BOTÓN DE GUARDADO ---
-    const saveBtn = document.getElementById('edit-save-match-btn');
-    if(saveBtn) {
-        const newBtn = saveBtn.cloneNode(true);
-        saveBtn.parentNode.replaceChild(newBtn, saveBtn);
-        newBtn.addEventListener('click', () => saveMatchChanges(matchId));
+// --- FUNCIÓN AUXILIAR PARA CAMBIAR PESTAÑAS ---
+function switchEditTab(tabName) {
+    const tabLineup = document.getElementById('edit-tab-lineup');
+    const tabStats = document.getElementById('edit-tab-stats');
+    const btnLineup = document.getElementById('tab-btn-lineup');
+    const btnStats = document.getElementById('tab-btn-stats');
+
+    if (tabName === 'lineup') {
+        tabLineup.classList.remove('hidden');
+        tabStats.classList.add('hidden');
+        // Estilos Botones
+        btnLineup.classList.add('text-indigo-600', 'border-indigo-600');
+        btnLineup.classList.remove('text-gray-500', 'border-transparent');
+        btnStats.classList.remove('text-indigo-600', 'border-indigo-600');
+        btnStats.classList.add('text-gray-500', 'border-transparent');
+    } else {
+        tabLineup.classList.add('hidden');
+        tabStats.classList.remove('hidden');
+        // Estilos Botones
+        btnStats.classList.add('text-indigo-600', 'border-indigo-600');
+        btnStats.classList.remove('text-gray-500', 'border-transparent');
+        btnLineup.classList.remove('text-indigo-600', 'border-indigo-600');
+        btnLineup.classList.add('text-gray-500', 'border-transparent');
+    }
+}
+
+// --- FUNCIÓN AUXILIAR PARA PINTAR LA PIZARRA DE EDICIÓN ---
+function renderEditPitchVisuals(allPlayers) {
+    const container = document.getElementById('edit-pitch-container');
+    container.innerHTML = ''; // Limpiar
+
+    // Coordenadas fijas (basadas en 4-4-2 o lo que uses, simplificado)
+    // Usamos porcentajes para que escale. [top%, left%]
+    const formationSlots = [
+        {t: 85, l: 45}, // 0: Portero
+        {t: 65, l: 15}, {t: 65, l: 35}, {t: 65, l: 55}, {t: 65, l: 75}, // Defensas
+        {t: 40, l: 15}, {t: 40, l: 35}, {t: 40, l: 55}, {t: 40, l: 75}, // Medios
+        {t: 15, l: 35}, {t: 15, l: 55}  // Delanteros
+    ];
+    // NOTA: Si quieres usar tu formación real (4-3-3, etc), tendrías que importar tus coordenadas 'POSITIONS'. 
+    // Por simplicidad, aquí pinto 11 huecos genéricos, pero si tu 'renderMatches' usa coordenadas reales, cópialas aquí.
+
+    // Recorremos los 11 slots posibles
+    for (let i = 0; i < 11; i++) {
+        const playerId = editPitchPlayers[`edit-slot-${i}`];
+        if (playerId) {
+            const player = allPlayers.find(p => p.id === playerId);
+            if (player) {
+                // Posición (Si tienes las coordenadas reales importadas, úsalas. Si no, usa el array simple de arriba)
+                // Si tu app ya tiene variable 'POSITIONS', usa: const pos = POSITIONS['4-3-3'][i];
+                const pos = formationSlots[i] || {t: 50, l: 50}; 
+
+                const el = document.createElement('div');
+                el.className = "absolute flex flex-col items-center justify-center w-16 transform -translate-x-1/2 -translate-y-1/2 transition-all";
+                el.style.top = pos.t + '%';
+                el.style.left = pos.l + '%';
+                
+                el.innerHTML = `
+                    <div class="w-10 h-10 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white">
+                        <img src="${player.foto}" class="w-full h-full object-cover">
+                    </div>
+                    <span class="mt-1 bg-black/70 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow backdrop-blur-sm truncate max-w-full">
+                        ${player.apodo}
+                    </span>
+                `;
+                container.appendChild(el);
+            }
+        }
+    }
+}
+function executeEditSave() {
+    console.log("💾 Ejecutando guardado...");
+
+    // 1. RECUPERAR ID DEL TATUAJE
+    const modal = document.getElementById('edit-match-modal');
+    const matchId = modal.dataset.matchId;
+
+    if (!matchId) {
+        alert("❌ Error Crítico: El modal ha perdido el ID del partido.");
+        return;
     }
 
-    // Mostrar Modal
-    const modal = document.getElementById('edit-match-modal');
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
+    const matches = getData('matches');
+    const matchIndex = matches.findIndex(m => m.id === matchId); // OJO: Si id es número, usar ==, si es string ===
+    
+    if (matchIndex === -1) { 
+        alert("❌ Error: No se encuentra el partido en la base de datos."); 
+        return; 
+    }
+    
+    const match = matches[matchIndex];
+    const statsContainer = document.getElementById('edit-stats-list');
+    const playerStats = [];
+    
+    // 2. LEER DATOS
+    statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
+        const playerId = row.getAttribute('data-player-id');
+        const specificPos = row.getAttribute('data-specific-pos');
+        const isBadgeStarter = row.querySelector('.bg-emerald-100') !== null;
+        
+        // LEER INPUTS OCULTOS
+        const goalsStr = row.querySelector('.stat-goals-minutes')?.value || "";
+        const assistsStr = row.querySelector('.stat-assists-minutes')?.value || "";
+        const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
+        const redStr = row.querySelector('.stat-red-minutes')?.value || "";
+
+        const countItems = (str) => (!str || str.trim() === "") ? 0 : str.split(',').filter(s => s.trim() !== '').length;
+
+        const goals = countItems(goalsStr);
+        const assists = countItems(assistsStr);
+        const yellow = countItems(yellowStr);
+        const red = countItems(redStr);
+
+        const ratingVal = row.querySelector('.stat-rating')?.value;
+        const rating = (ratingVal === "" || ratingVal === null) ? null : parseFloat(ratingVal);
+        const minVal = row.querySelector('.stat-minutes')?.value;
+        const minutes = (parseInt(minVal) || 0);
+
+        playerStats.push({
+            playerId: playerId,
+            isStarter: isBadgeStarter,
+            specificPosition: specificPos,
+            rating: rating,
+            goals: goals,
+            assists: assists,
+            minutes: minutes,
+            yellowCards: yellow,
+            redCards: red,
+            played: minutes > 0,
+            detailGoals: goalsStr,
+            detailAssists: assistsStr,
+            detailYellow: yellowStr,
+            detailRed: redStr
+        });
+    });
+
+    const result = document.getElementById('edit-result-val').value;
+    const roundId = document.getElementById('edit-round-select').value;
+    const outcome = calculateMatchOutcome(result, match.venue);
+
+    // 3. GUARDAR
+    matches[matchIndex] = {
+        ...match,
+        result: result,
+        roundId: roundId,
+        outcome: outcome,
+        mvp: calculateAutoMVP(playerStats),
+        playerStats: playerStats
+    };
+    
+    saveData('matches', matches);
+    
+    // 4. CERRAR Y REFRESCAR
+    closeEditMatchModal();
+    renderMatches();
+    
+    if (typeof renderCompetitionStatus === 'function') renderCompetitionStatus();
+    if (typeof renderPrincipal === 'function') renderPrincipal();
+    
+    console.log("✅ Guardado con éxito.");
 }
 function saveMatchChanges(matchId) {
+    console.log("💾 Guardando cambios para:", matchId);
+    
     const matches = getData('matches');
     const matchIndex = matches.findIndex(m => m.id === matchId);
-    if (matchIndex === -1) return;
+    if (matchIndex === -1) { alert("❌ Error al guardar: No encuentro el partido"); return; }
     
     const match = matches[matchIndex];
     const statsContainer = document.getElementById('edit-stats-list');
@@ -6646,7 +6869,7 @@ function saveMatchChanges(matchId) {
         const playerId = row.getAttribute('data-player-id');
         const specificPos = row.getAttribute('data-specific-pos');
         
-        // Detectar titularidad por el badge verde
+        // Detectar titularidad (si tiene badge verde)
         const isBadgeStarter = row.querySelector('.bg-emerald-100') !== null;
         const isStarter = isBadgeStarter;
 
@@ -6656,7 +6879,7 @@ function saveMatchChanges(matchId) {
         const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
         const redStr = row.querySelector('.stat-red-minutes')?.value || "";
 
-        // Contar
+        // Función contar
         const countItems = (str) => (!str || str.trim() === "") ? 0 : str.split(',').filter(s => s.trim() !== '').length;
 
         const goals = countItems(goalsStr);
@@ -6700,7 +6923,7 @@ function saveMatchChanges(matchId) {
     matches[matchIndex] = {
         ...match,
         result: result,
-        roundId: roundId, // Actualizar ronda si cambió
+        roundId: roundId,
         outcome: outcome,
         mvp: calculateAutoMVP(playerStats),
         playerStats: playerStats
@@ -6709,23 +6932,31 @@ function saveMatchChanges(matchId) {
     saveData('matches', matches);
     
     // Cerrar y refrescar
-    document.getElementById('edit-match-modal').classList.add('hidden');
-    document.getElementById('edit-match-modal').classList.remove('flex');
+    closeEditMatchModal();
     
-    renderMatches(); // Recargar lista
+    renderMatches(); // Recargar lista visual
     
-    // Opcional: Recalcular tablas si tienes esa función
+    // Opcional: Recalcular tablas
     if (typeof renderCompetitionStatus === 'function') renderCompetitionStatus();
+    if (typeof renderPrincipal === 'function') renderPrincipal();
     
-    alert('✅ Partido editado correctamente.');
+    alert('✅ Cambios guardados correctamente.');
 }
 
         
-            function closeEditMatchModal() {
+function closeEditMatchModal() {
     const modal = document.getElementById('edit-match-modal');
+    
     if (modal) {
+        // 1. Añadir la clase de ocultar de Tailwind
         modal.classList.add('hidden');
-        modal.classList.remove('flex'); // Por si acaso
+        modal.classList.remove('flex');
+        
+        // 2. IMPORTANTE: Sobrescribir el estilo en línea
+        // Esto anula el 'display: flex' que pusimos al abrir
+        modal.style.display = 'none'; 
+        
+        console.log("🔒 Modal cerrado correctamente.");
     }
 }
         
@@ -10616,14 +10847,25 @@ function renderFormationStats() {
 
 // 1. FUNCIÓN DE APERTURA
 function openMinuteModal(targetId, title) {
-    console.log("🔓 Abriendo modal para:", targetId);
+    console.log("🔓 Abriendo modal minutos para:", targetId);
 
     const input = document.getElementById(targetId);
     if(!input) return console.error("❌ No existe el input oculto con ID:", targetId);
 
-    // TRUCO: Guardamos el ID en el propio HTML del modal (data-target)
-    // Así no dependemos de variables globales que pueden fallar.
     const modal = document.getElementById('minute-modal');
+    if(!modal) return console.error("❌ Error: No encuentro el div 'minute-modal'");
+
+    // =========================================================
+    // TRUCO DE CAPAS: PONERLO ENCIMA DEL EDITOR
+    // =========================================================
+    // 1. Lo movemos al final del todo en el HTML para que sea lo último que se pinta
+    document.body.appendChild(modal); 
+    
+    // 2. Le damos un Z-Index mayor que el del editor (que tiene 99999)
+    modal.style.zIndex = "99999999"; 
+    // =========================================================
+
+    // Guardamos a quién pertenece este modal
     modal.dataset.targetId = targetId; 
 
     // Rellenar datos
@@ -10634,7 +10876,8 @@ function openMinuteModal(targetId, title) {
     
     // Mostrar
     modal.classList.remove('hidden');
-    modal.style.display = 'flex'; // Forzar visibilidad
+    modal.classList.add('flex'); // Aseguramos que usa Flexbox para centrarse
+    modal.style.display = 'flex'; // Forzamos visibilidad
     
     setTimeout(() => modalInput.focus(), 100);
 }
