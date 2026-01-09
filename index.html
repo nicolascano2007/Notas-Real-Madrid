@@ -2429,12 +2429,10 @@ button:active, .btn:active {
             <div id="match-detail-content" class="p-6"></div>
         </div>
     </div>
-
-    <!-- EDIT MATCH MODAL -->
-            <div id="edit-match-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center hidden z-50 p-4 backdrop-blur-sm" style="z-index: 50;">
-                <div id="edit-match-content" class="bg-white rounded-xl w-full max-w-5xl h-[90vh] shadow-2xl overflow-hidden relative flex flex-col">
-                </div>
-            </div>
+    <div id="edit-match-modal" class="fixed inset-0 bg-black/80 hidden z-[9999] items-center justify-center backdrop-blur-sm">
+    <div id="edit-match-content" class="bg-white rounded-xl w-full max-w-6xl h-[95vh] shadow-2xl overflow-hidden relative flex flex-col">
+        </div>
+</div>
 
     <!-- PLAYER STATUS MODAL -->
    <div id="player-status-modal" class="modal fixed inset-0 bg-black/50 items-center justify-center z-50 p-4">
@@ -6461,166 +6459,128 @@ let editPitchPlayers = {};
 // Lo ideal es reutilizar las mismas variables pero limpiándolas antes.
 
 function editMatch(matchId) {
-    console.log("👉 Abriendo Editor (Reutilizando motor táctico):", matchId);
-
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
-    if (!match) { alert("❌ Error: Partido no encontrado."); return; }
+    if (!match) return alert("Error: Partido no encontrado.");
 
     const modal = document.getElementById('edit-match-modal');
     const content = document.getElementById('edit-match-content');
-    if (!modal || !content) { alert("Error HTML modal"); return; }
+    
+    if (!modal || !content) return alert("Falta HTML del modal");
 
+    // Z-Index fix
+    document.body.appendChild(modal);
     modal.dataset.matchId = matchId; 
-    document.body.appendChild(modal); 
 
-    // --- 1. PREPARAR ESTADO (Mapear DB -> Variables Globales) ---
-    // Importante: Usamos las mismas variables que usa tu Drag & Drop (Paso 6)
-    // Asumo que 'currentPitchPlayers' es un objeto { "prefijo-slot-N": "id" }
-    
+    // --- CARGAR DATOS ---
+    const players = getPlayers(); // Traemos a TODOS para rellenar la plantilla disponible
     currentPitchPlayers = {}; 
-    currentSubstitutes = []; 
-    currentFormation = match.formation || "4-3-3"; // Recuperar formación
+    currentSubstitutes = [];
+    currentFormation = match.formation || "4-3-3"; 
 
-    const allPlayers = getPlayers();
-    
+    // 1. Rellenar Pizarra (Titulares)
     match.playerStats.forEach(ps => {
-        // A. JUGADOR EN CAMPO (Tiene slot guardado)
-        if (ps.isStarter && ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
-            // Reconstruimos la clave exacta que espera el Drag & Drop: "edit-slot-5"
-            currentPitchPlayers[`edit-slot-${ps.pitchSlot}`] = ps.playerId;
-        }
-        // B. JUGADOR TITULAR PERO SIN SLOT (Legacy/Importados)
-        else if (ps.isStarter) {
-            // Buscamos primer hueco libre
-            for(let i=0; i<11; i++) {
-                if (!currentPitchPlayers[`edit-slot-${i}`]) {
-                    currentPitchPlayers[`edit-slot-${i}`] = ps.playerId;
-                    break;
+        // Ignorar entrenadores siempre
+        const pInfo = players.find(pl => pl.id === ps.playerId);
+        if (pInfo && pInfo.posicion === 'entrenador') return;
+
+        if (ps.isStarter) {
+            if (ps.pitchSlot !== null && ps.pitchSlot !== undefined) {
+                currentPitchPlayers[`edit-slot-${ps.pitchSlot}`] = ps.playerId;
+            } else {
+                // Fallback
+                for(let i=0; i<11; i++) {
+                    if(!currentPitchPlayers[`edit-slot-${i}`]){ currentPitchPlayers[`edit-slot-${i}`]=ps.playerId; break;}
                 }
             }
-        }
-        // C. SUPLENTE
-        else {
-            if (ps.rol !== 'Entrenador') currentSubstitutes.push(ps.playerId);
+        } else if (ps.played) {
+            // 2. Rellenar Caja Azul (Suplentes que jugaron)
+            currentSubstitutes.push(ps.playerId);
         }
     });
 
-    // --- 2. PREPARAR RONDAS (Código estándar) ---
-    let roundOptionsHtml = '<option value="">-- Sin asignar --</option>';
-    let compConfig = null;
-    if (match.competition && typeof COMPETICIONES_ACTUALES !== 'undefined') {
-        const matchCompName = match.competition.toString().trim().toLowerCase();
-        const compKey = Object.keys(COMPETICIONES_ACTUALES).find(key => {
-            const cfg = COMPETICIONES_ACTUALES[key];
-            return key.toLowerCase() === matchCompName || (cfg.nombre && cfg.nombre.toLowerCase() === matchCompName);
-        });
-        if (compKey) compConfig = COMPETICIONES_ACTUALES[compKey];
-    }
-    if (compConfig) {
-        let allRounds = [];
-        compConfig.fases.forEach(fase => { fase.rondas.forEach(r => allRounds.push({ ...r, faseTipo: fase.tipo })); });
-        allRounds.sort((a, b) => a.orden - b.orden);
-        roundOptionsHtml = allRounds.map(r => {
-            const isCurrent = (match.roundId === r.id) || (match.round === r.id) || (match.round === r.nombre);
-            return `<option value="${r.id}" ${isCurrent ? 'selected' : ''}>${r.nombre}</option>`;
-        }).join('');
-    } else {
-        roundOptionsHtml = `<option value="${match.round}" selected>${match.round}</option>`;
-    }
-
-    // --- 3. INYECTAR HTML (ESTRUCTURA QUE ESPERA TU MOTOR) ---
-    // Nota: Aquí usamos los IDs que tus funciones 'renderTacticalBoard' y 'renderBench' esperan.
-    // Normalmente esperan: [prefix]pitch-formation, [prefix]bench-container, etc.
-    
+    // --- HTML ESTRUCTURA HORIZONTAL ---
     content.innerHTML = `
-        <div class="h-full flex flex-col bg-gray-50" x-data="{ activeTab: 'lineup' }">
+        <div class="h-full flex flex-col bg-gray-50">
             
-            <div class="bg-white px-4 pt-4 border-b border-gray-200 shadow-sm shrink-0 flex justify-between items-center">
-                <div class="flex space-x-4">
-                    <button onclick="switchEditTab('lineup')" id="tab-btn-lineup" class="pb-2 px-2 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">
-                        🏟️ Pizarra
-                    </button>
-                    <button onclick="switchEditTab('stats')" id="tab-btn-stats" class="pb-2 px-2 text-sm font-bold text-gray-500 hover:text-indigo-600 border-b-2 border-transparent transition-colors">
-                        📊 Estadísticas
-                    </button>
-                </div>
-                <div>
-                     <select id="edit-formation-select" onchange="updatePitchFormation('edit-')" class="text-xs border rounded p-1 bg-gray-100 font-bold">
-                        <option value="4-3-3" ${currentFormation==='4-3-3'?'selected':''}>4-3-3</option>
-                        <option value="4-4-2" ${currentFormation==='4-4-2'?'selected':''}>4-4-2</option>
-                        <option value="4-2-3-1" ${currentFormation==='4-2-3-1'?'selected':''}>4-2-3-1</option>
-                        <option value="3-5-2" ${currentFormation==='3-5-2'?'selected':''}>3-5-2</option>
-                    </select>
-                </div>
+            <div class="bg-white p-3 border-b border-gray-200 shadow-sm shrink-0 grid grid-cols-1 md:grid-cols-4 gap-3">
+                 <input type="hidden" id="edit-match-id" value="${match.id}">
+                 <div>
+                    <label class="text-[10px] font-bold text-gray-400">RESULTADO</label>
+                    <input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 font-bold text-center">
+                 </div>
+                 <div class="md:col-span-3 flex items-end pb-1">
+                    <div class="w-full bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1 rounded text-xs font-bold flex justify-between">
+                        <span>RIVAL: ${match.opponent}</span>
+                        <span>RONDA: ${match.round}</span>
+                    </div>
+                 </div>
             </div>
 
-            <div id="edit-tab-lineup" class="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-800">
-                 
-                 <div class="w-full md:w-64 bg-white border-r border-gray-200 flex flex-col z-10">
-                    <div class="p-2 bg-gray-100 border-b text-xs font-bold text-gray-500 uppercase">Plantilla / Banquillo</div>
-                    <div id="edit-bench-container" 
-                         class="flex-1 overflow-y-auto p-2 space-y-1"
-                         ondragover="allowDrop(event)" 
-                         ondrop="dropToBench(event, 'edit-')">
-                         </div>
-                 </div>
+            <div id="edit-step-lineup" class="flex flex-col flex-1 h-full p-2 overflow-hidden">
+                
+                <div class="mb-2 flex justify-between items-center bg-white p-2 rounded-xl border shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-gray-500">ESQUEMA:</span>
+                        <select id="edit-formation-select" class="border rounded text-sm font-bold p-1 bg-gray-50" onchange="updatePitchFormation('edit-')">
+                            <option value="4-3-3" ${currentFormation==='4-3-3'?'selected':''}>4-3-3</option>
+                            <option value="4-4-2" ${currentFormation==='4-4-2'?'selected':''}>4-4-2</option>
+                            <option value="4-2-3-1" ${currentFormation==='4-2-3-1'?'selected':''}>4-2-3-1</option>
+                            <option value="3-5-2" ${currentFormation==='3-5-2'?'selected':''}>3-5-2</option>
+                        </select>
+                    </div>
+                    <button onclick="goToEditStats()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-1.5 px-4 rounded shadow text-xs flex items-center gap-1">
+                        Siguiente: Stats ➡️
+                    </button>
+                </div>
 
-                 <div class="flex-1 relative overflow-hidden flex items-center justify-center p-4 bg-emerald-800">
-                    <div id="edit-pitch-wrapper" class="relative w-full max-w-2xl aspect-[3/4] md:aspect-[4/3] bg-green-600 rounded-xl shadow-2xl border-4 border-white/20 overflow-hidden">
-                        <div class="absolute inset-0 opacity-30 bg-[length:50px_50px] bg-[linear-gradient(rgba(255,255,255,.2)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.2)_1px,transparent_1px)]"></div>
-                        <div class="absolute inset-x-0 top-1/2 h-0.5 bg-white/40"></div>
-                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 border-2 border-white/40 rounded-full"></div>
+                <div class="flex flex-col md:flex-row gap-2 h-[550px] min-h-0">
+                    
+                    <div class="flex-1 relative bg-emerald-800 rounded-xl border-4 border-white/20 overflow-hidden shadow-xl">
+                        <div class="pitch-container w-full h-full" style="margin:0; border:none; border-radius:0;">
+                            <div class="pitch-line-mid"></div><div class="pitch-circle"></div>
+                            <div class="pitch-box-left" style="left:0; border-left:none;"></div>
+                            <div class="pitch-box-right" style="right:0; border-right:none;"></div>
+                            
+                            <div id="edit-pitch-players-layer"></div>
+                        </div>
+                    </div>
+
+                    <div class="w-full md:w-64 flex flex-col gap-2 h-full">
                         
-                        <div id="edit-pitch-formation" class="absolute inset-0 z-10"></div>
-                    </div>
-                 </div>
-            </div>
+                        <div class="flex-1 bg-white rounded-xl border border-gray-300 flex flex-col shadow-sm overflow-hidden">
+                            <div class="bg-gray-100 p-1.5 border-b text-[10px] font-bold text-center text-gray-500 uppercase">Plantilla Disponible</div>
+                            <div id="edit-bench-zone" class="flex-1 overflow-y-auto bg-gray-50" ondragover="allowDrop(event)" ondrop="dropToBench(event, 'edit-')"></div>
+                        </div>
 
-            <div id="edit-tab-stats" class="hidden flex-col flex-1 overflow-hidden bg-gray-50">
-                <div class="bg-white p-4 border-b border-gray-100 grid grid-cols-2 md:grid-cols-4 gap-3 shrink-0">
-                    <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-400">Resultado</label>
-                        <input type="text" id="edit-result-val" value="${match.result}" class="w-full border rounded px-2 py-1 text-center font-bold">
-                    </div>
-                     <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-400">Ronda</label>
-                        <select id="edit-round-select" class="w-full border rounded px-2 py-1">${roundOptionsHtml}</select>
-                    </div>
-                     <div>
-                        <label class="text-[10px] uppercase font-bold text-gray-400">Rival</label>
-                        <input type="text" value="${match.opponent}" class="w-full bg-gray-50 border rounded px-2 py-1 text-gray-500" readonly>
+                        <div class="h-1/3 bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 flex flex-col overflow-hidden">
+                            <div class="bg-blue-100 p-1.5 border-b border-blue-200 text-[10px] font-bold text-center text-blue-600 uppercase">Suplentes (Jugaron)</div>
+                            <div id="edit-subs-zone" class="flex-1 p-2 flex flex-wrap gap-2 content-start overflow-y-auto" ondragover="allowDrop(event)" ondrop="dropToSubs(event, 'edit-')"></div>
+                        </div>
+
                     </div>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 space-y-2" id="edit-stats-list"></div>
             </div>
 
-            <div class="p-4 border-t border-gray-200 bg-white flex justify-end gap-3 shrink-0 z-20">
-                <button onclick="closeEditMatchModal()" class="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded">Cancelar</button>
-                <button onclick="executeEditSave()" class="px-6 py-2 bg-emerald-600 text-white rounded shadow font-bold hover:bg-emerald-700">💾 GUARDAR CAMBIOS</button>
+            <div id="edit-step-stats" class="hidden flex-col flex-1 h-full p-4 overflow-hidden">
+                <div id="edit-stats-list" class="flex-1 overflow-y-auto border rounded-xl p-4 bg-white space-y-2"></div>
+                <div class="flex justify-end gap-3 pt-4 border-t mt-2">
+                    <button onclick="backToEditLineup()" class="text-gray-500 font-bold px-4">⬅️ Volver a Pizarra</button>
+                    <button onclick="handleEditMatchSubmit()" class="bg-emerald-600 text-white font-bold py-2 px-6 rounded shadow hover:bg-emerald-700">💾 GUARDAR CAMBIOS</button>
+                </div>
             </div>
         </div>
     `;
 
-    // --- 4. LLAMAR A TUS FUNCIONES EXISTENTES ---
-    
-    // A) Renderizar Pizarra y Banquillo usando el prefijo 'edit-'
-    // Asegúrate de que tus funciones renderTacticalBoard y renderBench acepten el prefijo como argumento
-    // Si no aceptan argumentos, tendrás que modificarlas ligeramente para que busquen `prefix + 'id'`
-    if (typeof renderTacticalBoard === 'function') renderTacticalBoard('edit-'); 
-    if (typeof renderBench === 'function') renderBench('edit-');
+    // 4. RENDERIZAR
+    renderTacticalBoard('edit-'); 
+    renderBench('edit-');
 
-    // B) Renderizar Lista Stats
-    renderEditStatsList(match, allPlayers);
-
-    // Mostrar Modal
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.style.display = 'flex';
-    modal.style.zIndex = '99999';
-
-    switchEditTab('lineup');
 }
+
 function renderEditStatsList(match, allPlayers) {
     const statsList = document.getElementById('edit-stats-list');
     
@@ -7095,57 +7055,112 @@ function closeEditMatchModal() {
         let currentSubstitutes = [];
         let currentFormation = '4-3-3'; // Formación por defecto
 
-        function updatePitchFormation() {
-            const isEditing = document.getElementById('edit-match-modal').classList.contains('active');
-            const prefix = isEditing ? 'edit-' : '';
-            const selectId = isEditing ? 'edit-formation-select' : 'formation-select';
-            
-            const select = document.getElementById(selectId);
-            if (select) {
-                currentFormation = select.value;
-                renderTacticalBoard(prefix);
-                updateFormationStats();
-            }
-        }
-
-function renderTacticalBoard(prefix = '') {
-    const slotsLayer = document.getElementById(prefix + 'pitch-slots-layer');
-    const playersLayer = document.getElementById(prefix + 'pitch-players-layer');
+function updatePitchFormation(prefix = 'wizard-') {
+    // 1. Buscar el selector de formación
+    // En Wizard suele ser 'new-formation', en Edit es 'edit-formation-select'
+    let selectId = 'new-formation';
+    if (prefix === 'edit-') selectId = 'edit-formation-select';
     
-    if (!slotsLayer || !playersLayer) return;
-
-    const coords = FORMACIONES[currentFormation] || []; 
-
-    slotsLayer.innerHTML = coords.map((pos, index) => {
-        const posName = getPositionName(currentFormation, index);
-        return `
-                <div class="pitch-slot cursor-pointer hover:bg-white/20 transition-colors pointer-events-auto" 
-             id="${prefix}slot-${index}"
-             style="top: ${pos.top}%; left: ${pos.left}%;"
-             ondragover="allowDrop(event)" 
-             ondrop="drop(event)"
-             onclick="openPlayerSelector('${prefix}slot-${index}')"
-             title="${posName}"> 
-             <span class="heatmap-label" style="position:absolute; bottom:-15px; font-size:7px; opacity:0.7; width:60px; text-align:center;">${posName}</span>
-        </div>
-    `}).join('');
-
-    playersLayer.innerHTML = ''; 
-    
-    // Convertimos a array para tener el índice (i)
-    Object.keys(currentPitchPlayers).forEach((slotId, i) => {
-        if (slotId.startsWith(prefix)) {
-            const playerId = currentPitchPlayers[slotId];
-            const player = getPlayers().find(p => p.id === playerId);
-            if (player) {
-                // Pasamos 'i' como tercer argumento para el retraso de la animación
-                renderPlayerOnPitch(player, slotId, playersLayer, i);
-            }
-        }
-    });
-    if (typeof updateSquadValueDisplay === 'function') {
-        updateSquadValueDisplay();
+    const select = document.getElementById(selectId);
+    if (select) {
+        currentFormation = select.value; // Actualizamos variable global
+        
+        // 2. Re-renderizar la pizarra correcta
+        renderTacticalBoard(prefix);
     }
+}
+
+function renderTacticalBoard(prefix = 'wizard-') {
+    const containerId = prefix + 'pitch-players-layer'; 
+    const container = document.getElementById(containerId);
+    
+    // Fallback por si el ID en el HTML es diferente
+    if (!container) {
+        const fallback = document.getElementById(prefix + 'pitch-formation');
+        if(!fallback) return; 
+        // Si tienes una función fallback, úsala, si no, intentamos pintar aquí
+    }
+
+    if(container) container.innerHTML = '';
+    
+    const allPlayers = getPlayers();
+    const currentForm = (typeof currentFormation !== 'undefined') ? currentFormation : '4-3-3';
+    
+    // --- COORDENADAS HORIZONTALES (Portero izquierda, ataque derecha) ---
+    // t: top (vertical), l: left (horizontal)
+    const horizontalCoords = {
+        "4-3-3": [
+            {t:50, l:5},  // GK
+            {t:20, l:25}, {t:40, l:25}, {t:60, l:25}, {t:80, l:25}, // Defensas
+            {t:30, l:50}, {t:50, l:50}, {t:70, l:50}, // Medios
+            {t:20, l:75}, {t:50, l:75}, {t:80, l:75}  // Delanteros
+        ],
+        "4-4-2": [
+            {t:50, l:5},  // GK
+            {t:15, l:25}, {t:38, l:25}, {t:62, l:25}, {t:85, l:25}, // Def
+            {t:15, l:50}, {t:38, l:50}, {t:62, l:50}, {t:85, l:50}, // Med
+            {t:35, l:75}, {t:65, l:75}  // Del
+        ],
+        "4-2-3-1": [
+            {t:50, l:5},  // GK
+            {t:15, l:25}, {t:38, l:25}, {t:62, l:25}, {t:85, l:25}, // Def
+            {t:35, l:45}, {t:65, l:45}, // Pivotes
+            {t:15, l:65}, {t:50, l:65}, {t:85, l:65}, // MP
+            {t:50, l:82}  // DC
+        ],
+        "3-5-2": [
+            {t:50, l:5}, // GK
+            {t:25, l:25}, {t:50, l:25}, {t:75, l:25}, // 3 Defensas
+            {t:15, l:50}, {t:35, l:50}, {t:50, l:40}, {t:65, l:50}, {t:85, l:50}, // 5 Medios
+            {t:35, l:75}, {t:65, l:75} // 2 Delanteros
+        ]
+    };
+    
+    const coords = horizontalCoords[currentForm] || horizontalCoords["4-3-3"];
+
+    for (let i = 0; i < 11; i++) {
+        const slotKey = `${prefix}slot-${i}`;
+        const playerId = currentPitchPlayers[slotKey];
+        
+        const div = document.createElement('div');
+        div.className = "absolute w-10 h-10 md:w-12 md:h-12 transform -translate-x-1/2 -translate-y-1/2 cursor-move z-20 group";
+        div.id = `${prefix}p-${playerId || 'slot-'+i}`;
+        div.draggable = true;
+        div.ondragstart = (e) => drag(e);
+        
+        const pos = coords[i] || {t: 50, l: 50}; 
+        div.style.top = pos.t + '%';
+        div.style.left = pos.l + '%';
+
+        if (playerId) {
+            const p = allPlayers.find(pl => pl.id === playerId);
+            if (p) {
+                div.innerHTML = `
+                    <div class="w-full h-full rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform">
+                        <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none">
+                    </div>
+                    <div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-[8px] px-1.5 rounded font-bold whitespace-nowrap pointer-events-none">
+                        ${p.apodo}
+                    </div>
+                    <div onclick="removePlayerFromAllZones('${p.id}')" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity z-30">×</div>
+                `;
+            }
+        } else {
+            // Slot vacío
+            div.innerHTML = `
+                <div class="w-full h-full rounded-full border-2 border-dashed border-white/40 flex items-center justify-center group-hover:border-white/80 transition-colors bg-white/10">
+                    <span class="text-white/60 text-xs font-bold">${i + 1}</span>
+                </div>
+            `;
+        }
+        if(container) container.appendChild(div);
+    }
+}
+
+// Helper por si tu HTML usa la estructura antigua de 'formation' en vez de 'layers'
+function renderTacticalBoardFallback(prefix, container) {
+    // (Pega aquí el contenido de tu renderTacticalBoard antiguo si quieres soporte legacy, 
+    // pero idealmente usa el de arriba y asegúrate que el ID del HTML coincida)
 }
 
 // AÑADIDO: Nuevo parámetro 'delayIndex' al final (por defecto 0)
@@ -7210,57 +7225,71 @@ function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
 
     container.appendChild(div);
 }
-        function renderBench(prefix = '') {
-            const benchZone = document.getElementById(prefix + 'bench-zone');
-            const subsZone = document.getElementById(prefix + 'subs-zone');
-            
-            if(!benchZone || !subsZone) return;
+function renderBench(prefix = 'wizard-') {
+    const allPlayers = getPlayers();
+    const activeIds = Object.values(currentPitchPlayers); // En campo
+    const subIds = currentSubstitutes || []; // En zona azul
 
-            let sourcePlayers = [];
-            
-            if (editingMatchPlayersPool) {
-                const all = getPlayers();
-                sourcePlayers = all.filter(p => editingMatchPlayersPool.includes(p.id) && p.posicion !== 'entrenador');
-            } else {
-                sourcePlayers = getActivePlayers().filter(p => p.posicion !== 'entrenador');
+    // --- 1. ZONA SUPLENTES (CAJA AZUL) ---
+    const subsContainer = document.getElementById(prefix + 'subs-zone');
+    if (subsContainer) {
+        subsContainer.innerHTML = '';
+        subIds.forEach(id => {
+            const p = allPlayers.find(pl => pl.id === id);
+            // Filtro anti-entrenador por si acaso
+            if (p && p.posicion !== 'entrenador') {
+                const el = document.createElement('div');
+                el.className = "relative w-10 h-10 cursor-move group m-1";
+                el.draggable = true;
+                el.ondragstart = (e) => drag(e);
+                el.setAttribute('data-player-id', p.id);
+                el.id = `${prefix}sub-${p.id}`;
+                
+                el.innerHTML = `
+                    <div class="w-full h-full rounded-full border-2 border-blue-400 overflow-hidden bg-white hover:scale-110 transition-transform shadow-sm">
+                        <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none">
+                    </div>
+                    <div onclick="removeFromSubs('${p.id}')" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 cursor-pointer shadow">×</div>
+                `;
+                subsContainer.appendChild(el);
             }
-            
-            const playersOnPitchIds = Object.values(currentPitchPlayers);
-            
-            const availablePlayers = sourcePlayers.filter(p => 
-                !playersOnPitchIds.includes(p.id) && !currentSubstitutes.includes(p.id)
-            );
-            
-            const subPlayers = sourcePlayers.filter(p => currentSubstitutes.includes(p.id));
+        });
+    }
 
-            const sorter = (a, b) => {
-                if (a.posicion === 'portero') return -1;
-                if (b.posicion === 'portero') return 1;
-                return a.dorsal - b.dorsal;
-            };
-            availablePlayers.sort(sorter);
-            subPlayers.sort(sorter);
+    // --- 2. ZONA PLANTILLA (CAJA BLANCA) ---
+    // Buscamos el contenedor. En wizard es 'bench-zone', en edit es 'edit-bench-zone'
+    const benchContainer = document.getElementById(prefix + 'bench-zone') || document.getElementById(prefix + 'bench-container');
+    
+    if (benchContainer) {
+        benchContainer.innerHTML = '';
+        
+        // Filtramos: Ni en campo, ni en caja azul, ni entrenadores
+        const available = allPlayers.filter(p => 
+            !activeIds.includes(p.id) && 
+            !subIds.includes(p.id) && 
+            p.posicion !== 'entrenador'
+        );
 
-            const createToken = (p) => `
-                <div class="player-token relative" 
-                     style="position: relative; transform: none; width: 50px; height: 50px; margin: 4px;"
-                     draggable="true" 
-                     data-player-id="${p.id}"
-                     ondragstart="drag(event)"
-                     onclick="openPlayerSelector(null)">
-                    <img src="${p.foto}" style="object-position: top !important;" onerror="this.src='https://via.placeholder.com/40x40?text=${p.dorsal}'">
-                    <div class="player-token-name">${p.apodo || p.apellido}</div>
+        // Estilo GRID
+        benchContainer.className = "flex flex-wrap gap-2 content-start p-2";
+
+        available.forEach(p => {
+            const el = document.createElement('div');
+            el.className = "relative w-10 h-10 cursor-move opacity-90 hover:opacity-100 transition-opacity";
+            el.draggable = true;
+            el.ondragstart = (e) => drag(e);
+            el.setAttribute('data-player-id', p.id);
+            el.id = `${prefix}pool-${p.id}`;
+
+            el.innerHTML = `
+                <div class="w-full h-full rounded-full border border-gray-300 overflow-hidden bg-white shadow-sm hover:border-indigo-500 hover:ring-2 hover:ring-indigo-200 transition-all">
+                    <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none" title="${p.apodo}">
                 </div>
             `;
-
-            benchZone.innerHTML = availablePlayers.map(createToken).join('');
-            subsZone.innerHTML = subPlayers.map(createToken).join('');
-            
-            benchZone.ondragover = allowDrop;
-            benchZone.ondrop = dropToBench;
-            subsZone.ondragover = allowDrop;
-            subsZone.ondrop = dropToSubs;
-        }
+            benchContainer.appendChild(el);
+        });
+    }
+}
 
         // --- DRAG & DROP NATIVO ---
 
@@ -9291,111 +9320,59 @@ function renderLineWarsChart() {
             container.innerHTML = html;
         }
 
-        function handleEditMatchSubmit(e) {
-    if(e) e.preventDefault(); 
+function handleEditMatchSubmit(e) {
+    if(e) e.preventDefault();
     
     try {
-        if (!currentTeam) throw new Error("No hay equipo seleccionado (currentTeam es null). Recarga la página.");
-
         const matchId = document.getElementById('edit-match-id').value;
         const matches = getData('matches');
         const matchIndex = matches.findIndex(m => m.id === matchId);
+        if (matchIndex === -1) throw new Error("Partido no encontrado");
         
-        if (matchIndex === -1) throw new Error("No se encuentra el partido en la memoria.");
-
-        // --- CORRECCIÓN: Definimos la variable AQUÍ ARRIBA para poder usarla después ---
         const matchToUpdate = matches[matchIndex];
-        // -----------------------------------------------------------------------------
-
-        // 1. Datos Generales
-        const resultInput = document.getElementById('edit-result-val');
-        const newResult = resultInput ? resultInput.value.trim() : null;
-        if (!newResult) throw new Error("El resultado no puede estar vacío.");
-
-        const formationSelect = document.getElementById('edit-formation-select');
-        const newFormation = formationSelect ? formationSelect.value : "4-3-3";
         
-        // --- LÓGICA DE RONDA (Ahora sí funcionará porque matchToUpdate existe) ---
-        const roundSelect = document.getElementById('edit-round-select');
-        if (roundSelect && roundSelect.value) {
-            const selectedRoundId = roundSelect.value;
-            
-            // Intentar encontrar el nombre bonito de la ronda en la configuración
-            let roundName = selectedRoundId; // Fallback
-            
-            // Buscar en COMPETICIONES_ACTUALES si es posible
-            if (typeof COMPETICIONES_ACTUALES !== 'undefined' && matchToUpdate.competition) {
-                const cKey = Object.keys(COMPETICIONES_ACTUALES).find(k => 
-                    k.toLowerCase() === matchToUpdate.competition.toLowerCase() || 
-                    (COMPETICIONES_ACTUALES[k].nombre && COMPETICIONES_ACTUALES[k].nombre.toLowerCase() === matchToUpdate.competition.toLowerCase())
-                );
-                
-                if (cKey) {
-                    const cfg = COMPETICIONES_ACTUALES[cKey];
-                    // Buscar la ronda en todas las fases
-                    cfg.fases.forEach(f => {
-                        const r = f.rondas.find(ron => ron.id === selectedRoundId);
-                        if (r) roundName = r.nombre;
-                    });
-                }
-            }
+        // 1. Datos Básicos
+        matchToUpdate.result = document.getElementById('edit-result-val').value;
+        matchToUpdate.formation = document.getElementById('edit-formation-select').value;
+        matchToUpdate.outcome = calculateMatchOutcome(matchToUpdate.result, matchToUpdate.venue);
 
-            // Guardamos AMBOS: el ID para lógica y el Nombre para visualización
-            matchToUpdate.roundId = selectedRoundId; 
-            matchToUpdate.round = roundName;         
-        }
-        // ----------------------------
-
-        // 2. Recoger Stats y Posiciones
+        // 2. Jugadores
         const statsContainer = document.getElementById('edit-stats-list');
-        if (!statsContainer) throw new Error("No se encuentra el contenedor de estadísticas.");
-
         const newPlayerStats = [];
+        
+        // Mapa de la pizarra para guardar el slot exacto
+        const pitchMap = {};
+        for (let i=0; i<11; i++) {
+            const pid = currentPitchPlayers[`edit-slot-${i}`];
+            if(pid) pitchMap[pid] = i;
+        }
 
         statsContainer.querySelectorAll('[data-player-id]').forEach(row => {
             const playerId = row.getAttribute('data-player-id');
             const rol = row.getAttribute('data-rol');
-            const specificPos = row.getAttribute('data-specific-pos');
-            const isCoach = rol === 'Entrenador';
             const isStarter = rol === 'Titular';
-
-            let savedSlotIdx = null;
-            if (isStarter) {
-                const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
-                if (slotKey) {
-                    const numMatch = slotKey.match(/\d+/);
-                    if (numMatch) savedSlotIdx = parseInt(numMatch[0]);
-                }
-            }
-
-            let rating = null;
-            const ratingInput = row.querySelector('.stat-rating');
-            if (ratingInput && ratingInput.value !== "") rating = parseFloat(ratingInput.value);
-           
+            
+            // Leer inputs (Strings con comas)
             const goalsStr = row.querySelector('.stat-goals-minutes')?.value || "";
             const assistsStr = row.querySelector('.stat-assists-minutes')?.value || "";
             const yellowStr = row.querySelector('.stat-yellow-minutes')?.value || "";
             const redStr = row.querySelector('.stat-red-minutes')?.value || "";
+            
+            const count = (str) => (!str) ? 0 : str.split(',').filter(s => s.trim() !== '').length;
+            const minsVal = parseInt(row.querySelector('.stat-minutes')?.value) || 0;
+            const ratingVal = row.querySelector('.stat-rating')?.value;
 
-            // Función auxiliar para contar elementos separados por coma
-            const countItems = (str) => str.trim() === "" ? 0 : str.split(',').length;
-
-            const goals = isCoach ? 0 : countItems(goalsStr);
-            const assists = isCoach ? 0 : countItems(assistsStr);
-            const yellow = countItems(yellowStr);
-            const red = countItems(redStr);
-            const minutes = isCoach ? 0 : (parseInt(row.querySelector('.stat-minutes')?.value) || 0);
             newPlayerStats.push({
                 playerId,
                 isStarter,
-                pitchSlot: savedSlotIdx, 
-                rating,
-                goals,
-                assists,
-                minutes,
-                yellowCards: yellow,
-                redCards: red,
-                played: true,
+                pitchSlot: isStarter ? pitchMap[playerId] : null,
+                rating: ratingVal ? parseFloat(ratingVal) : null,
+                minutes: minsVal,
+                goals: count(goalsStr),
+                assists: count(assistsStr),
+                yellowCards: count(yellowStr),
+                redCards: count(redStr),
+                played: minsVal > 0,
                 detailGoals: goalsStr,
                 detailAssists: assistsStr,
                 detailYellow: yellowStr,
@@ -9403,126 +9380,154 @@ function renderLineWarsChart() {
             });
         });
 
-        // 3. Actualizar resto de propiedades
-        matchToUpdate.result = newResult;
-        matchToUpdate.formation = newFormation;
-        matchToUpdate.outcome = calculateMatchOutcome(newResult, matchToUpdate.venue);
         matchToUpdate.playerStats = newPlayerStats;
         matchToUpdate.mvp = calculateAutoMVP(newPlayerStats);
 
-        // 4. Guardar
         saveData('matches', matches);
         
-        if (typeof recalculateCompetitionState === "function") {
-            recalculateCompetitionState(matchToUpdate.competition);
-        }
+        if (typeof recalculateCompetitionState === "function") recalculateCompetitionState(matchToUpdate.competition);
 
         closeEditMatchModal();
         renderMatches();
-        renderStats(); 
-        renderPrincipal();
-        renderCompetitionStatus();
-        
-        editingMatchPlayersPool = null;
-        
-        alert("✅ GUARDADO CORRECTAMENTE:\n- Datos y Ronda actualizados\n- Posiciones de pizarra guardadas");
+        if(typeof renderStats === 'function') renderStats(); 
+        if(typeof renderPrincipal === 'function') renderPrincipal();
 
-    } catch (error) {
-        console.error(error);
-        alert("❌ ERROR AL GUARDAR:\n" + error.message);
+        alert("✅ Partido actualizado con éxito.");
+
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + err.message);
     }
 }
 
-          function goToEditStats() {
+function backToEditLineup() {
+    document.getElementById('edit-step-stats').classList.add('hidden');
+    document.getElementById('edit-step-stats').classList.remove('flex');
+    document.getElementById('edit-step-lineup').classList.remove('hidden');
+}
+
+function goToEditStats() {
+    // 1. Recoger jugadores de la pizarra
     const starterIds = Object.values(currentPitchPlayers).filter(id => id);
     const subIds = currentSubstitutes || []; 
     const players = getPlayers();
     
+    // Obtener datos previos para pre-rellenar
     const matchId = document.getElementById('edit-match-id').value;
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     
-    const isImported = match.isImported === true;
     const coach = players.find(p => p.posicion === 'entrenador');
 
+    // Construir lista unificada
     let roster = [];
     starterIds.forEach(id => {
         const p = players.find(pl => pl.id === id);
-        if(p) roster.push({ ...p, rol: 'Titular' });
+        if(p) roster.push({ ...p, rol: 'Titular', isStarter: true });
     });
-    
     subIds.forEach(id => {
         const p = players.find(pl => pl.id === id);
         if(p && p.posicion !== 'entrenador' && !roster.find(r => r.id === p.id)) {
-            roster.push({ ...p, rol: 'Suplente' });
+            roster.push({ ...p, rol: 'Suplente', isStarter: false });
         }
     });
-    
-    if(coach) roster.push({ ...coach, rol: 'Entrenador' });
+    if(coach) roster.push({ ...coach, rol: 'Entrenador', isStarter: false });
 
+    // 2. Renderizar la lista de stats (Igual que renderPlayerStatsForm pero manual para control total)
     const container = document.getElementById('edit-stats-list');
     
-    if (roster.length === 0) {
-        container.innerHTML = '<div class="text-center p-8 text-gray-400">No hay jugadores seleccionados.</div>';
-    } else {
-        container.innerHTML = roster.map(p => {
-            const prevStats = match.playerStats ? match.playerStats.find(ps => ps.playerId === p.id) : null;
-            const ratingVal = prevStats ? (prevStats.rating !== null ? prevStats.rating : '') : '';
-            const goalsVal = prevStats ? (prevStats.goals || 0) : 0;
-            const assistsVal = prevStats ? (prevStats.assists || 0) : 0;
-            const yellowVal = prevStats ? (prevStats.yellowCards || 0) : 0;
-            const redVal = prevStats ? (prevStats.redCards || 0) : 0;
-            const minsVal = prevStats ? (prevStats.minutes || (p.rol === 'Titular' ? 90 : (p.rol === 'Suplente' ? 30 : 0))) : 0;
-            
-            const isCoach = p.rol === 'Entrenador';
-            
-            const ratingAttr = (isImported) 
-                ? `readonly class="stat-rating w-full bg-gray-100 text-gray-400 border border-gray-200 rounded text-center font-bold text-sm py-1 cursor-not-allowed" min="0"`
-                : `class="stat-rating w-full border border-gray-300 rounded text-center font-bold text-sm py-1 focus:ring-2 focus:ring-blue-500" min="0"`;
+    container.innerHTML = roster.map(p => {
+        const prevStats = match.playerStats ? match.playerStats.find(ps => ps.playerId === p.id) : null;
+        
+        // Recuperar valores (Strings con comas para la nueva lógica)
+        const goalsStr = prevStats?.detailGoals || "";
+        const assistsStr = prevStats?.detailAssists || "";
+        const yellowStr = prevStats?.detailYellow || "";
+        const redStr = prevStats?.detailRed || "";
+        const ratingVal = prevStats?.rating || "";
+        const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 0);
 
-            return `
-            <div class="flex items-center gap-3 bg-white p-2 rounded-lg border border-gray-100 shadow-sm" data-player-id="${p.id}" data-rol="${p.rol}">
-                <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200 bg-gray-50" onerror="this.src='https://via.placeholder.com/40'">
-                <div class="w-28 shrink-0">
-                    <div class="font-bold text-sm truncate text-gray-800">${p.apodo || p.apellido}</div>
-                    <div class="text-[10px] uppercase font-bold tracking-wider ${p.rol === 'Titular' ? 'text-emerald-600' : (isCoach ? 'text-gray-500' : 'text-blue-500')}">${p.rol}</div>
-                </div>
-                <div class="flex-1 grid grid-cols-6 gap-2">
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Nota</label><input type="number" step="0.1" value="${ratingVal}" ${ratingAttr} placeholder="-"></div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Gol</label>${isCoach?'-':`<input type="number" class="stat-goals w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${goalsVal}">`}</div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Asis</label>${isCoach?'-':`<input type="number" class="stat-assists w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${assistsVal}">`}</div>
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Min</label>${isCoach?'-':`<input type="number" class="stat-minutes w-full border border-gray-300 rounded text-center text-sm py-1" min="0" value="${minsVal}">`}</div>
-                    
-                    <div class="text-center">
-                        <label class="block text-[9px] uppercase text-gray-400 mb-1">Ama</label>
-                        <input type="number" 
-                               class="stat-yellow w-full border border-yellow-200 bg-yellow-50 rounded text-center text-sm py-1" 
-                               min="0" max="2" 
-                               value="${yellowVal}" 
-                               oninput="checkAutoRedCard(this)">
+        // Contar para botones
+        const count = (str) => (!str) ? 0 : str.split(',').filter(s => s.trim() !== '').length;
+        const gC = count(goalsStr) || (prevStats?.goals || 0);
+        const aC = count(assistsStr) || (prevStats?.assists || 0);
+        const yC = count(yellowStr) || (prevStats?.yellowCards || 0);
+        const rC = count(redStr) || (prevStats?.redCards || 0);
+
+        // Estilos Botones (Clave para que se vea moderno)
+        const btnBase = "w-full h-9 border rounded text-sm font-bold flex items-center justify-center transition-all ";
+        const btnStyle = (c, color='indigo') => c > 0 
+            ? btnBase + `bg-${color}-100 text-${color}-700 border-${color}-300` 
+            : btnBase + "bg-white text-gray-700 border-gray-300 hover:border-indigo-400";
+
+        // IDs Únicos
+        const prefix = 'edit-';
+        const goalId = `${prefix}goals-${p.id}`;
+        const assistId = `${prefix}assists-${p.id}`;
+        const yellowId = `${prefix}yellow-${p.id}`;
+        const redId = `${prefix}red-${p.id}`;
+        const isCoach = p.rol === 'Entrenador';
+
+        // Badge de Posición
+        let badgeHtml = '';
+        if (isCoach) badgeHtml = '<span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-1 rounded">STAFF</span>';
+        else if (p.rol === 'Titular') badgeHtml = '<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200">TITULAR</span>';
+        else badgeHtml = '<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100">SUPLENTE</span>';
+
+        return `
+        <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" data-player-id="${p.id}" data-rol="${p.rol}">
+             
+             <div class="flex items-center gap-3 w-full md:w-1/3 min-w-[200px]">
+                <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200" onerror="this.src='https://via.placeholder.com/40'">
+                <div class="flex-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-gray-800 text-sm truncate pr-2">${p.apodo || p.apellido}</span>
+                        ${badgeHtml}
                     </div>
-                    
-                    <div class="text-center"><label class="block text-[9px] uppercase text-gray-400 mb-1">Roj</label><input type="number" class="stat-red w-full border border-red-200 bg-red-50 rounded text-center text-sm py-1" min="0" max="1" value="${redVal}"></div>
+                    <span class="text-xs text-gray-400">#${p.dorsal} - ${p.posicion}</span>
                 </div>
-            </div>`;
-        }).join('');
-    }
+            </div>
 
+            <div class="flex-1 grid grid-cols-5 gap-3 w-full" style="${isCoach ? 'display:none' : ''}">
+                 <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Nota</label>
+                 <input type="number" step="0.1" class="stat-rating w-full h-9 px-2 border border-gray-300 rounded text-center font-bold" value="${ratingVal}" placeholder="-"></div>
+
+                 <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Gol</label>
+                 <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${goalsStr}">
+                 <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnStyle(gC)}">${gC}</button></div>
+
+                 <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Asis</label>
+                 <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${assistsStr}">
+                 <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnStyle(aC)}">${aC}</button></div>
+
+                 <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Min</label>
+                 <input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-center text-gray-600 font-mono" value="${minsVal}"></div>
+
+                 <div class="flex flex-col items-center"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Tarj</label>
+                    <div class="flex gap-1 w-full">
+                        <div class="flex-1">
+                            <input type="hidden" class="stat-yellow-minutes" id="${yellowId}" value="${yellowStr}">
+                            <button type="button" id="btn-${yellowId}" onclick="openMinuteModal('${yellowId}', 'Amarilla')" class="${btnStyle(yC, 'yellow')}">${yC}</button>
+                        </div>
+                        <div class="flex-1">
+                            <input type="hidden" class="stat-red-minutes" id="${redId}" value="${redStr}">
+                            <button type="button" id="btn-${redId}" onclick="openMinuteModal('${redId}', 'Roja')" class="${btnStyle(rC, 'red')}">${rC}</button>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+            
+            <div class="flex-1 text-center text-xs text-gray-400 italic" style="${!isCoach ? 'display:none' : ''}">Staff Técnico</div>
+        </div>`;
+    }).join('');
+
+    // Cambiar vista
     document.getElementById('edit-step-lineup').classList.add('hidden');
     document.getElementById('edit-step-stats').classList.remove('hidden');
     document.getElementById('edit-step-stats').classList.add('flex');
-    const saveBtn = document.getElementById('edit-save-btn');
-    if (saveBtn) saveBtn.style.display = 'block';
 }
 
-        function backToEditLineup() {
-            document.getElementById('edit-step-stats').classList.add('hidden');
-            document.getElementById('edit-step-lineup').classList.remove('hidden');
-             const saveBtn = document.getElementById('edit-save-btn');
-            if (saveBtn) saveBtn.style.display = 'none';
-            // Ocultar botón Guardar para que no guarden a medias
-            document.querySelector('#edit-match-modal button[type="button"][onclick="handleEditMatchSubmit(event)"]').classList.add('hidden');
-        }
+
         // --- AUTO-ROJA: Función para detectar 2 amarillas ---
 window.checkAutoRedCard = function(yellowInput) {
     // 1. Obtenemos el valor actual de amarillas
