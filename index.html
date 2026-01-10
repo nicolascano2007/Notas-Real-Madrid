@@ -5372,6 +5372,21 @@ function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlaye
 
         const btnClass = "w-full h-9 bg-white border border-gray-300 rounded text-sm text-gray-700 font-bold hover:border-indigo-400 hover:text-indigo-600 transition-colors flex items-center justify-center";
 
+        // --- LÓGICA CONDICIONAL PARA ENTRENADOR ---
+        const goalsInput = isCoach 
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 select-none">-</div>`
+            : `<input type="hidden" class="stat-goals-minutes" id="${goalId}" value="">
+               <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnClass}">0</button>`;
+
+        const assistsInput = isCoach
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 select-none">-</div>`
+            : `<input type="hidden" class="stat-assists-minutes" id="${assistId}" value="">
+               <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnClass}">0</button>`;
+
+        const minsInput = isCoach
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 select-none">-</div>`
+            : `<input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-mono text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none" min="0" max="120" value="${p.isStarter ? 90 : 0}">`;
+
         return `
         <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4 mb-2 ${isSuspended ? 'opacity-70 bg-gray-50' : ''}" 
              data-player-id="${p.id}" 
@@ -5392,7 +5407,7 @@ function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlaye
                 </div>
             </div>
 
-            <div class="flex-1 grid grid-cols-5 gap-3 w-full" style="${isCoach ? 'display:none' : ''}">
+            <div class="flex-1 grid grid-cols-5 gap-3 w-full">
                 
                 <div class="flex flex-col">
                     <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Nota</label>
@@ -5401,19 +5416,17 @@ function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlaye
 
                 <div class="flex flex-col">
                     <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Gol</label>
-                    <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="">
-                    <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnClass}">0</button>
+                    ${goalsInput}
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Asis</label>
-                    <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="">
-                    <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnClass}">0</button>
+                    ${assistsInput}
                 </div>
 
                 <div class="flex flex-col">
                     <label class="text-[9px] uppercase font-bold text-gray-400 mb-1 tracking-wider">Min</label>
-                    <input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-sm text-center font-mono text-gray-600 focus:ring-2 focus:ring-indigo-500 outline-none" min="0" max="120" value="${p.isStarter ? 90 : 0}">
+                    ${minsInput}
                 </div>
 
                 <div class="flex flex-col items-center">
@@ -5432,10 +5445,6 @@ function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlaye
                     </div>
                 </div>
 
-            </div>
-            
-            <div class="flex-1 flex justify-center text-xs text-gray-400 italic" style="${!isCoach ? 'display:none' : ''}">
-                Sin estadísticas de juego
             </div>
         </div>
         `;
@@ -9527,22 +9536,19 @@ function backToEditLineup() {
 function goToEditStats() {
     console.log("➡️ Pasando a Estadísticas...");
     
-    // Asegurarnos que el modal HTML de etiquetas existe
     ensureGoalTagModal();
 
-    // 1. Recoger jugadores de la pizarra
+    // 1. Recoger datos
     const starterIds = Object.values(currentPitchPlayers).filter(id => id);
     const subIds = currentSubstitutes || []; 
     const players = getPlayers();
     
-    // Obtener datos previos
     const matchId = document.getElementById('edit-match-id').value;
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
     
     const coach = players.find(p => p.posicion === 'entrenador');
 
-    // Construir lista unificada
     let roster = [];
     starterIds.forEach(id => {
         const p = players.find(pl => pl.id === id);
@@ -9556,43 +9562,41 @@ function goToEditStats() {
     });
     if(coach) roster.push({ ...coach, rol: 'Entrenador', isStarter: false });
 
-    // 2. Renderizar lista
+    // 2. Renderizar
     const container = document.getElementById('edit-stats-list');
     
     container.innerHTML = roster.map(p => {
         const prevStats = match.playerStats ? match.playerStats.find(ps => ps.playerId === p.id) : null;
         
-        // Recuperar valores (Strings)
+        // Datos previos
         const goalsStr = prevStats?.detailGoals || "";
         const assistsStr = prevStats?.detailAssists || "";
         const yellowStr = prevStats?.detailYellow || "";
         const redStr = prevStats?.detailRed || "";
-        
-        // --- NUEVO: RECUPERAR TIPOS DE GOL (JSON) ---
         const goalTypes = prevStats?.detailGoalTypes || []; 
-
         const ratingVal = prevStats?.rating || "";
         const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 0);
 
-        // Contar para botones
+        // Contadores
         const count = (str) => (!str) ? 0 : str.split(',').filter(s => s.trim() !== '').length;
         const gC = count(goalsStr) || (prevStats?.goals || 0);
         const aC = count(assistsStr) || (prevStats?.assists || 0);
         const yC = count(yellowStr) || (prevStats?.yellowCards || 0);
         const rC = count(redStr) || (prevStats?.redCards || 0);
 
-        // Estilos Botones
+        // Estilos
         const btnBase = "w-full h-9 border rounded text-sm font-bold flex items-center justify-center transition-all ";
         const btnStyle = (c, color='indigo') => c > 0 
             ? btnBase + `bg-${color}-100 text-${color}-700 border-${color}-300` 
             : btnBase + "bg-white text-gray-700 border-gray-300 hover:border-indigo-400";
 
-        // IDs Únicos
+        // IDs
         const prefix = 'edit-';
         const goalId = `${prefix}goals-${p.id}`;
         const assistId = `${prefix}assists-${p.id}`;
         const yellowId = `${prefix}yellow-${p.id}`;
         const redId = `${prefix}red-${p.id}`;
+        
         const isCoach = p.rol === 'Entrenador';
 
         // Badge
@@ -9600,6 +9604,24 @@ function goToEditStats() {
         if (isCoach) badgeHtml = '<span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-1 rounded">STAFF</span>';
         else if (p.rol === 'Titular') badgeHtml = '<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200">TITULAR</span>';
         else badgeHtml = '<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100">SUPLENTE</span>';
+
+        // --- HTML CONDICIONAL PARA ENTRENADOR ---
+        // Si es entrenador, mostramos un guion gris en vez del input en Goles, Asistencias y Minutos.
+        
+        const goalsInputHtml = isCoach 
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 text-lg select-none bg-gray-50 border border-gray-100 rounded">-</div>`
+            : `<input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${goalsStr}">
+               <input type="hidden" class="stat-goals-types" id="${goalId}-types" value='${JSON.stringify(goalTypes)}'>
+               <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnStyle(gC)}">${gC}</button>`;
+
+        const assistsInputHtml = isCoach
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 text-lg select-none bg-gray-50 border border-gray-100 rounded">-</div>`
+            : `<input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${assistsStr}">
+               <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnStyle(aC)}">${aC}</button>`;
+
+        const minsInputHtml = isCoach
+            ? `<div class="w-full h-9 flex items-center justify-center text-gray-300 text-lg select-none bg-gray-50 border border-gray-100 rounded">-</div>`
+            : `<input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-center text-gray-600 font-mono" value="${minsVal}">`;
 
         return `
         <div class="bg-white rounded-lg p-3 border border-gray-200 shadow-sm flex flex-col md:flex-row items-center gap-4" data-player-id="${p.id}" data-rol="${p.rol}">
@@ -9615,25 +9637,23 @@ function goToEditStats() {
                 </div>
             </div>
 
-            <div class="flex-1 grid grid-cols-5 gap-3 w-full" style="${isCoach ? 'display:none' : ''}">
+            <div class="flex-1 grid grid-cols-5 gap-3 w-full">
+                 
                  <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Nota</label>
                  <input type="number" step="0.1" class="stat-rating w-full h-9 px-2 border border-gray-300 rounded text-center font-bold" value="${ratingVal}" placeholder="-"></div>
 
                  <div class="flex flex-col">
                     <label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Gol</label>
-                    <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${goalsStr}">
-                    
-                    <input type="hidden" class="stat-goals-types" id="${goalId}-types" value='${JSON.stringify(goalTypes)}'>
-
-                    <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnStyle(gC)}">${gC}</button>
+                    ${goalsInputHtml}
                  </div>
 
                  <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Asis</label>
-                 <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${assistsStr}">
-                 <button type="button" id="btn-${assistId}" onclick="openMinuteModal('${assistId}', 'Asistencias 👟')" class="${btnStyle(aC)}">${aC}</button></div>
+                    ${assistsInputHtml}
+                 </div>
 
                  <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Min</label>
-                 <input type="number" class="stat-minutes w-full h-9 px-2 border border-gray-300 rounded text-center text-gray-600 font-mono" value="${minsVal}"></div>
+                    ${minsInputHtml}
+                 </div>
 
                  <div class="flex flex-col items-center"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Tarj</label>
                     <div class="flex gap-1 w-full">
@@ -9648,8 +9668,6 @@ function goToEditStats() {
                     </div>
                  </div>
             </div>
-            
-            <div class="flex-1 text-center text-xs text-gray-400 italic" style="${!isCoach ? 'display:none' : ''}">Staff Técnico</div>
         </div>`;
     }).join('');
 
