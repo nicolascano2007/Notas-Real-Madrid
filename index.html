@@ -11227,6 +11227,7 @@ function ensureGoalTagModal() {
     `;
     document.body.appendChild(modal);
 }
+// B. ABRIR ETIQUETADOR
 let currentTaggingGoalId = null;
 
 function openGoalTagging(goalInputId, minutesStr) {
@@ -11247,7 +11248,21 @@ function openGoalTagging(goalInputId, minutesStr) {
         const savedData = existingTags[index] || {};
         const selectedTags = savedData.tags || [];
 
-        const tagsList = ['Pie derecho', 'Pie izquierdo', 'Cabeza', 'Chilena', 'Volea', 'Balón parado', 'Olímpico', 'Corner', 'Falta directa', 'Penalti'];
+        // --- LISTA DE ETIQUETAS ACTUALIZADA ---
+        const tagsList = [
+            'Pie derecho', 
+            'Pie izquierdo', 
+            'Cabeza', 
+            'Chilena', 
+            'Volea', 
+            'Tacón',           // <--- NUEVA
+            'Fuera del área',  // <--- NUEVA
+            'Balón parado', 
+            'Olímpico', 
+            'Corner', 
+            'Falta directa', 
+            'Penalti'
+        ];
         
         const tagsHtml = tagsList.map(tag => {
             const isChecked = selectedTags.includes(tag) ? 'checked' : '';
