@@ -3698,134 +3698,176 @@ function renderRegularityAnalysis() {
         renderCard("Los 'Reloj Suizo' (Más Regulares)", "🛡️", mostConsistent, "text-emerald-600", 'regular') +
         renderCard("Las 'Montañas Rusas' (Más Irregulares)", "🎢", leastConsistent, "text-amber-600", 'irregular');
 }
-        // ==========================================
-        // GRÁFICOS INTERACTIVOS (CHART.JS)
-        // ==========================================
+        /* ========================================================= */
+/* 📈 RENDERIZAR GRÁFICOS (EVOLUCIÓN Y GOLES)                */
+/* ========================================================= */
+let evolutionChart = null;
+let goalsChart = null;
 
-        let goalsChart = null;
-        let evolutionChart = null;
+function renderCharts(filteredMatches) {
+    // 1. PREPARAR EL TERRENO (HTML)
+    const wrapper = document.getElementById('stats-charts-wrapper');
+    if (!wrapper) return;
 
-            function renderCharts(filteredMatches) {
+    // Inyectamos los canvas si no existen
+    // Creamos dos huecos: Arriba la evolución (ancho), Abajo el donut (centrado)
+    wrapper.innerHTML = `
+        <div class="relative h-60 w-full mb-6">
+            <canvas id="chart-season-evolution"></canvas>
+        </div>
+        
+        <div class="border-t border-gray-100 pt-4">
+            <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Distribución de Goles</h4>
+            <div class="relative h-48 w-full flex justify-center">
+                <canvas id="chart-goals-distribution"></canvas>
+            </div>
+        </div>
+    `;
+
     const players = getPlayers();
-    
-    // --- 1. DATOS PARA GRÁFICO DE GOLES (DONUT) ---
+
+    // --- 2. GRÁFICO DE GOLES (DONUT) ---
     const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0 };
     
     filteredMatches.forEach(m => {
-        m.playerStats.forEach(ps => {
-            const p = players.find(pl => pl.id === ps.playerId);
-            if (p && ps.goals > 0) {
-                let pos = p.posicion;
-                if (pos === 'extremo') pos = 'delantero';
-                
-                if (goalsByPos[pos] !== undefined) {
-                    goalsByPos[pos] += ps.goals;
+        if(m.playerStats) {
+            m.playerStats.forEach(ps => {
+                const p = players.find(pl => pl.id === ps.playerId);
+                if (p && ps.goals > 0) {
+                    let pos = p.posicion;
+                    if (pos === 'extremo') pos = 'delantero';
+                    if (pos === 'carrilero') pos = 'defensa'; // Normalizamos
+                    
+                    if (goalsByPos[pos] !== undefined) {
+                        goalsByPos[pos] += ps.goals;
+                    }
                 }
-            }
-        });
+            });
+        }
     });
 
-    const ctxGoals = document.getElementById('chart-goals-distribution').getContext('2d');
-    if (goalsChart) goalsChart.destroy();
+    const ctxGoals = document.getElementById('chart-goals-distribution');
+    if (ctxGoals) {
+        if (goalsChart) goalsChart.destroy();
 
-    goalsChart = new Chart(ctxGoals, {
-        type: 'doughnut',
-        data: {
-            labels: ['Delanteros (+Ext)', 'Medios', 'Defensas'],
-            datasets: [{
-                data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
-                backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
-                hoverOffset: 4,
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom', labels: { font: { size: 11 } } },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const value = context.raw;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
-                            return ` ${value} Goles (${percentage})`;
+        goalsChart = new Chart(ctxGoals.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Delanteros', 'Medios', 'Defensas'],
+                datasets: [{
+                    data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
+                    backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                    hoverOffset: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Importante para que no crezca infinito
+                plugins: {
+                    legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
+                                return ` ${value} Goles (${percentage})`;
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    }
 
-    // --- 2. DATOS PARA EVOLUCIÓN (LÍNEA) ---
+    // --- 3. GRÁFICO DE EVOLUCIÓN (LÍNEA) ---
     const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
     
     const labels = sortedMatches.map(m => {
-        const shortRound = m.round.replace('Jornada', 'J').replace('Fase de Liga - ', '').replace('Fase de Grupos - ', 'G');
-        return `${shortRound} vs ${m.opponent}`;
+        // Acortamos nombres para que quepan
+        const shortRound = m.round.replace('Jornada', 'J').replace('Fase de Liga - ', '').substring(0, 5);
+        const shortOpponent = m.opponent.substring(0, 3).toUpperCase();
+        return `${shortRound} vs ${shortOpponent}`;
     });
 
     const ratings = sortedMatches.map(m => {
         let total = 0, count = 0;
-        m.playerStats.forEach(ps => {
-            if (ps.rating) {
-                total += parseFloat(ps.rating);
-                count++;
-            }
-        });
+        if(m.playerStats) {
+            m.playerStats.forEach(ps => {
+                if (ps.rating) {
+                    total += parseFloat(ps.rating);
+                    count++;
+                }
+            });
+        }
         return count > 0 ? (total / count).toFixed(2) : null;
     });
 
-    const ctxEvo = document.getElementById('chart-season-evolution').getContext('2d');
-    if (evolutionChart) evolutionChart.destroy();
+    const ctxEvo = document.getElementById('chart-season-evolution');
+    if (ctxEvo) {
+        if (evolutionChart) evolutionChart.destroy();
 
-    evolutionChart = new Chart(ctxEvo, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Nota Media',
-                data: ratings,
-                borderColor: '#f59e0b',
-                backgroundColor: (context) => {
-                    const ctx = context.chart.ctx;
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                    gradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
-                    gradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
-                    return gradient;
-                },
-                tension: 0.3,
-                fill: true,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#f59e0b',
-                pointRadius: 4,
-                pointHoverRadius: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            scales: {
-                y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, border: { display: false } },
-                x: { display: false }
+        evolutionChart = new Chart(ctxEvo.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Nota Media Equipo',
+                    data: ratings,
+                    borderColor: '#6366f1', // Indigo más bonito
+                    backgroundColor: (context) => {
+                        const ctx = context.chart.ctx;
+                        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+                        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+                        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+                        return gradient;
+                    },
+                    tension: 0.4, // Más curvo y suave
+                    fill: true,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#6366f1',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
             },
-            plugins: {
-                tooltip: {
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                    titleColor: '#1f2937',
-                    bodyColor: '#1f2937',
-                    borderColor: '#e5e7eb',
-                    borderWidth: 1,
-                    callbacks: { title: (context) => context[0].label }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // CLAVE: Se adapta al div contenedor (h-60)
+                interaction: { mode: 'index', intersect: false },
+                scales: {
+                    y: { 
+                        min: 0, max: 10, 
+                        grid: { color: '#f3f4f6' }, 
+                        border: { display: false },
+                        ticks: { stepSize: 1 } 
+                    },
+                    x: { 
+                        display: true, // Mostramos eje X
+                        grid: { display: false },
+                        ticks: { 
+                            maxTicksLimit: 5, // Evita que se amontonen las etiquetas
+                            font: { size: 9 }
+                        }
+                    }
                 },
-                legend: { display: false }
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#1f2937',
+                        bodyColor: '#1f2937',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: { 
+                            label: (context) => `Nota Media: ${context.raw}` 
+                        }
+                    }
+                }
             }
-        }
-    });
-
-    // --- 3. NUEVO: MATRIZ DE RENDIMIENTO (HEATMAP) ---
-    renderPerformanceMatrix(sortedMatches);
+        });
+    }
 }
 
 // --- FUNCIÓN AUXILIAR PARA DIBUJAR LA MATRIZ ---
