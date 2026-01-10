@@ -7309,11 +7309,17 @@ function renderBench(prefix = 'wizard-') {
 
     // --- 1. ZONA SUPLENTES (CAJA AZUL) ---
     const subsContainer = document.getElementById(prefix + 'subs-zone');
+    
     if (subsContainer) {
         subsContainer.innerHTML = '';
+        
+        // ¡ESTO ES LO QUE FALTABA! ACTIVAR EL DROP
+        subsContainer.setAttribute('ondragover', 'allowDrop(event)');
+        subsContainer.setAttribute('ondrop', `dropToSubs(event, '${prefix}')`);
+        
+        // Pintar jugadores
         subIds.forEach(id => {
             const p = allPlayers.find(pl => pl.id === id);
-            // Filtro anti-entrenador por si acaso
             if (p && p.posicion !== 'entrenador') {
                 const el = document.createElement('div');
                 el.className = "relative w-10 h-10 cursor-move group m-1";
@@ -7323,10 +7329,10 @@ function renderBench(prefix = 'wizard-') {
                 el.id = `${prefix}sub-${p.id}`;
                 
                 el.innerHTML = `
-                    <div class="w-full h-full rounded-full border-2 border-blue-400 overflow-hidden bg-white hover:scale-110 transition-transform shadow-sm">
-                        <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none">
+                    <div class="w-full h-full rounded-full border-2 border-blue-400 overflow-hidden bg-white hover:scale-110 transition-transform shadow-sm pointer-events-none">
+                        <img src="${p.foto}" class="w-full h-full object-cover">
                     </div>
-                    <div onclick="removeFromSubs('${p.id}')" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 cursor-pointer shadow">×</div>
+                    <div onclick="event.stopPropagation(); removeFromSubs('${p.id}'); renderAll('${prefix}');" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 cursor-pointer shadow z-50 pointer-events-auto">×</div>
                 `;
                 subsContainer.appendChild(el);
             }
@@ -7334,11 +7340,14 @@ function renderBench(prefix = 'wizard-') {
     }
 
     // --- 2. ZONA PLANTILLA (CAJA BLANCA) ---
-    // Buscamos el contenedor. En wizard es 'bench-zone', en edit es 'edit-bench-zone'
     const benchContainer = document.getElementById(prefix + 'bench-zone') || document.getElementById(prefix + 'bench-container');
     
     if (benchContainer) {
         benchContainer.innerHTML = '';
+        
+        // ¡ESTO ES LO QUE FALTABA! ACTIVAR EL DROP PARA DEVOLVER JUGADORES
+        benchContainer.setAttribute('ondragover', 'allowDrop(event)');
+        benchContainer.setAttribute('ondrop', `dropToBench(event, '${prefix}')`);
         
         // Filtramos: Ni en campo, ni en caja azul, ni entrenadores
         const available = allPlayers.filter(p => 
@@ -7348,7 +7357,7 @@ function renderBench(prefix = 'wizard-') {
         );
 
         // Estilo GRID
-        benchContainer.className = "flex flex-wrap gap-2 content-start p-2";
+        benchContainer.className = "flex flex-wrap gap-2 content-start p-2 min-h-[100px]"; // Min-height para que siempre haya sitio para soltar
 
         available.forEach(p => {
             const el = document.createElement('div');
@@ -7359,8 +7368,8 @@ function renderBench(prefix = 'wizard-') {
             el.id = `${prefix}pool-${p.id}`;
 
             el.innerHTML = `
-                <div class="w-full h-full rounded-full border border-gray-300 overflow-hidden bg-white shadow-sm hover:border-indigo-500 hover:ring-2 hover:ring-indigo-200 transition-all">
-                    <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none" title="${p.apodo}">
+                <div class="w-full h-full rounded-full border border-gray-300 overflow-hidden bg-white shadow-sm hover:border-indigo-500 hover:ring-2 hover:ring-indigo-200 transition-all pointer-events-none">
+                    <img src="${p.foto}" class="w-full h-full object-cover" title="${p.apodo}">
                 </div>
             `;
             benchContainer.appendChild(el);
