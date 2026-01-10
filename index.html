@@ -5033,34 +5033,36 @@ function renderPlayerHistoryTab(player, matches) {
             }
         }
         
-        function goToStep2() {
-            // Validate Step 1
-            const comp = document.getElementById('new-competition').value;
-            const round = document.getElementById('new-round').value;
-            const result = document.getElementById('new-result').value;
-            
-            if (!comp || !round || !result) {
-                alert("Por favor, completa todos los campos obligatorios del Paso 1.");
-                return;
-            }
-            if (!/^\d+-\d+$/.test(result)) {
-                alert("El formato del resultado debe ser goles_local-goles_visitante (ej: 2-1)");
-                return;
-            }
+function goToStep2() {
+    // Validate Step 1
+    const comp = document.getElementById('new-competition').value;
+    const round = document.getElementById('new-round').value;
+    const result = document.getElementById('new-result').value;
+    
+    if (!comp || !round || !result) {
+        alert("Por favor, completa todos los campos obligatorios del Paso 1.");
+        return;
+    }
+    if (!/^\d+-\d+$/.test(result)) {
+        alert("El formato del resultado debe ser goles_local-goles_visitante (ej: 2-1)");
+        return;
+    }
 
-            // Render players with suspension logic
-            renderPlayerStatsForm('new-match-players-stats', comp);
+    // Render players with suspension logic
+    renderPlayerStatsForm('new-match-players-stats', comp);
 
-            document.getElementById('wizard-step-1').classList.add('hidden');
-            document.getElementById('wizard-step-2').classList.remove('hidden');
-            document.getElementById('wizard-step-3').classList.add('hidden');
+    document.getElementById('wizard-step-1').classList.add('hidden');
+    document.getElementById('wizard-step-2').classList.remove('hidden');
+    document.getElementById('wizard-step-3').classList.add('hidden');
 
-            currentPitchPlayers = {}; // Reseteamos alineación
-            currentSubstitutes = [];
-            editingMatchPlayersPool = null;
-            renderBench();
-            updatePitchFormation();   // Pintamos el campo (4-3-3 por defecto)
-        }
+    currentPitchPlayers = {}; // Reseteamos alineación
+    currentSubstitutes = [];
+    editingMatchPlayersPool = null;
+    
+    // --- CAMBIO CLAVE: Usamos comillas vacías '' para usar los IDs originales ---
+    renderBench('');
+    updatePitchFormation(''); 
+}
 
         function goToStep1() {
             document.getElementById('wizard-step-2').classList.add('hidden');
@@ -6338,100 +6340,177 @@ function renderMatches(matchesData = null) {
     }).join('');
 }
         
-        // --- FUNCIÓN CORREGIDA PARA VER DETALLES (SOLO LECTURA) ---
-        function viewMatchDetails(matchId) {
-            const matches = getData('matches');
-            const players = getPlayers();
-            const match = matches.find(m => m.id === matchId);
-            if (!match) return;
-            
-            const modal = document.getElementById('match-detail-modal');
-            const content = document.getElementById('match-detail-content');
-            const title = document.getElementById('match-detail-title');
-            
-            title.textContent = `vs ${match.opponent} (${match.result})`;
-            
-            // 1. Preparar mapa de la Pizarra (Slot -> Jugador)
-            // Esto asegura que cada jugador salga EXACTAMENTE donde lo pusiste
-            const pitchMap = {};
-            const subs = [];
-            
-            // Fallback: Si es un partido antiguo sin slots guardados, recolectamos titulares para ordenarlos después
-            let fallbackStarters = [];
+function viewMatchDetails(matchId) {
+    const matches = getData('matches');
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
 
-            match.playerStats.forEach(ps => {
-                const p = players.find(pl => pl.id === ps.playerId);
-                if (p) {
-                    const data = { ...p, ...ps }; 
-                    if (ps.isStarter === true || ps.isStarter === 'true') {
-                        // Si tiene posición guardada (pitchSlot), la usamos.
-                        if (ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
-                            pitchMap[ps.pitchSlot] = data;
-                        } else {
-                            fallbackStarters.push(data);
-                        }
-                    } else if (p.posicion !== 'entrenador') {
-                        subs.push(data);
-                    }
-                }
-            });
+    // 1. Crear Modal
+    let modal = document.getElementById('match-details-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'match-details-modal';
+        modal.className = "fixed inset-0 bg-black/80 hidden z-[9999] items-center justify-center backdrop-blur-sm";
+        // Aumentamos altura máxima para que quepa bien el campo grande
+        modal.innerHTML = `<div id="match-details-content" class="bg-white rounded-xl w-full max-w-4xl h-[95vh] shadow-2xl overflow-hidden relative flex flex-col m-4"></div>`;
+        document.body.appendChild(modal);
+    }
+    
+    const content = document.getElementById('match-details-content');
 
-            // Si no hay ningún slot guardado (partidos viejos), rellenamos 0-10 por orden de posición
-            if (Object.keys(pitchMap).length === 0 && fallbackStarters.length > 0) {
-                const posOrder = { 'portero': 0, 'defensa': 1, 'centrocampista': 2, 'extremo': 3, 'delantero': 4 };
-                fallbackStarters.sort((a,b) => (posOrder[a.posicion]||5) - (posOrder[b.posicion]||5));
-                fallbackStarters.forEach((p, i) => { if(i < 11) pitchMap[i] = p; });
-            }
+    // 2. Timeline
+    const timelineHtml = (typeof renderMatchTimeline === 'function') 
+        ? renderMatchTimeline(match) 
+        : '<div class="p-4 text-center text-gray-400">Timeline no disponible</div>';
 
-            // 2. Generar HTML
-            content.innerHTML = `
-                <div class="flex flex-col lg:flex-row gap-6">
-                    <div class="w-full lg:w-1/2">
-                        <div class="bg-gray-100 p-2 rounded-t-xl flex justify-between items-center border-b border-gray-200">
-                            <h4 class="font-bold text-gray-700 text-sm">Once Inicial</h4>
-                            <span class="text-xs bg-white px-2 py-1 rounded border border-gray-300 font-mono">
-                                ${match.formation || "4-3-3"}
-                            </span>
-                        </div>
-                        <div id="read-only-pitch-${match.id}" class="w-full rounded-b-xl overflow-hidden shadow-lg border-2 border-slate-200 bg-gray-800 relative h-[350px]"></div>
-                    </div>
+    // 3. Generar Lista de Jugadores (Ahora más ancha)
+    const players = getPlayers();
+    const statsHtml = match.playerStats.map(ps => {
+        const p = players.find(pl => pl.id === ps.playerId) || { apodo: '?', apellido: '?' };
+        if (!ps.played && !ps.isStarter && !ps.goals && !ps.yellowCards && !ps.redCards) return '';
 
-                    <div class="w-full lg:w-1/2 space-y-6">
-                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
-                            <div class="flex justify-between mb-1"><span>📅 Fecha:</span> <span class="font-bold">${formatDate(match.date)}</span></div>
-                            <div class="flex justify-between mb-1"><span>🏆 Competición:</span> <span class="font-bold">${match.competition}</span></div>
-                            <div class="flex justify-between"><span>🏟️ Estadio:</span> <span class="font-bold">${match.stadium || match.venue}</span></div>
-                        </div>
+        let metas = [];
+        if (ps.goals > 0) metas.push(`<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-bold">⚽ ${ps.detailGoals || ps.goals}</span>`);
+        if (ps.assists > 0) metas.push(`<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-xs">👟 ${ps.assists}</span>`);
+        if (ps.yellowCards > 0) metas.push(`<span class="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded text-xs">🟨</span>`);
+        if (ps.redCards > 0) metas.push(`<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded text-xs">🟥</span>`);
 
-                        <div>
-                            <h4 class="font-bold text-gray-700 mb-2 border-b pb-1">Suplentes y Cambios</h4>
-                            <div class="space-y-2 max-h-[200px] overflow-y-auto">
-                                ${subs.length > 0 ? subs.map(s => `
-                                    <div class="flex items-center justify-between bg-white p-2 rounded border border-gray-100">
-                                        <div class="flex items-center gap-2">
-                                            <img src="${s.foto}" class="w-8 h-8 rounded-full object-cover object-top">
-                                            <span class="text-sm font-medium">${s.apodo || s.apellido}</span>
-                                        </div>
-                                        <div class="flex items-center gap-3 text-xs">
-                                            ${s.goals > 0 ? `<span class="text-green-600 font-bold">⚽ ${s.goals}</span>` : ''}
-                                            <span class="bg-gray-100 px-2 py-1 rounded">Nota: <strong>${s.rating || '-'}</strong></span>
-                                            <span class="text-gray-400">${s.minutes}'</span>
-                                        </div>
-                                    </div>
-                                `).join('') : '<p class="text-gray-400 text-xs italic">Sin cambios registrados.</p>'}
-                            </div>
-                        </div>
+        return `
+            <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50 px-4 transition-colors">
+                <div class="flex items-center gap-4">
+                    <div class="w-8 text-center text-sm font-bold text-gray-400 bg-gray-100 rounded">${p.dorsal || '-'}</div>
+                    <img src="${p.foto}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                    <div>
+                        <div class="text-sm font-bold text-gray-800">${p.apodo}</div>
+                        ${ps.isStarter ? '<span class="text-[10px] uppercase font-bold text-green-600">Titular</span>' : '<span class="text-[10px] uppercase font-bold text-gray-400">Suplente</span>'}
                     </div>
                 </div>
-            `;
+                <div class="flex items-center gap-4">
+                    <div class="flex gap-2">${metas.join('')}</div>
+                    <div class="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">Min ${ps.minutes}'</div>
+                    <div class="w-10 h-10 flex items-center justify-center font-black text-lg rounded-lg ${getRatingColor ? getRatingColor(ps.rating) : 'bg-gray-200 text-gray-600'}">
+                        ${ps.rating || '-'}
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 4. Inyectar HTML con PESTAÑAS
+    content.innerHTML = `
+        <div class="bg-slate-900 text-white p-4 shrink-0 relative overflow-hidden shadow-lg z-10">
+            <button onclick="document.getElementById('match-details-modal').classList.add('hidden'); document.getElementById('match-details-modal').classList.remove('flex');" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition cursor-pointer z-50">✕</button>
             
-            // Renderizar la pizarra visualmente con delay para asegurar que el DOM existe
-            setTimeout(() => {
-                renderReadOnlyPitch(`read-only-pitch-${match.id}`, pitchMap, match.formation || '4-3-3');
-            }, 50);
+            <div class="flex justify-between items-center relative z-10 max-w-3xl mx-auto">
+                <div class="text-center w-1/3">
+                    <div class="text-3xl font-bold tracking-tighter text-yellow-400 filter drop-shadow-lg">REAL MADRID</div>
+                </div>
+                <div class="text-center w-1/3">
+                    <div class="text-5xl font-black mb-1">${match.result}</div>
+                    <div class="text-xs uppercase tracking-widest text-white/60 bg-white/10 px-2 py-1 rounded-full inline-block">${match.opponent}</div>
+                </div>
+                <div class="text-center w-1/3 opacity-90">
+                    <div class="text-2xl font-bold truncate">${match.opponent}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white border-b border-gray-200 shadow-sm z-0">
+            ${timelineHtml}
+        </div>
+
+        <div class="flex border-b border-gray-200 bg-white shrink-0">
+            <button id="btn-tab-stats" onclick="switchViewTab('stats')" class="flex-1 py-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50 transition">
+                📊 Estadísticas y Notas
+            </button>
+            <button id="btn-tab-pitch" onclick="switchViewTab('pitch')" class="flex-1 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition">
+                🏟️ Esquema Inicial
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-hidden bg-gray-50 relative">
             
-            modal.classList.add('active');
+            <div id="view-tab-stats" class="absolute inset-0 overflow-y-auto p-4 animate-in fade-in duration-300">
+                <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    ${statsHtml || '<div class="p-8 text-center text-gray-400">Sin datos registrados</div>'}
+                </div>
+            </div>
+
+            <div id="view-tab-pitch" class="absolute inset-0 hidden p-4 animate-in fade-in duration-300 flex items-center justify-center">
+                <div class="w-full max-w-4xl h-full max-h-[600px] bg-emerald-800 rounded-xl shadow-2xl border-4 border-white/20 overflow-hidden relative">
+                     <div class="pitch-container w-full h-full" style="margin:0; border:none; border-radius:0; pointer-events: none;">
+                        <div class="pitch-line-mid"></div><div class="pitch-circle"></div>
+                        <div class="pitch-box-left" style="left:0; border-left:none;"></div>
+                        <div class="pitch-box-right" style="right:0; border-right:none;"></div>
+                        
+                        <div id="readonly-pitch-players-layer"></div>
+                     </div>
+                     
+                     <div class="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20">
+                        ${match.formation || '4-3-3'}
+                     </div>
+                </div>
+            </div>
+
+        </div>
+    `;
+
+    // 5. RENDERIZAR PIZARRA (TRUCO GLOBAL)
+    const savedPitch = { ...currentPitchPlayers };
+    const savedForm = currentFormation;
+    const savedSubs = [...currentSubstitutes];
+
+    const tempPitch = {};
+    match.playerStats.forEach(ps => {
+        if (ps.isStarter && ps.pitchSlot !== undefined && ps.pitchSlot !== null) {
+            tempPitch[`readonly-slot-${ps.pitchSlot}`] = ps.playerId;
         }
+    });
+
+    currentPitchPlayers = tempPitch;
+    currentFormation = match.formation || "4-3-3";
+    currentSubstitutes = [];
+
+    if (typeof renderTacticalBoard === 'function') {
+        renderTacticalBoard('readonly-');
+    }
+
+    currentPitchPlayers = savedPitch;
+    currentFormation = savedForm;
+    currentSubstitutes = savedSubs;
+
+    // 6. MOSTRAR
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+/* ========================================================= */
+/* 🔄 CAMBIAR PESTAÑAS EN "VER DETALLES"                     */
+/* ========================================================= */
+function switchViewTab(tabName) {
+    // Botones
+    const btnStats = document.getElementById('btn-tab-stats');
+    const btnPitch = document.getElementById('btn-tab-pitch');
+    
+    // Contenedores
+    const contentStats = document.getElementById('view-tab-stats');
+    const contentPitch = document.getElementById('view-tab-pitch');
+
+    // Resetear estilos
+    btnStats.className = "flex-1 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition";
+    btnPitch.className = "flex-1 py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent hover:text-gray-600 transition";
+    
+    contentStats.classList.add('hidden');
+    contentPitch.classList.add('hidden');
+
+    // Activar el seleccionado
+    if (tabName === 'stats') {
+        btnStats.className = "flex-1 py-3 text-sm font-bold text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50";
+        contentStats.classList.remove('hidden');
+    } else {
+        btnPitch.className = "flex-1 py-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50";
+        contentPitch.classList.remove('hidden');
+    }
+}
         
         function deleteMatch(matchId) {
             if (!confirm('¿Estás seguro de eliminar este partido?')) return;
@@ -7055,65 +7134,51 @@ function closeEditMatchModal() {
         let currentSubstitutes = [];
         let currentFormation = '4-3-3'; // Formación por defecto
 
-function updatePitchFormation(prefix = 'wizard-') {
-    // 1. Buscar el selector de formación
-    // En Wizard suele ser 'new-formation', en Edit es 'edit-formation-select'
-    let selectId = 'new-formation';
+function updatePitchFormation(prefix = '') {
+    // 1. Detectar el ID correcto del selector
+    let selectId = 'formation-select'; // Default (Registrar Partido)
+    
     if (prefix === 'edit-') selectId = 'edit-formation-select';
+    else if (prefix === 'wizard-') selectId = 'new-formation';
     
     const select = document.getElementById(selectId);
+    
     if (select) {
         currentFormation = select.value; // Actualizamos variable global
-        
         // 2. Re-renderizar la pizarra correcta
         renderTacticalBoard(prefix);
     }
 }
 
+/* ========================================================= */
+/* 🎨 RENDERIZADOR DE PIZARRA (BLINDADO Z-INDEX)             */
+/* ========================================================= */
+
 function renderTacticalBoard(prefix = 'wizard-') {
     const containerId = prefix + 'pitch-players-layer'; 
     const container = document.getElementById(containerId);
     
-    // Fallback por si el ID en el HTML es diferente
     if (!container) {
         const fallback = document.getElementById(prefix + 'pitch-formation');
         if(!fallback) return; 
-        // Si tienes una función fallback, úsala, si no, intentamos pintar aquí
     }
 
-    if(container) container.innerHTML = '';
+    if(container) {
+        container.innerHTML = '';
+        container.style.position = "absolute";
+        container.style.inset = "0";
+        container.style.zIndex = "50"; 
+        container.style.pointerEvents = "none"; 
+    }
     
     const allPlayers = getPlayers();
     const currentForm = (typeof currentFormation !== 'undefined') ? currentFormation : '4-3-3';
     
-    // --- COORDENADAS HORIZONTALES (Portero izquierda, ataque derecha) ---
-    // t: top (vertical), l: left (horizontal)
     const horizontalCoords = {
-        "4-3-3": [
-            {t:50, l:5},  // GK
-            {t:20, l:25}, {t:40, l:25}, {t:60, l:25}, {t:80, l:25}, // Defensas
-            {t:30, l:50}, {t:50, l:50}, {t:70, l:50}, // Medios
-            {t:20, l:75}, {t:50, l:75}, {t:80, l:75}  // Delanteros
-        ],
-        "4-4-2": [
-            {t:50, l:5},  // GK
-            {t:15, l:25}, {t:38, l:25}, {t:62, l:25}, {t:85, l:25}, // Def
-            {t:15, l:50}, {t:38, l:50}, {t:62, l:50}, {t:85, l:50}, // Med
-            {t:35, l:75}, {t:65, l:75}  // Del
-        ],
-        "4-2-3-1": [
-            {t:50, l:5},  // GK
-            {t:15, l:25}, {t:38, l:25}, {t:62, l:25}, {t:85, l:25}, // Def
-            {t:35, l:45}, {t:65, l:45}, // Pivotes
-            {t:15, l:65}, {t:50, l:65}, {t:85, l:65}, // MP
-            {t:50, l:82}  // DC
-        ],
-        "3-5-2": [
-            {t:50, l:5}, // GK
-            {t:25, l:25}, {t:50, l:25}, {t:75, l:25}, // 3 Defensas
-            {t:15, l:50}, {t:35, l:50}, {t:50, l:40}, {t:65, l:50}, {t:85, l:50}, // 5 Medios
-            {t:35, l:75}, {t:65, l:75} // 2 Delanteros
-        ]
+        "4-3-3": [{t:50,l:5}, {t:20,l:25},{t:40,l:25},{t:60,l:25},{t:80,l:25}, {t:30,l:50},{t:50,l:50},{t:70,l:50}, {t:20,l:75},{t:50,l:75},{t:80,l:75}],
+        "4-4-2": [{t:50,l:5}, {t:15,l:25},{t:38,l:25},{t:62,l:25},{t:85,l:25}, {t:15,l:50},{t:38,l:50},{t:62,l:50},{t:85,l:50}, {t:35,l:75},{t:65,l:75}],
+        "4-2-3-1": [{t:50,l:5}, {t:15,l:25},{t:38,l:25},{t:62,l:25},{t:85,l:25}, {t:35,l:45},{t:65,l:45}, {t:15,l:65},{t:50,l:65},{t:85,l:65}, {t:50,l:82}],
+        "3-5-2": [{t:50,l:5}, {t:25,l:25},{t:50,l:25},{t:75,l:25}, {t:15,l:50},{t:35,l:50},{t:50,l:40},{t:65,l:50},{t:85,l:50}, {t:35,l:75},{t:65,l:75}]
     };
     
     const coords = horizontalCoords[currentForm] || horizontalCoords["4-3-3"];
@@ -7123,11 +7188,17 @@ function renderTacticalBoard(prefix = 'wizard-') {
         const playerId = currentPitchPlayers[slotKey];
         
         const div = document.createElement('div');
-        div.className = "absolute w-10 h-10 md:w-12 md:h-12 transform -translate-x-1/2 -translate-y-1/2 cursor-move z-20 group";
-        div.id = `${prefix}p-${playerId || 'slot-'+i}`;
-        div.draggable = true;
-        div.ondragstart = (e) => drag(e);
-        
+        div.id = slotKey; 
+        div.className = "absolute w-10 h-10 md:w-12 md:h-12 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center group";
+        div.style.zIndex = "100"; 
+        div.style.pointerEvents = "auto"; 
+        div.style.cursor = "pointer";
+
+        // Eventos Drop
+        div.setAttribute("ondragover", "allowDrop(event)");
+        div.setAttribute("ondrop", "drop(event)");
+        div.setAttribute('data-current-slot', slotKey); 
+
         const pos = coords[i] || {t: 50, l: 50}; 
         div.style.top = pos.t + '%';
         div.style.left = pos.l + '%';
@@ -7135,21 +7206,30 @@ function renderTacticalBoard(prefix = 'wizard-') {
         if (playerId) {
             const p = allPlayers.find(pl => pl.id === playerId);
             if (p) {
+                div.draggable = true;
+                div.ondragstart = (e) => drag(e);
+                div.setAttribute('data-player-id', playerId);
+                div.style.cursor = "grab";
+
                 div.innerHTML = `
-                    <div class="w-full h-full rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform">
-                        <img src="${p.foto}" class="w-full h-full object-cover pointer-events-none">
+                    <div class="w-full h-full rounded-full border-2 border-white shadow-md overflow-hidden bg-white hover:scale-110 transition-transform pointer-events-none relative z-10">
+                        <img src="${p.foto}" class="w-full h-full object-cover">
                     </div>
-                    <div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-[8px] px-1.5 rounded font-bold whitespace-nowrap pointer-events-none">
+                    <div class="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-black/70 text-white text-[8px] px-1.5 rounded font-bold whitespace-nowrap pointer-events-none z-20">
                         ${p.apodo}
                     </div>
-                    <div onclick="removePlayerFromAllZones('${p.id}')" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity z-30">×</div>
+                    
+                    <div onclick="event.stopPropagation(); removePlayerFromAllZones('${p.id}')" 
+                         class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity z-50 pointer-events-auto hover:scale-110 shadow-sm border border-white">
+                         ×
+                    </div>
                 `;
             }
         } else {
-            // Slot vacío
+            div.draggable = false;
             div.innerHTML = `
-                <div class="w-full h-full rounded-full border-2 border-dashed border-white/40 flex items-center justify-center group-hover:border-white/80 transition-colors bg-white/10">
-                    <span class="text-white/60 text-xs font-bold">${i + 1}</span>
+                <div class="w-full h-full rounded-full border-2 border-dashed border-white/50 flex items-center justify-center group-hover:border-white transition-colors bg-white/10 pointer-events-none">
+                    <span class="text-white/80 text-xs font-bold">${i + 1}</span>
                 </div>
             `;
         }
@@ -7157,11 +7237,7 @@ function renderTacticalBoard(prefix = 'wizard-') {
     }
 }
 
-// Helper por si tu HTML usa la estructura antigua de 'formation' en vez de 'layers'
-function renderTacticalBoardFallback(prefix, container) {
-    // (Pega aquí el contenido de tu renderTacticalBoard antiguo si quieres soporte legacy, 
-    // pero idealmente usa el de arriba y asegúrate que el ID del HTML coincida)
-}
+
 
 // AÑADIDO: Nuevo parámetro 'delayIndex' al final (por defecto 0)
 function renderPlayerOnPitch(player, slotId, container, delayIndex = 0) {
@@ -7291,168 +7367,129 @@ function renderBench(prefix = 'wizard-') {
     }
 }
 
-        // --- DRAG & DROP NATIVO ---
+   /* ========================================================= */
+/* 🎮 MOTOR TÁCTICO FINAL (Soporta IDs viejos y nuevos)      */
+/* ========================================================= */
 
-        function allowDrop(ev) {
-            ev.preventDefault();
-        }
+function allowDrop(ev) { ev.preventDefault(); }
 
-       // 1. Función DRAG (Al empezar a arrastrar)
-        function drag(ev) {
-    // 1. Guardar ID del jugador
+function drag(ev) {
     const playerId = ev.target.getAttribute('data-player-id');
     ev.dataTransfer.setData("playerId", playerId);
     
-    // 2. DETECTAR ORIGEN (CORREGIDO)
-    // En lugar de buscar en el DOM con closest(), leemos el atributo directo
-    const sourceSlotId = ev.target.getAttribute('data-current-slot');
-    
-    if (sourceSlotId) {
-        // Viene de dentro del campo (Pizarra)
-        ev.dataTransfer.setData("sourceSlot", sourceSlotId);
-    } else {
-        // Viene del banquillo o lista (no tiene slot asignado)
-        ev.dataTransfer.setData("sourceSlot", ""); 
+    // Buscar origen
+    let sourceSlotId = ev.target.getAttribute('data-current-slot');
+    if (!sourceSlotId && ev.target.parentElement && ev.target.parentElement.id && ev.target.parentElement.id.includes('slot-')) {
+        sourceSlotId = ev.target.parentElement.id;
     }
+    ev.dataTransfer.setData("sourceSlot", sourceSlotId || "");
 }
 
-// --- LÓGICA DE MOVIMIENTO ---
-
-        function removePlayerFromAllZones(playerId) {
-            // 1. Quitar del campo si estaba
-            const slot = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
-            if (slot) delete currentPitchPlayers[slot];
-            
-            // 2. Quitar de suplentes si estaba
-            const subIndex = currentSubstitutes.indexOf(playerId);
-            if (subIndex > -1) currentSubstitutes.splice(subIndex, 1);
-        }
-
-        // Soltar en el CAMPO (Titular)
-        function drop(ev) {
+function drop(ev) {
     ev.preventDefault();
-    ev.stopPropagation(); // Evitar doble disparo
+    ev.stopPropagation(); 
 
     const draggedPlayerId = ev.dataTransfer.getData("playerId");
     const sourceSlotId = ev.dataTransfer.getData("sourceSlot"); 
-    
-    // --- LÓGICA MEJORADA DE DETECCIÓN DE DESTINO ---
-    let target = ev.target;
-    let targetSlotId = null;
+    if (!draggedPlayerId) return;
 
-    // Caso A: Soltamos sobre un hueco vacío (.pitch-slot)
-    if (target.classList.contains('pitch-slot')) {
-        targetSlotId = target.id;
-    } 
-    // Caso B: Soltamos sobre otro jugador (Swap)
-    // Buscamos si el elemento tiene el atributo data-current-slot
-    else {
-        // Puede que hayamos soltado en la imagen o el div interior, subimos hasta el token
-        const token = target.closest('.player-token');
-        if (token) {
-            targetSlotId = token.getAttribute('data-current-slot');
-        } else {
-            // Último intento: quizás soltamos en un slot pero dimos en el borde
-            const slot = target.closest('.pitch-slot');
-            if (slot) targetSlotId = slot.id;
-        }
+    let target = ev.target;
+    // Subir hasta encontrar el slot
+    while (target && (!target.id || !target.id.includes('slot-'))) {
+        target = target.parentElement;
     }
     
-    if (!targetSlotId) return; // Si no encontramos hueco válido, cancelar
+    if (!target || !target.id) return;
+
+    // DETECCIÓN INTELIGENTE DE PREFIJO
+    const isEditMode = target.id.startsWith('edit-');
+    // Si no es edit, usamos '' (vacío) para que coincida con tu HTML de registro
+    const prefix = isEditMode ? 'edit-' : ''; 
+    const targetSlotId = target.id;
+
+    if (sourceSlotId === targetSlotId) return;
 
     const existingPlayerId = currentPitchPlayers[targetSlotId];
 
-    // 1. Si soltamos en el MISMO hueco, no hacer nada
-    if (sourceSlotId === targetSlotId) return;
-
-    // 2. LOGICA: DESTINO VACÍO
+    // Lógica de movimiento
     if (!existingPlayerId) {
         currentPitchPlayers[targetSlotId] = draggedPlayerId;
-        
+        if (sourceSlotId) delete currentPitchPlayers[sourceSlotId];
+        else removeFromSubs(draggedPlayerId);
+    } else {
         if (sourceSlotId) {
-            delete currentPitchPlayers[sourceSlotId];
-        } else {
-            removeFromSubs(draggedPlayerId);
-        }
-    } 
-    // 3. LOGICA: SWAP (Intercambio)
-    else {
-        if (sourceSlotId) {
-            // Pizarra <-> Pizarra
             currentPitchPlayers[targetSlotId] = draggedPlayerId;
             currentPitchPlayers[sourceSlotId] = existingPlayerId;
         } else {
-            // Banquillo -> Pizarra
             currentPitchPlayers[targetSlotId] = draggedPlayerId;
             removeFromSubs(draggedPlayerId);
-            // El jugador que había (existingPlayerId) se va al limbo (al banquillo auto)
         }
     }
-
-    renderAll();
+    renderAll(prefix);
 }
 
-        // Función auxiliar para limpiar de suplentes si estaba ahí
-function removeFromSubs(playerId) {
-    const idx = currentSubstitutes.indexOf(playerId);
-    
-    if (idx > -1) {
-        currentSubstitutes.splice(idx, 1);
-        
-        // --- NUEVO: Actualizar valor si se elimina a alguien ---
-        // (Solo si quieres que se actualice al borrar sin renderizar todo de nuevo)
-        if (typeof updateSquadValueDisplay === 'function') {
-            setTimeout(updateSquadValueDisplay, 50);
-        }
-    }
-}
-        // Soltar en SUPLENTES
-            function dropToSubs(ev) {
+function dropToSubs(ev, prefixInput) {
     ev.preventDefault();
     const playerId = ev.dataTransfer.getData("playerId");
-    
-    // 1. Limpiamos al jugador de donde viniera
-    removePlayerFromAllZones(playerId);
-    
-    // 2. Lo metemos en el array de suplentes
-    currentSubstitutes.push(playerId); 
-    
-    // 3. Pintamos todo de nuevo
-    renderAll();
+    if(!playerId) return;
 
-    // --- NUEVO: Recalcular dinero DESPUÉS de pintar ---
-    // El setTimeout(..., 50) asegura que el HTML ya se ha actualizado
-    // antes de contar cuánto valen los suplentes.
-    if (typeof updateSquadValueDisplay === 'function') {
-        setTimeout(updateSquadValueDisplay, 50);
+    // Detectar prefijo
+    let prefix = prefixInput;
+    if (typeof prefix === 'undefined') {
+        prefix = document.getElementById('edit-match-modal')?.classList.contains('flex') ? 'edit-' : '';
     }
+
+    const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+    if (slotKey) delete currentPitchPlayers[slotKey];
+
+    if (!currentSubstitutes.includes(playerId)) {
+        currentSubstitutes.push(playerId);
+    }
+    renderAll(prefix);
 }
 
-        // Soltar en DISPONIBLES (Quitar de convocatoria)
-        function dropToBench(ev) {
-            ev.preventDefault();
-            const playerId = ev.dataTransfer.getData("playerId");
-            
-            removePlayerFromAllZones(playerId);
-            // Al no estar en pitch ni subs, renderBench lo pondrá en disponibles automáticamente
-            
-            renderAll();
-            if (typeof updateSquadValueDisplay === 'function') {
-    setTimeout(updateSquadValueDisplay, 50);
-}
-        }
+function dropToBench(ev, prefixInput) {
+    ev.preventDefault();
+    const playerId = ev.dataTransfer.getData("playerId");
+    if(!playerId) return;
 
-        function renderAll() {
-            // Detectar si estamos editando
-            const isEditing = document.getElementById('edit-match-modal').classList.contains('active');
-            
-            // Si editamos, usamos el prefijo 'edit-' para buscar los IDs
-            const prefix = isEditing ? 'edit-' : '';
-            
-            renderTacticalBoard(prefix);
-            renderBench(prefix);
-            updateFormationStats();
-        }
+    let prefix = prefixInput;
+    if (typeof prefix === 'undefined') {
+        prefix = document.getElementById('edit-match-modal')?.classList.contains('flex') ? 'edit-' : '';
+    }
+
+    removePlayerFromAllZones(playerId); // Esto lo manda al banquillo/disponibles
+    renderAll(prefix);
+}
+
+function removePlayerFromAllZones(playerId) {
+    const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === playerId);
+    if (slotKey) delete currentPitchPlayers[slotKey];
+
+    const subIndex = currentSubstitutes.indexOf(playerId);
+    if (subIndex > -1) currentSubstitutes.splice(subIndex, 1);
+    
+    // Refrescar automáticamente
+    renderAll();
+}
+
+function removeFromSubs(playerId) {
+    const idx = currentSubstitutes.indexOf(playerId);
+    if (idx > -1) currentSubstitutes.splice(idx, 1);
+}
+
+function renderAll(prefixInput) {
+    let prefix = prefixInput;
+    // Si no nos dan prefijo, adivinamos mirando si el modal de editar está abierto
+    if (typeof prefix === 'undefined') {
+        const editModal = document.getElementById('edit-match-modal');
+        const isEditing = editModal && (editModal.classList.contains('flex') || editModal.style.display === 'flex');
+        prefix = isEditing ? 'edit-' : '';
+    }
+    
+    if(typeof renderTacticalBoard === 'function') renderTacticalBoard(prefix);
+    if(typeof renderBench === 'function') renderBench(prefix);
+}
 
         // ==========================================
         // SELECTOR DE JUGADORES (MEJORADO)
@@ -10959,7 +10996,106 @@ function addMinuteToInput(text) {
         }
         field.value += text;
     }
-    field.focus();
+    field.foc
+    us();
+}
+/* ========================================================= */
+/* 🆕 VISUAL TIMELINE GENERATOR                              */
+/* ========================================================= */
+function renderMatchTimeline(match) {
+    // 1. Recolectar Eventos
+    let events = [];
+    const players = getPlayers();
+
+    match.playerStats.forEach(ps => {
+        const p = players.find(pl => pl.id === ps.playerId) || { apodo: '?', apellido: '?' };
+        const name = p.apodo || p.apellido;
+
+        // Helper para parsear "15, 45+2"
+        const parseEvents = (str, type, icon) => {
+            if (!str) return;
+            str.split(',').forEach(timeStr => {
+                timeStr = timeStr.trim();
+                if (!timeStr) return;
+                
+                // Extraer número para la posición (ej: "45+2" -> 45)
+                let minute = parseInt(timeStr);
+                if (isNaN(minute)) return;
+                
+                // Ajuste visual para el tiempo extra
+                let position = minute;
+                if (minute > 90) position = 92; // Capar al final
+                else if (minute > 45 && minute < 50 && timeStr.includes('+')) position = 46; // Descanso
+
+                events.push({
+                    minute: minute,
+                    displayTime: timeStr,
+                    type: type, // 'goal', 'yellow', 'red'
+                    icon: icon,
+                    player: name,
+                    positionPercent: (position / 95) * 100 // Escala sobre 95 min aprox
+                });
+            });
+        };
+
+        parseEvents(ps.detailGoals, 'goal', '⚽');
+        parseEvents(ps.detailYellow, 'yellow', '🟨');
+        parseEvents(ps.detailRed, 'red', '🟥');
+    });
+
+    // 2. Ordenar por minuto
+    events.sort((a, b) => a.minute - b.minute);
+
+    // 3. Generar HTML
+    if (events.length === 0) {
+        return `<div class="text-center text-xs text-gray-400 py-4 italic">Sin eventos registrados en la línea de tiempo.</div>`;
+    }
+
+    const markersHtml = events.map(ev => {
+        // Estilos según tipo para que no se solapen tanto visualmente
+        let colorClass = "";
+        let borderClass = "border-white";
+        let zIndex = "z-10";
+        
+        if (ev.type === 'goal') { colorClass = "bg-white text-lg -mt-3"; zIndex = "z-20"; }
+        else if (ev.type === 'yellow') { colorClass = "text-xs"; }
+        else { colorClass = "text-xs"; }
+
+        // Tooltip al hacer hover
+        return `
+            <div class="absolute transform -translate-x-1/2 flex flex-col items-center group cursor-pointer ${zIndex}" 
+                 style="left: ${ev.positionPercent}%; top: -12px;">
+                
+                <div class="${colorClass} hover:scale-125 transition-transform shadow-sm rounded-full ${borderClass}">
+                    ${ev.icon}
+                </div>
+                
+                <div class="h-3 w-px bg-gray-300"></div>
+
+                <div class="absolute bottom-8 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 pointer-events-none shadow-lg mb-1">
+                    <span class="font-bold">${ev.displayTime}'</span> ${ev.player}
+                    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="w-full px-4 py-6 select-none">
+            <div class="relative w-full h-1 bg-gray-200 rounded flex items-center">
+                <div class="absolute left-0 -ml-1 w-2 h-2 bg-gray-300 rounded-full"></div>
+                <div class="absolute left-0 top-3 text-[9px] text-gray-400 font-mono">0'</div>
+
+                <div class="absolute left-[47%] -ml-px w-px h-3 bg-gray-300 -top-1"></div>
+                <div class="absolute left-[47%] top-3 -translate-x-1/2 text-[9px] text-gray-400 font-mono">HT</div>
+
+                <div class="absolute right-0 -mr-1 w-2 h-2 bg-gray-300 rounded-full"></div>
+                <div class="absolute right-0 top-3 text-[9px] text-gray-400 font-mono">90'</div>
+
+                ${markersHtml}
+            </div>
+        </div>
+    `;
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
