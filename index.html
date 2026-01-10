@@ -7707,113 +7707,172 @@ function goToStep3() {
         // SISTEMA DE COPIA DE SEGURIDAD (CORREGIDO)
         // ==========================================
 
-        function backupData() {
-            if (!currentTeam) {
-                alert("⚠️ Error: No hay un equipo seleccionado.");
-                return;
+function backupData() {
+    if (!currentTeam) {
+        alert("⚠️ Error: No hay un equipo seleccionado.");
+        return;
+    }
+
+    const matches = getData('matches');
+    const players = getData('players') || []; // Necesitamos los jugadores para hacer los cálculos
+    const competitionState = getData('competitionState') || {}; 
+    const playerStates = getData('playerStates') || []; 
+
+    // --- MAGIA: ENRIQUECER LOS PARTIDOS CON DATOS CALCULADOS ---
+    // Recorremos cada partido y le "pegamos" el valor y la edad media del 11 titular
+    const enrichedMatches = matches.map(match => {
+        
+        // 1. Filtrar titulares de este partido
+        const starters = match.playerStats.filter(ps => ps.isStarter);
+        
+        let totalValue = 0;
+        let totalYears = 0;
+        let ageCount = 0;
+
+        starters.forEach(ps => {
+            // Buscamos al jugador real en la base de datos
+            const realPlayer = players.find(p => p.id === ps.playerId);
+            
+            if (realPlayer) {
+                // A) Sumar Valor de Mercado (Asumimos propiedad 'marketValue' o 'valor')
+                // Se intenta leer el valor, quitando símbolos si los hubiera
+                const val = parseFloat(realPlayer.marketValue || realPlayer.valor || 0);
+                totalValue += isNaN(val) ? 0 : val;
+
+                // B) Calcular Edad (basada en fecha de nacimiento)
+                if (realPlayer.birthDate || realPlayer.fechaNacimiento) {
+                    const dob = new Date(realPlayer.birthDate || realPlayer.fechaNacimiento);
+                    const matchDate = match.date ? new Date(match.date) : new Date(); // Edad al momento del partido
+                    
+                    if (!isNaN(dob.getTime())) {
+                        // Cálculo preciso de edad en la fecha del partido
+                        let age = matchDate.getFullYear() - dob.getFullYear();
+                        const m = matchDate.getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && matchDate.getDate() < dob.getDate())) {
+                            age--;
+                        }
+                        totalYears += age;
+                        ageCount++;
+                    }
+                }
+            }
+        });
+
+        // Calculamos medias
+        const avgAge = ageCount > 0 ? (totalYears / ageCount).toFixed(1) : "0.0";
+
+        // Devolvemos el partido con los datos nuevos INCRUSTADOS
+        return {
+            ...match,
+            // Estos campos ahora aparecerán en el JSON individualmente:
+            _backup_team_value: totalValue,    // Valor total del 11
+            _backup_avg_age: parseFloat(avgAge), // Edad media del 11
+            _backup_starters_count: starters.length // Para control
+        };
+    });
+
+    // Creamos el paquete final usando los partidos enriquecidos
+    const data = {
+        team: currentTeam, 
+        matches: enrichedMatches, // <--- Usamos la versión con datos extra
+        competitionState: competitionState,
+        playerStates: playerStates,
+        players: players, // Seguimos guardando los jugadores por si acaso
+        timestamp: new Date().toISOString(),
+        version: '1.3'
+    };
+
+    // Descargar
+    const dataStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    a.download = `FullBackup_${currentTeam}_${date}.json`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    alert(`✅ Copia ENRIQUECIDA descargada.\nAhora cada partido incluye Valor y Edad Media en el JSON.`);
+}
+function restoreData(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const content = e.target.result;
+            const data = JSON.parse(content);
+            
+            // 1. Validaciones básicas
+            if (!data.matches || !data.team) {
+                throw new Error("El archivo no es válido (faltan datos o equipo).");
             }
 
-            // CORRECCIÓN: Usamos getData() que sabe buscar en la carpeta correcta (ej: masculino_matches)
-            const matches = getData('matches');
-            const competitionState = getData('competitionState') || {}; // Usamos getData en vez de getCompetitionState para consistencia
-            const playerStates = getData('playerStates') || []; // También guardamos los estados (activo/inactivo)
-
-            // Creamos el paquete completo
-            const data = {
-                team: currentTeam, // "masculino" o "femenino"
-                matches: matches,
-                competitionState: competitionState,
-                playerStates: playerStates,
-                timestamp: new Date().toISOString(),
-                version: '1.1'
-            };
-
-            // Convertir y descargar
-            const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            const date = new Date().toISOString().split('T')[0];
-            // El nombre del archivo ahora incluye el equipo para no confundirlos
-            a.download = `Backup_RealMadrid_${currentTeam}_${date}.json`;
-            a.href = url;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            alert(`✅ Copia de seguridad descargada (${matches.length} partidos).`);
-        }
-
-      function restoreData(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const content = e.target.result;
-                    const data = JSON.parse(content);
-                    
-                    // 1. Validaciones básicas
-                    if (!data.matches || !data.team) {
-                        throw new Error("El archivo no es válido (faltan datos o equipo).");
-                    }
-
-                    // 2. Validación de Equipo Cruzado (Importante)
-                    if (data.team !== currentTeam) {
-                        if (!confirm(`⚠️ ARCHIVO DE OTRO EQUIPO\n\nEl archivo es del: ${data.team.toUpperCase()}\nEstás en: ${currentTeam.toUpperCase()}\n\n¿Quieres sobrescribir los datos de ${currentTeam.toUpperCase()} con los del archivo?`)) {
-                            input.value = '';
-                            return;
-                        }
-                    } else {
-                        if (!confirm(`⚠️ RESTAURAR COPIA\n\nSe van a cargar ${data.matches.length} partidos.\nLos datos actuales se perderán.\n¿Continuar?`)) {
-                            input.value = '';
-                            return;
-                        }
-                    }
-
-                    // 3. Guardar Datos
-                    saveData('matches', data.matches);
-                    saveData('competitionState', data.competitionState || {});
-                    if (data.playerStates) {
-                        saveData('playerStates', data.playerStates);
-                    }
-
-                    // 4. VERIFICACIÓN (Comprobamos si se ha guardado bien)
-                    const checkMatches = getData('matches');
-                    if (!checkMatches || checkMatches.length !== data.matches.length) {
-                        throw new Error("Error al escribir en la memoria del navegador.");
-                    }
-
-                    // 5. Refrescar TODO al instante (Sin recargar página)
-                    // Esto fuerza a la web a leer los nuevos datos inmediatamente
-                    calendarEvents = []; // Limpiamos caché de calendario para evitar conflictos
-                    loadCalendar();      // Recargamos calendario
-                    
-                    renderPlayers();          // Actualizamos estados de jugadores
-                    renderCompetitionStatus(); // Actualizamos rondas
-                    renderMatches();           // Actualizamos lista de partidos
-                    renderStats();             // Actualizamos estadísticas
-                    renderPrincipal();         // Actualizamos panel principal
-                    
-                    alert(`✅ ÉXITO: ${checkMatches.length} partidos restaurados correctamente.`);
-                    
-                    // Te llevamos a la pestaña de partidos para que veas que están ahí
-                    showTab('partidos');
-
-                } catch (err) {
-                    console.error(err);
-                    alert("❌ ERROR: " + err.message);
-                } finally {
-                    input.value = ''; // Limpiar input para permitir recargar el mismo archivo si hace falta
+            // 2. Validación de Equipo Cruzado
+            if (data.team !== currentTeam) {
+                if (!confirm(`⚠️ ARCHIVO DE OTRO EQUIPO\n\nEl archivo es del: ${data.team.toUpperCase()}\nEstás en: ${currentTeam.toUpperCase()}\n\n¿Quieres sobrescribir los datos de ${currentTeam.toUpperCase()} con los del archivo?`)) {
+                    input.value = '';
+                    return;
                 }
-            };
+            } else {
+                if (!confirm(`⚠️ RESTAURAR COPIA\n\nSe van a cargar ${data.matches.length} partidos y datos de plantilla.\nLos datos actuales se perderán.\n¿Continuar?`)) {
+                    input.value = '';
+                    return;
+                }
+            }
+
+            // 3. Guardar Datos (Sobrescribir memoria)
+            saveData('matches', data.matches);
+            saveData('competitionState', data.competitionState || {});
             
-            reader.readAsText(file);
+            if (data.playerStates) {
+                saveData('playerStates', data.playerStates);
+            }
+
+            // NUEVO: Restaurar Jugadores (Valores de mercado, etc.)
+            if (data.players && Array.isArray(data.players) && data.players.length > 0) {
+                saveData('players', data.players);
+            }
+
+            // 4. VERIFICACIÓN
+            const checkMatches = getData('matches');
+            if (!checkMatches || checkMatches.length !== data.matches.length) {
+                throw new Error("Error al escribir en la memoria del navegador.");
+            }
+
+            // 5. Refrescar TODO
+            // Limpiamos variables globales críticas si las usas en caché
+            if (typeof calendarEvents !== 'undefined') calendarEvents = []; 
+            
+            // Recargamos funciones principales
+            if (typeof loadCalendar === 'function') loadCalendar();
+            if (typeof renderPlayers === 'function') renderPlayers();
+            if (typeof renderCompetitionStatus === 'function') renderCompetitionStatus();
+            if (typeof renderMatches === 'function') renderMatches();
+            if (typeof renderStats === 'function') renderStats(); 
+            if (typeof renderPrincipal === 'function') renderPrincipal();
+            
+            alert(`✅ RESTAURACIÓN EXITOSA:\n- ${checkMatches.length} partidos cargados.\n- Plantilla actualizada (Valores y Edades).\n- Competiciones sincronizadas.`);
+            
+            // Ir a la pestaña de partidos
+            if (typeof showTab === 'function') showTab('partidos');
+
+        } catch (err) {
+            console.error(err);
+            alert("❌ ERROR AL RESTAURAR: " + err.message);
+        } finally {
+            input.value = ''; 
         }
+    };
+    
+    reader.readAsText(file);
+}
 
         function hardReset() {
             if (!currentTeam) return;
