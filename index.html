@@ -7198,6 +7198,7 @@ function renderTacticalBoard(prefix = 'wizard-') {
         div.setAttribute("ondragover", "allowDrop(event)");
         div.setAttribute("ondrop", "drop(event)");
         div.setAttribute('data-current-slot', slotKey); 
+        div.setAttribute("onclick", `openPlayerSelector('${slotKey}')`);
 
         const pos = coords[i] || {t: 50, l: 50}; 
         div.style.top = pos.t + '%';
@@ -9457,7 +9458,13 @@ function handleEditMatchSubmit(e) {
             const count = (str) => (!str) ? 0 : str.split(',').filter(s => s.trim() !== '').length;
             const minsVal = parseInt(row.querySelector('.stat-minutes')?.value) || 0;
             const ratingVal = row.querySelector('.stat-rating')?.value;
-
+            const typesInput = row.querySelector('.stat-goals-types');
+            let goalTypes = [];
+            if (typesInput && typesInput.value) {
+                try {
+                    goalTypes = JSON.parse(typesInput.value);
+                } catch(e) { goalTypes = []; }
+            }
             newPlayerStats.push({
                 playerId,
                 isStarter,
@@ -9470,6 +9477,7 @@ function handleEditMatchSubmit(e) {
                 redCards: count(redStr),
                 played: minsVal > 0,
                 detailGoals: goalsStr,
+                detailGoalTypes: goalTypes,
                 detailAssists: assistsStr,
                 detailYellow: yellowStr,
                 detailRed: redStr
@@ -9502,13 +9510,23 @@ function backToEditLineup() {
     document.getElementById('edit-step-lineup').classList.remove('hidden');
 }
 
+/* ========================================================= */
+/* 🛠️ FUNCIONES DE ESTADÍSTICAS Y MODALES DE MINUTOS/GOLES */
+/* ========================================================= */
+
+// --- 1. FUNCIÓN PRINCIPAL: CARGAR FORMULARIO DE ESTADÍSTICAS ---
 function goToEditStats() {
+    console.log("➡️ Pasando a Estadísticas...");
+    
+    // Asegurarnos que el modal HTML de etiquetas existe
+    ensureGoalTagModal();
+
     // 1. Recoger jugadores de la pizarra
     const starterIds = Object.values(currentPitchPlayers).filter(id => id);
     const subIds = currentSubstitutes || []; 
     const players = getPlayers();
     
-    // Obtener datos previos para pre-rellenar
+    // Obtener datos previos
     const matchId = document.getElementById('edit-match-id').value;
     const matches = getData('matches');
     const match = matches.find(m => m.id === matchId);
@@ -9529,17 +9547,21 @@ function goToEditStats() {
     });
     if(coach) roster.push({ ...coach, rol: 'Entrenador', isStarter: false });
 
-    // 2. Renderizar la lista de stats (Igual que renderPlayerStatsForm pero manual para control total)
+    // 2. Renderizar lista
     const container = document.getElementById('edit-stats-list');
     
     container.innerHTML = roster.map(p => {
         const prevStats = match.playerStats ? match.playerStats.find(ps => ps.playerId === p.id) : null;
         
-        // Recuperar valores (Strings con comas para la nueva lógica)
+        // Recuperar valores (Strings)
         const goalsStr = prevStats?.detailGoals || "";
         const assistsStr = prevStats?.detailAssists || "";
         const yellowStr = prevStats?.detailYellow || "";
         const redStr = prevStats?.detailRed || "";
+        
+        // --- NUEVO: RECUPERAR TIPOS DE GOL (JSON) ---
+        const goalTypes = prevStats?.detailGoalTypes || []; 
+
         const ratingVal = prevStats?.rating || "";
         const minsVal = prevStats ? prevStats.minutes : (p.rol === 'Titular' ? 90 : 0);
 
@@ -9550,7 +9572,7 @@ function goToEditStats() {
         const yC = count(yellowStr) || (prevStats?.yellowCards || 0);
         const rC = count(redStr) || (prevStats?.redCards || 0);
 
-        // Estilos Botones (Clave para que se vea moderno)
+        // Estilos Botones
         const btnBase = "w-full h-9 border rounded text-sm font-bold flex items-center justify-center transition-all ";
         const btnStyle = (c, color='indigo') => c > 0 
             ? btnBase + `bg-${color}-100 text-${color}-700 border-${color}-300` 
@@ -9564,7 +9586,7 @@ function goToEditStats() {
         const redId = `${prefix}red-${p.id}`;
         const isCoach = p.rol === 'Entrenador';
 
-        // Badge de Posición
+        // Badge
         let badgeHtml = '';
         if (isCoach) badgeHtml = '<span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-2 py-1 rounded">STAFF</span>';
         else if (p.rol === 'Titular') badgeHtml = '<span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded border border-emerald-200">TITULAR</span>';
@@ -9588,9 +9610,14 @@ function goToEditStats() {
                  <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Nota</label>
                  <input type="number" step="0.1" class="stat-rating w-full h-9 px-2 border border-gray-300 rounded text-center font-bold" value="${ratingVal}" placeholder="-"></div>
 
-                 <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Gol</label>
-                 <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${goalsStr}">
-                 <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnStyle(gC)}">${gC}</button></div>
+                 <div class="flex flex-col">
+                    <label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Gol</label>
+                    <input type="hidden" class="stat-goals-minutes" id="${goalId}" value="${goalsStr}">
+                    
+                    <input type="hidden" class="stat-goals-types" id="${goalId}-types" value='${JSON.stringify(goalTypes)}'>
+
+                    <button type="button" id="btn-${goalId}" onclick="openMinuteModal('${goalId}', 'Goles ⚽')" class="${btnStyle(gC)}">${gC}</button>
+                 </div>
 
                  <div class="flex flex-col"><label class="text-[9px] uppercase font-bold text-gray-400 mb-1">Asis</label>
                  <input type="hidden" class="stat-assists-minutes" id="${assistId}" value="${assistsStr}">
@@ -10942,11 +10969,6 @@ function renderFormationStats() {
     }).join('');
 }
 
-/* ========================================== */
-/* LÓGICA DEL MODAL DE MINUTOS (CON DEPURACIÓN) */
-/* ========================================== */
-
-// 1. FUNCIÓN DE APERTURA
 function openMinuteModal(targetId, title) {
     console.log("🔓 Abriendo modal minutos para:", targetId);
 
@@ -10956,18 +10978,13 @@ function openMinuteModal(targetId, title) {
     const modal = document.getElementById('minute-modal');
     if(!modal) return console.error("❌ Error: No encuentro el div 'minute-modal'");
 
-    // =========================================================
-    // TRUCO DE CAPAS: PONERLO ENCIMA DEL EDITOR
-    // =========================================================
-    // 1. Lo movemos al final del todo en el HTML para que sea lo último que se pinta
+    // TRUCO DE CAPAS
     document.body.appendChild(modal); 
-    
-    // 2. Le damos un Z-Index mayor que el del editor (que tiene 99999)
     modal.style.zIndex = "99999999"; 
-    // =========================================================
 
-    // Guardamos a quién pertenece este modal
+    // Guardamos a quién pertenece este modal y el título
     modal.dataset.targetId = targetId; 
+    modal.dataset.title = title; // <--- NUEVO
 
     // Rellenar datos
     const modalInput = document.getElementById('minute-input-field');
@@ -10977,8 +10994,8 @@ function openMinuteModal(targetId, title) {
     
     // Mostrar
     modal.classList.remove('hidden');
-    modal.classList.add('flex'); // Aseguramos que usa Flexbox para centrarse
-    modal.style.display = 'flex'; // Forzamos visibilidad
+    modal.classList.add('flex');
+    modal.style.display = 'flex';
     
     setTimeout(() => modalInput.focus(), 100);
 }
@@ -10988,22 +11005,17 @@ function closeMinuteModal() {
     const modal = document.getElementById('minute-modal');
     if(modal) {
         modal.classList.add('hidden');
-        modal.style.display = 'none'; // Forzar ocultado
+        modal.style.display = 'none';
     }
-    currentMinuteTarget = null;
 }
 
-// 3. FUNCIÓN DE GUARDADO
+// 3. FUNCIÓN DE GUARDADO (¡AQUÍ ESTÁ EL DISPARADOR DE ETIQUETAS!)
 function saveMinutesFromModal() {
     const modal = document.getElementById('minute-modal');
-    // Recuperar el ID guardado
     const targetId = modal.dataset.targetId; 
+    const title = modal.dataset.title || ""; // <--- RECUPERAMOS TÍTULO
     
-    if(!targetId) {
-        console.error("❌ ERROR: No hay targetId en el modal");
-        closeMinuteModal();
-        return;
-    }
+    if(!targetId) return closeMinuteModal();
     
     const val = document.getElementById('minute-input-field').value.trim();
     
@@ -11011,31 +11023,42 @@ function saveMinutesFromModal() {
     const hiddenInput = document.getElementById(targetId);
     if(hiddenInput) hiddenInput.value = val;
     
-    // 2. ACTUALIZAR EL BOTÓN VISUAL (FORZANDO ESTILOS)
+    // 2. ACTUALIZAR BOTÓN VISUAL
     const btn = document.getElementById('btn-' + targetId);
-    
     if(btn) {
-        // Contar elementos
         const parts = val === '' ? [] : val.split(',').filter(s => s.trim() !== '');
         const count = parts.length;
         
-        // Poner el número
         btn.innerText = count;
         
-        // Clases base del botón (tamaño, borde, fuente)
+        // Estilos
         const baseClasses = "w-full h-9 border rounded text-sm font-bold flex items-center justify-center transition-colors ";
+        const isRed = title.includes('Roja');
+        const isYellow = title.includes('Amarilla');
         
-        // SI TIENE DATOS (>0) -> AZUL INTENSO
-        // SI NO TIENE DATOS (0) -> BLANCO/GRIS
+        let colorClass = "bg-indigo-100 text-indigo-700 border-indigo-300 shadow-sm";
+        if(isRed) colorClass = "bg-red-100 text-red-700 border-red-300 shadow-sm";
+        else if(isYellow) colorClass = "bg-yellow-100 text-yellow-700 border-yellow-300 shadow-sm";
+
         if (count > 0) {
-            btn.className = baseClasses + "bg-indigo-100 text-indigo-700 border-indigo-300 shadow-sm";
+            btn.className = baseClasses + colorClass;
         } else {
             btn.className = baseClasses + "bg-white text-gray-400 border-gray-300 hover:border-indigo-300 hover:text-indigo-400";
         }
-        
-        console.log(`✅ Botón ${targetId} actualizado a ${count}`);
-    } else {
-        console.error(`❌ No encuentro el botón visual: btn-${targetId}`);
+
+        // --- MAGIA: DISPARAR ETIQUETADO SI ES UN GOL ---
+        if (title.includes('Goles') || title.includes('Gol')) {
+            if (count > 0) {
+                // Cerramos modal minutos y abrimos etiquetador
+                closeMinuteModal();
+                setTimeout(() => openGoalTagging(targetId, val), 200);
+                return; // Salimos para no ejecutar closeMinuteModal dos veces
+            } else {
+                // Si borraron los goles, limpiar etiquetas
+                const typeInput = document.getElementById(targetId + '-types');
+                if(typeInput) typeInput.value = '[]';
+            }
+        }
     }
 
     closeMinuteModal();
@@ -11055,8 +11078,7 @@ function addMinuteToInput(text) {
         }
         field.value += text;
     }
-    field.foc
-    us();
+    field.focus();
 }
 /* ========================================================= */
 /* 🆕 VISUAL TIMELINE GENERATOR                              */
@@ -11155,6 +11177,112 @@ function renderMatchTimeline(match) {
             </div>
         </div>
     `;
+}
+/* --- HTML DEL MODAL DE ETIQUETAS --- */
+function ensureGoalTagModal() {
+    if (document.getElementById('goal-tag-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'goal-tag-modal';
+    modal.className = "fixed inset-0 bg-black/80 hidden z-[10000] items-center justify-center backdrop-blur-sm";
+    modal.innerHTML = `
+        <div class="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden m-4 flex flex-col max-h-[90vh]">
+            <div class="bg-slate-900 text-white p-4 font-bold text-center border-b border-slate-700">
+                🏷️ ETIQUETAR GOLES
+            </div>
+            <div id="goal-tag-content" class="p-4 overflow-y-auto flex-1 space-y-4 bg-gray-50">
+                </div>
+            <div class="p-4 bg-white border-t border-gray-200 flex justify-end gap-3">
+                <button onclick="closeGoalTagModal()" class="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded-lg">Cancelar</button>
+                <button onclick="saveGoalTags()" class="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-lg">GUARDAR ETIQUETAS</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+let currentTaggingGoalId = null;
+
+function openGoalTagging(goalInputId, minutesStr) {
+    currentTaggingGoalId = goalInputId; 
+    ensureGoalTagModal();
+
+    const minutes = minutesStr.split(',').map(s => s.trim()).filter(s => s !== '');
+    const container = document.getElementById('goal-tag-content');
+    container.innerHTML = '';
+
+    // Recuperar etiquetas existentes
+    const typeInput = document.getElementById(goalInputId + '-types');
+    let existingTags = [];
+    try { existingTags = JSON.parse(typeInput.value) || []; } catch(e) {}
+
+    // Generar Fichas
+    minutes.forEach((min, index) => {
+        const savedData = existingTags[index] || {};
+        const selectedTags = savedData.tags || [];
+
+        const tagsList = ['Pie derecho', 'Pie izquierdo', 'Cabeza', 'Chilena', 'Volea', 'Balón parado', 'Olímpico', 'Corner', 'Falta directa', 'Penalti'];
+        
+        const tagsHtml = tagsList.map(tag => {
+            const isChecked = selectedTags.includes(tag) ? 'checked' : '';
+            return `
+                <label class="flex items-center space-x-3 bg-white border border-gray-200 p-3 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition-all shadow-sm">
+                    <input type="checkbox" value="${tag}" ${isChecked} class="form-checkbox h-5 w-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 goal-tag-check-${index}">
+                    <span class="text-xs font-bold text-gray-700 uppercase tracking-wide">${tag}</span>
+                </label>
+            `;
+        }).join('');
+
+        const card = `
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-5 relative mt-4">
+                <div class="absolute -top-3 left-4 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full shadow-md tracking-wider border-2 border-white">
+                    GOL ${index + 1} • MINUTO ${min}'
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                    ${tagsHtml}
+                </div>
+            </div>
+        `;
+        container.innerHTML += card;
+    });
+
+    const modal = document.getElementById('goal-tag-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+// C. CERRAR
+function closeGoalTagModal() {
+    const modal = document.getElementById('goal-tag-modal');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+// D. GUARDAR JSON
+function saveGoalTags() {
+    if (!currentTaggingGoalId) return;
+
+    const goalInput = document.getElementById(currentTaggingGoalId);
+    const minutes = goalInput.value.split(',').map(s => s.trim()).filter(s => s !== '');
+    
+    const finalData = [];
+
+    minutes.forEach((min, index) => {
+        const checks = document.querySelectorAll(`.goal-tag-check-${index}:checked`);
+        const tags = Array.from(checks).map(c => c.value);
+        
+        finalData.push({
+            minute: min,
+            tags: tags
+        });
+    });
+
+    const typeInput = document.getElementById(currentTaggingGoalId + '-types');
+    if (typeInput) {
+        typeInput.value = JSON.stringify(finalData);
+    }
+    closeGoalTagModal();
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
