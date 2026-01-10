@@ -6362,10 +6362,21 @@ function viewMatchDetails(matchId) {
         `;
     }).join('');
 
-    // 4. Inyectar HTML con PESTAÑAS
+    // 4. Inyectar HTML con PESTAÑAS (Y BOTÓN DE FOTO)
     content.innerHTML = `
-        <div class="bg-slate-900 text-white p-4 shrink-0 relative overflow-hidden shadow-lg z-10">
-            <button onclick="document.getElementById('match-details-modal').classList.add('hidden'); document.getElementById('match-details-modal').classList.remove('flex');" class="absolute top-4 right-4 text-white/50 hover:text-white hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition cursor-pointer z-50">✕</button>
+        <div class="bg-slate-900 text-white p-4 shrink-0 relative overflow-hidden shadow-lg z-10 print:hidden">
+            
+            <div class="absolute top-4 right-4 flex gap-2 z-50">
+                <button onclick="downloadMatchCard('${match.id}')" title="Descargar Ficha" 
+                        class="text-white/50 hover:text-yellow-400 hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition cursor-pointer">
+                    📷
+                </button>
+                
+                <button onclick="document.getElementById('match-details-modal').classList.add('hidden'); document.getElementById('match-details-modal').classList.remove('flex');" 
+                        class="text-white/50 hover:text-white hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition cursor-pointer">
+                    ✕
+                </button>
+            </div>
             
             <div class="flex justify-between items-center relative z-10 max-w-3xl mx-auto">
                 <div class="text-center w-1/3">
@@ -11370,6 +11381,188 @@ function renderGoalAnalysis() {
             </div>
             <div class="p-5">
                 ${barsHtml}
+            </div>
+        </div>
+    `;
+}
+/* ========================================================= */
+/* 📸 GENERADOR DE FICHA DE PARTIDO (CORREGIDO Y ROBUSTO)    */
+/* ========================================================= */
+
+async function downloadMatchCard(matchId) {
+    const matches = getData('matches');
+    const match = matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    // Notificar al usuario que espere un momento
+    const originalText = document.body.style.cursor;
+    document.body.style.cursor = 'wait';
+
+    // 1. Crear contenedor temporal (visible pero detrás de todo)
+    // Esto evita errores de renderizado que ocurren cuando está fuera de pantalla (-9999px)
+    const container = document.createElement('div');
+    container.id = "temp-capture-container";
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.zIndex = '-50'; // Detrás de todo
+    container.style.width = '600px'; 
+    container.style.height = '800px';
+    container.style.overflow = 'hidden';
+    document.body.appendChild(container);
+
+    // 2. Generar HTML
+    container.innerHTML = generateMatchCardHTML(match);
+
+    // 3. Esperar un poco para asegurar que las imágenes y fuentes carguen
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    try {
+        // 4. Capturar
+        const canvas = await html2canvas(container.querySelector('#match-share-card'), {
+            scale: 2, 
+            backgroundColor: '#0f172a',
+            useCORS: true, // Intentar cargar imágenes externas
+            allowTaint: true,
+            logging: false
+        });
+
+        // 5. Descargar
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.download = `MatchReport_RealMadrid_vs_${match.opponent.replace(/\s+/g, '')}.png`;
+        link.href = image;
+        link.click();
+
+    } catch (err) {
+        console.error("Error generando imagen:", err);
+        alert("No se pudo generar la imagen. Inténtalo de nuevo.");
+    } finally {
+        // 6. Limpieza
+        document.body.removeChild(container);
+        document.body.style.cursor = originalText;
+    }
+}
+
+// Helper para obtener nombre del MVP
+function getMvpName(playerId) {
+    if(!playerId) return "N/A";
+    const players = getPlayers();
+    const p = players.find(pl => pl.id === playerId);
+    return p ? (p.apodo || p.apellido) : "Desconocido";
+}
+
+// FUNCIÓN DE DISEÑO (Simplificada para compatibilidad)
+function generateMatchCardHTML(match) {
+    const players = getPlayers();
+    const [homeGoals, awayGoals] = match.result.split('-').map(Number);
+    const isWin = homeGoals > awayGoals;
+    // Usamos colores hex directos para evitar problemas con clases de Tailwind no cargadas
+    const resultColor = isWin ? '#34d399' : (homeGoals === awayGoals ? '#fbbf24' : '#f87171');
+
+    // --- GENERAR LISTA DE JUGADORES CON NOTAS ---
+    let playersHtml = '';
+    if (match.playerStats) {
+        // Filtramos los que jugaron o tienen nota
+        const activeStats = match.playerStats.filter(ps => ps.played || ps.minutes > 0 || ps.rating);
+        
+        // Ordenamos: Titulares primero, luego por nota
+        activeStats.sort((a, b) => {
+            if (a.isStarter && !b.isStarter) return -1;
+            if (!a.isStarter && b.isStarter) return 1;
+            return (b.rating || 0) - (a.rating || 0);
+        });
+
+        // Limitamos para que quepa en la imagen si son muchos (ej: max 16)
+        const displayStats = activeStats.slice(0, 16);
+
+        playersHtml = displayStats.map(ps => {
+            const p = players.find(pl => pl.id === ps.playerId);
+            const name = p ? (p.apodo || p.apellido) : '???';
+            const rating = ps.rating || '-';
+            
+            // Color de la nota
+            let ratingColor = '#9ca3af'; // Gris
+            if (rating >= 8) ratingColor = '#34d399'; // Verde
+            else if (rating >= 6) ratingColor = '#60a5fa'; // Azul
+            else if (rating >= 5) ratingColor = '#fbbf24'; // Amarillo
+            else if (rating !== '-') ratingColor = '#f87171'; // Rojo
+
+            // Iconos de rendimiento
+            let icons = '';
+            if (ps.goals > 0) icons += `⚽${ps.goals > 1 ? 'x'+ps.goals : ''} `;
+            if (ps.assists > 0) icons += `👟${ps.assists > 1 ? 'x'+ps.assists : ''} `;
+            if (ps.redCards > 0) icons += `🟥 `;
+            else if (ps.yellowCards > 0) icons += `🟨 `;
+            if (match.mvp === ps.playerId) icons += `👑 `;
+
+            return `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                        <span style="color: ${ps.isStarter ? '#e2e8f0' : '#94a3b8'}; font-weight: ${ps.isStarter ? 'bold' : 'normal'}; white-space: nowrap;">${name}</span>
+                        <span style="font-size: 10px;">${icons}</span>
+                    </div>
+                    <div style="font-weight: 900; color: ${ratingColor}; font-size: 14px;">${rating}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // MVP Info
+    const mvpName = getMvpName(match.mvp);
+    const mvpPlayer = players.find(p => p.id === match.mvp);
+    const mvpImg = mvpPlayer?.foto || 'https://via.placeholder.com/60';
+
+    // HTML CON ESTILOS INLINE (MÁS SEGURO PARA HTML2CANVAS)
+    return `
+        <div id="match-share-card" style="width: 600px; height: 800px; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); font-family: sans-serif; position: relative; overflow: hidden; display: flex; flex-direction: column;">
+            
+            <div style="width: 100%; height: 8px; background: linear-gradient(90deg, #d97706, #fbbf24, #d97706);"></div>
+
+            <div style="text-align: center; padding-top: 30px; margin-bottom: 10px;">
+                <div style="color: #fbbf24; text-transform: uppercase; letter-spacing: 3px; font-weight: bold; font-size: 12px; margin-bottom: 4px;">${match.competition}</div>
+                <div style="color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 1px;">${match.round}</div>
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; padding: 0 20px;">
+                <div style="width: 35%; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 900; color: white; text-shadow: 0 4px 6px rgba(0,0,0,0.3);">REAL MADRID</div>
+                </div>
+                <div style="width: 30%; text-align: center;">
+                    <div style="background: rgba(30, 41, 59, 0.6); padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); display: inline-block;">
+                        <div style="font-size: 48px; font-weight: 900; color: ${resultColor}; line-height: 1;">${match.result}</div>
+                    </div>
+                </div>
+                <div style="width: 35%; text-align: center; opacity: 0.9;">
+                    <div style="font-size: 18px; font-weight: bold; color: white;">${match.opponent}</div>
+                </div>
+            </div>
+
+            <div style="margin: 10px 30px; background: rgba(30, 41, 59, 0.4); border-radius: 16px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); flex: 1; display: flex; flex-direction: column;">
+                <div style="text-align: center; color: rgba(251, 191, 36, 0.8); font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 8px;">
+                    Notas del Partido
+                </div>
+                <div style="flex: 1; overflow: hidden;"> <!-- Evitar scrollbars en la imagen -->
+                    ${playersHtml}
+                </div>
+            </div>
+
+            ${match.mvp ? `
+            <div style="margin: 0 30px 20px 30px; display: flex; align-items: center; background: linear-gradient(90deg, rgba(251, 191, 36, 0.1) 0%, transparent 100%); border-radius: 12px; padding: 10px; border-left: 3px solid #fbbf24;">
+                <div style="margin-right: 15px; position: relative;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: #fbbf24; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #fbbf24;">
+                        <img src="${mvpImg}" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+                <div>
+                    <div style="color: #fbbf24; font-size: 9px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">MVP del Partido</div>
+                    <div style="font-size: 18px; font-weight: 900; color: white;">${mvpName}</div>
+                </div>
+            </div>
+            ` : ''}
+
+            <div style="text-align: center; padding-bottom: 15px; color: rgba(255,255,255,0.3); font-size: 9px; text-transform: uppercase; letter-spacing: 2px;">
+                Reporte Oficial de Partido
             </div>
         </div>
     `;
