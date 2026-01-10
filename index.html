@@ -2335,6 +2335,17 @@ button:active, .btn:active {
                             </table>
                         </div>
                     </div>
+                    <div id="stats-visual-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 mb-12 hidden">
+    
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-h-[300px]">
+        <h3 class="font-bold text-gray-700 mb-4 px-2 border-l-4 border-indigo-500">📈 Evolución de la Temporada</h3>
+        <div id="stats-charts-wrapper"></div> 
+    </div>
+
+    <div class="lg:col-span-1" id="stats-goal-analysis-container">
+        </div>
+
+</div>
                     <div class="mt-6 mb-8">
     <h3 class="text-lg font-bold text-gray-700 mb-3 border-l-4 border-indigo-500 pl-3">
         🧩 Rendimiento por Esquema
@@ -3354,14 +3365,18 @@ function renderTopPerformances() {
     }).join('');
 }
 
-            function renderStats() {
+/* ========================================================= */
+/* 📊 RENDERIZAR ESTADÍSTICAS (TABLA + GRÁFICOS)             */
+/* ========================================================= */
+
+function renderStats() {
     const matches = getData('matches');
     const players = getPlayers();
     
     const competitionFilter = document.getElementById('stats-filter-competition').value;
     const statusFilter = document.getElementById('stats-filter-status').value;
     
-    // 1. ACTUALIZAR CABECERAS (Visual)
+    // 1. ACTUALIZAR CABECERAS
     document.querySelectorAll('th.sortable').forEach(th => {
         th.classList.remove('th-active');
         th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
@@ -3378,7 +3393,7 @@ function renderTopPerformances() {
         filteredMatches = filteredMatches.filter(m => m.competition === competitionFilter);
     }
 
-    // (Lógica de Rachas y Totales... Se mantiene igual)
+    // Lógica de Rachas
     const streakContainer = document.getElementById('team-streak');
     const last5Matches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
     if (last5Matches.length > 0 && streakContainer) {
@@ -3435,7 +3450,7 @@ function renderTopPerformances() {
             posicion: player.posicion,
             estado: player.estado,
             matchesPlayed: 0,
-            starts: 0, // <--- NUEVO CONTADOR
+            starts: 0, 
             totalRating: 0,
             ratingCount: 0,
             goals: 0,
@@ -3455,13 +3470,7 @@ function renderTopPerformances() {
             if (ps) {
                 if (ps.minutes > 0 || ps.played) {
                     stats.matchesPlayed++;
-                    
-                    // --- NUEVO: CONTAR TITULARIDADES ---
-                    if (ps.isStarter) {
-                        stats.starts++;
-                    }
-                    // -----------------------------------
-
+                    if (ps.isStarter) stats.starts++;
                     const posName = ps.specificPosition || (ps.isStarter ? 'Titular' : 'Suplente');
                     stats.positionsPlayed[posName] = (stats.positionsPlayed[posName] || 0) + 1;
                 }
@@ -3499,8 +3508,6 @@ function renderTopPerformances() {
 
     if(document.getElementById('stat-total-assists')) document.getElementById('stat-total-assists').textContent = totalAssists;
 
-    // (Lógica Top Form... Se mantiene igual)
-
     // 4. ORDENAR
     playerStats.sort((a, b) => {
         if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
@@ -3509,9 +3516,7 @@ function renderTopPerformances() {
         let valA = a[currentSortColumn];
         let valB = b[currentSortColumn];
 
-        if (currentSortColumn === 'name') {
-            return currentSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
+        if (currentSortColumn === 'name') return currentSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
         if (currentSortColumn === 'avgRating') {
             valA = (valA === '-' || valA === null) ? -1 : parseFloat(valA);
             valB = (valB === '-' || valB === null) ? -1 : parseFloat(valB);
@@ -3524,7 +3529,6 @@ function renderTopPerformances() {
             valA = parseFloat(valA) || 0;
             valB = parseFloat(valB) || 0;
         }
-
         return currentSortOrder === 'asc' ? valA - valB : valB - valA;
     });
 
@@ -3535,53 +3539,70 @@ function renderTopPerformances() {
     if (playerStats.length === 0) {
         tableBody.innerHTML = '';
         noStats.classList.remove('hidden');
-        return;
-    }
-    
-    noStats.classList.add('hidden');
-    tableBody.innerHTML = playerStats.map(stats => {
-        const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
-        
-        return `
-        <tr class="border-t hover:bg-gray-50 cursor-pointer ${stats.estado === 'Inactivo' ? 'opacity-60 bg-gray-50' : ''}" onclick="viewPlayerDetails('${stats.id}')">
-            <td class="px-4 py-3">
-                <div class="flex items-center gap-3">
-                    <img src="${stats.foto}" class="player-photo-small" onerror="this.src='https://via.placeholder.com/40x40?text=${stats.number}'">
-                    <div>
-                        <span class="font-medium text-gray-800">${stats.name}</span>
-                        <span class="text-gray-500 text-sm ml-1">${stats.number === 'DT' ? 'DT' : '#' + stats.number}</span>
-                        ${stats.estado === 'Inactivo' ? '<span class="text-xs text-red-500 font-bold ml-1">(Inactivo)</span>' : ''}
+    } else {
+        noStats.classList.add('hidden');
+        tableBody.innerHTML = playerStats.map(stats => {
+            const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
+            
+            return `
+            <tr class="border-t hover:bg-gray-50 cursor-pointer ${stats.estado === 'Inactivo' ? 'opacity-60 bg-gray-50' : ''}" onclick="viewPlayerDetails('${stats.id}')">
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                        <img src="${stats.foto}" class="player-photo-small" onerror="this.src='https://via.placeholder.com/40x40?text=${stats.number}'">
+                        <div>
+                            <span class="font-medium text-gray-800">${stats.name}</span>
+                            <span class="text-gray-500 text-sm ml-1">${stats.number === 'DT' ? 'DT' : '#' + stats.number}</span>
+                            ${stats.estado === 'Inactivo' ? '<span class="text-xs text-red-500 font-bold ml-1">(Inactivo)</span>' : ''}
+                        </div>
                     </div>
-                </div>
-            </td>
-            <td class="px-4 py-3 text-center font-medium">${stats.matchesPlayed}</td>
-            
-            <td class="px-4 py-3 text-center font-semibold text-indigo-600">${stats.starts}</td>
-            <td class="px-4 py-3 text-center font-semibold ${getRatingColor(stats.avgRating)}">${stats.avgRating}</td>
-            
-            <td class="px-4 py-3 text-center font-medium text-emerald-600">${isCoach ? '-' : stats.goals}</td>
-            <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono">${isCoach ? '-' : stats.gPer90}</td>
+                </td>
+                <td class="px-4 py-3 text-center font-medium">${stats.matchesPlayed}</td>
+                <td class="px-4 py-3 text-center font-semibold text-indigo-600">${stats.starts}</td>
+                <td class="px-4 py-3 text-center font-semibold ${getRatingColor(stats.avgRating)}">${stats.avgRating}</td>
+                <td class="px-4 py-3 text-center font-medium text-emerald-600">${isCoach ? '-' : stats.goals}</td>
+                <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono">${isCoach ? '-' : stats.gPer90}</td>
+                <td class="px-4 py-3 text-center">${isCoach ? '-' : stats.assists}</td>
+                <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono">${isCoach ? '-' : stats.aPer90}</td>
+                <td class="px-4 py-3 text-center font-bold">${isCoach ? '-' : stats.ga}</td>
+                <td class="px-2 py-3 text-center text-xs text-purple-600 font-bold font-mono">${isCoach ? '-' : stats.gaPer90}</td>
+                <td class="px-4 py-3 text-center text-gray-600">${isCoach ? '-' : stats.minutes + "'"}</td>
+                <td class="px-2 py-3 text-center text-xs text-gray-500 italic">${isCoach ? '-' : stats.minPerMatch + "'"}</td>
+                <td class="px-4 py-3 text-center">
+                    ${stats.mvpCount > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-sm font-medium">${stats.mvpCount}</span>` : '-'}
+                </td>
+                <td class="px-4 py-3 text-center text-green-600 font-medium">${stats.wins}</td>
+                <td class="px-4 py-3 text-center text-amber-600">${stats.draws}</td>
+                <td class="px-4 py-3 text-center text-red-600">${stats.losses}</td>
+                <td class="px-4 py-3 text-center">${stats.yellowCards > 0 ? stats.yellowCards : '-'}</td>
+                <td class="px-4 py-3 text-center">${stats.redCards > 0 ? `<span class="text-red-600 font-medium">${stats.redCards}</span>` : '-'}</td>
+            </tr>
+            `}).join('');
+    }
 
-            <td class="px-4 py-3 text-center">${isCoach ? '-' : stats.assists}</td>
-            <td class="px-2 py-3 text-center text-xs text-blue-500 font-mono">${isCoach ? '-' : stats.aPer90}</td>
+    // ... (Todo el código anterior de la tabla sigue igual) ...
 
-            <td class="px-4 py-3 text-center font-bold">${isCoach ? '-' : stats.ga}</td>
-            <td class="px-2 py-3 text-center text-xs text-purple-600 font-bold font-mono">${isCoach ? '-' : stats.gaPer90}</td>
-
-            <td class="px-4 py-3 text-center text-gray-600">${isCoach ? '-' : stats.minutes + "'"}</td>
-            <td class="px-2 py-3 text-center text-xs text-gray-500 italic">${isCoach ? '-' : stats.minPerMatch + "'"}</td>
-
-            <td class="px-4 py-3 text-center">
-                ${stats.mvpCount > 0 ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-sm font-medium">${stats.mvpCount}</span>` : '-'}
-            </td>
-            <td class="px-4 py-3 text-center text-green-600 font-medium">${stats.wins}</td>
-            <td class="px-4 py-3 text-center text-amber-600">${stats.draws}</td>
-            <td class="px-4 py-3 text-center text-red-600">${stats.losses}</td>
-            <td class="px-4 py-3 text-center">${stats.yellowCards > 0 ? stats.yellowCards : '-'}</td>
-            <td class="px-4 py-3 text-center">${stats.redCards > 0 ? `<span class="text-red-600 font-medium">${stats.redCards}</span>` : '-'}</td>
-        </tr>
-    `}).join('');
+    // =========================================================
+    // 6. RENDERIZAR GRÁFICOS Y ANÁLISIS VISUAL
+    // =========================================================
     
+    // 1. Mostrar la sección visual (por si estaba oculta)
+    const visualSection = document.getElementById('stats-visual-section');
+    if (visualSection) {
+        visualSection.classList.remove('hidden');
+    }
+
+    // 2. Inyectar el Análisis de Goles en su hueco específico
+    const goalContainer = document.getElementById('stats-goal-analysis-container');
+    if (goalContainer) {
+        // Llamamos a la función que crea las barras y lo metemos en el DIV
+        goalContainer.innerHTML = (typeof renderGoalAnalysis === 'function') 
+            ? renderGoalAnalysis() 
+            : '';
+    }
+
+    // 3. Renderizar el resto de gráficos existentes
+    // Nota: Asegúrate de que 'renderCharts' pinte dentro de 'stats-charts-wrapper' 
+    // o el ID que tengas configurado para ello.
     if(typeof renderCharts === 'function') renderCharts(filteredMatches);
     if(typeof renderBestXI === 'function') renderBestXI();
     if(typeof renderScatterChart === 'function') renderScatterChart();
@@ -11325,6 +11346,97 @@ function saveGoalTags() {
         typeInput.value = JSON.stringify(finalData);
     }
     closeGoalTagModal();
+}
+/* ========================================================= */
+/* 📊 ANÁLISIS DE TIPOS DE GOL (MÓDULO DE ESTADÍSTICAS)      */
+/* ========================================================= */
+function renderGoalAnalysis() {
+    const matches = getData('matches');
+    
+    // 1. AGREGAR DATOS
+    let tagCounts = {};
+    let totalTaggedGoals = 0;
+
+    matches.forEach(m => {
+        m.playerStats.forEach(ps => {
+            // Verificamos si tiene etiquetas guardadas
+            if (ps.detailGoalTypes && Array.isArray(ps.detailGoalTypes)) {
+                ps.detailGoalTypes.forEach(evt => {
+                    if (evt.tags && Array.isArray(evt.tags)) {
+                        evt.tags.forEach(tag => {
+                            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+                            totalTaggedGoals++;
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // 2. ORDENAR DE MAYOR A MENOR
+    // Convertimos el objeto en array para ordenar
+    const sortedTags = Object.entries(tagCounts)
+        .sort(([, a], [, b]) => b - a); // Orden descendente
+
+    // 3. GENERAR HTML
+    if (sortedTags.length === 0) {
+        return `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col items-center justify-center text-center h-full">
+                <div class="text-4xl mb-2">🤷‍♂️</div>
+                <h3 class="font-bold text-gray-700">Sin datos de goles</h3>
+                <p class="text-xs text-gray-400 mt-1">Etiqueta tus goles al editar partidos para ver el análisis aquí.</p>
+            </div>
+        `;
+    }
+
+    // Mapeamos iconos para darle un toque visual
+    const icons = {
+        'Pie derecho': '🦶👉', 'Pie izquierdo': '👈🦶', 'Cabeza': '👤', 
+        'Chilena': '🤸', 'Volea': '🚀', 'Tacón': '👠', 
+        'Fuera del área': '🎯', 'Balón parado': '⏳', 'Olímpico': '🚩', 
+        'Corner': '📐', 'Falta directa': '🧱', 'Penalti': '🥅'
+    };
+
+    const barsHtml = sortedTags.map(([tag, count]) => {
+        // Calcular porcentaje respecto al total de etiquetas (para la barra)
+        // Usamos Math.max(..., 5) para que siempre se vea un poquito de barra
+        const percentage = Math.round((count / totalTaggedGoals) * 100);
+        const icon = icons[tag] || '⚽';
+        
+        // Color dinámico según porcentaje
+        let barColor = 'bg-indigo-500';
+        if (percentage > 40) barColor = 'bg-emerald-500';
+        else if (percentage < 10) barColor = 'bg-gray-400';
+
+        return `
+            <div class="mb-3 last:mb-0">
+                <div class="flex justify-between items-end mb-1">
+                    <span class="text-sm font-bold text-gray-700 flex items-center gap-2">
+                        <span class="text-base">${icon}</span> ${tag}
+                    </span>
+                    <div class="text-right">
+                        <span class="text-sm font-black text-indigo-900">${count}</span>
+                        <span class="text-[10px] text-gray-400 ml-1">(${percentage}%)</span>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                    <div class="${barColor} h-2.5 rounded-full transition-all duration-1000" style="width: ${percentage}%"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-indigo-900 text-white px-4 py-3 border-b border-indigo-800 flex justify-between items-center">
+                <h3 class="font-bold text-sm uppercase tracking-wider">🔬 ADN Goleador</h3>
+                <span class="bg-indigo-700 text-[10px] px-2 py-0.5 rounded-full">${totalTaggedGoals} Registros</span>
+            </div>
+            <div class="p-5">
+                ${barsHtml}
+            </div>
+        </div>
+    `;
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
