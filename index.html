@@ -5304,6 +5304,13 @@ function renderPlayerStatsForm(containerId, currentCompetition, preSelectedPlaye
         if (b.rol === 'Entrenador') return -1;
         if (a.isStarter && !b.isStarter) return -1;
         if (!a.isStarter && b.isStarter) return 1;
+        
+        // Ordenar titulares por posición en el campo (pitchSlot)
+        if (a.isStarter && b.isStarter) {
+            if (typeof a.pitchSlot === 'number' && typeof b.pitchSlot === 'number') {
+                return a.pitchSlot - b.pitchSlot;
+            }
+        }
         return 0;
     });
 
@@ -5771,8 +5778,26 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
                 if (!line) continue;
                 
                 if (line === 'BEGIN:VEVENT') {
-                    currentEvent = { id: generateId() };
+                    currentEvent = {};
                 } else if (line === 'END:VEVENT' && currentEvent) {
+                    // Generar ID Determinista (UID o Hash) para persistencia
+                    if (!currentEvent.id) {
+                        if (currentEvent.uid) {
+                            currentEvent.id = currentEvent.uid;
+                        } else if (currentEvent.start && currentEvent.summary) {
+                            const dateStr = currentEvent.start.toISOString();
+                            let hash = 0;
+                            const str = currentEvent.summary;
+                            for (let j = 0; j < str.length; j++) {
+                                hash = ((hash << 5) - hash) + str.charCodeAt(j);
+                                hash |= 0;
+                            }
+                            currentEvent.id = `evt-${dateStr}-${Math.abs(hash)}`;
+                        } else {
+                            currentEvent.id = generateId();
+                        }
+                    }
+
                     if (currentEvent.summary && currentEvent.start) {
                         currentEvent.opponent = extractOpponent(currentEvent.summary);
                         currentEvent.venue = detectVenue(currentEvent.summary, currentEvent.location);
@@ -5833,6 +5858,7 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
                         
                         if (key === 'SUMMARY') currentEvent.summary = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
                         else if (key === 'DTSTART') currentEvent.start = parseICalDate(value);
+                        else if (key === 'UID') currentEvent.uid = value.trim();
                         else if (key === 'LOCATION') currentEvent.location = value.replace(/\\,/g, ',').replace(/\\;/g, ';');
                         else if (key === 'DESCRIPTION') currentEvent.description = value.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ');
                     }
@@ -5968,8 +5994,20 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             
             container.innerHTML = events.map(event => {
                 const isPast = event.start <= now;
-                const isRegistered = registeredEventIds.includes(event.id);
-                const registeredMatch = isRegistered ? matches.find(m => m.calendarEventId === event.id) : null;
+                let isRegistered = registeredEventIds.includes(event.id);
+                let registeredMatch = isRegistered ? matches.find(m => m.calendarEventId === event.id) : null;
+                
+                // Fallback: Verificar por Fecha y Rival si falla el ID (para CSV/JSON antiguos)
+                if (!isRegistered) {
+                    const evtDate = event.start.toISOString().split('T')[0];
+                    registeredMatch = matches.find(m => {
+                        if (m.date !== evtDate) return false;
+                        const mOpp = m.opponent.toLowerCase().trim();
+                        const eOpp = event.opponent.toLowerCase().trim();
+                        return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+                    });
+                    if (registeredMatch) isRegistered = true;
+                }
                 
                 const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
                 const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
@@ -6075,7 +6113,20 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
                 
                 let eventsHtml = '';
                 daysEvents.forEach(e => {
-                    const isRegistered = registeredEventIds.includes(e.id);
+                    let isRegistered = registeredEventIds.includes(e.id);
+                    
+                    // Fallback: Verificar por Fecha y Rival
+                    if (!isRegistered) {
+                        const evtDate = e.start.toISOString().split('T')[0];
+                        const matchFound = matches.find(m => {
+                            if (m.date !== evtDate) return false;
+                            const mOpp = m.opponent.toLowerCase().trim();
+                            const eOpp = e.opponent.toLowerCase().trim();
+                            return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+                        });
+                        if (matchFound) isRegistered = true;
+                    }
+
                     if (hideRegisteredMatches && isRegistered) return;
 
                     const isPast = e.start <= new Date();
@@ -6087,8 +6138,14 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
                     // 2. Determinar Competición (Registrada > Detectada > Nada)
                     let compName = e.competition; 
                     if (isRegistered) {
-                        const m = matches.find(m => m.calendarEventId === e.id);
-                        compName = m.competition;
+                        const m = matches.find(m => m.calendarEventId === e.id) || matches.find(m => {
+                            // Búsqueda fallback para obtener el nombre de la compe
+                            if (m.date !== e.start.toISOString().split('T')[0]) return false;
+                            const mOpp = m.opponent.toLowerCase().trim();
+                            const eOpp = e.opponent.toLowerCase().trim();
+                            return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+                        });
+                        if (m) compName = m.competition;
                     }
 
                     // 3. Aplicar Colores (Mismos HEX que en CSS)
@@ -6331,7 +6388,20 @@ function viewMatchDetails(matchId) {
 
     // 3. Generar Lista de Jugadores (Ahora más ancha)
     const players = getPlayers();
-    const statsHtml = match.playerStats.map(ps => {
+    
+    // Ordenar stats para visualización
+    const sortedStats = [...match.playerStats].sort((a, b) => {
+        if (a.isStarter && !b.isStarter) return -1;
+        if (!a.isStarter && b.isStarter) return 1;
+        if (a.isStarter && b.isStarter) {
+             if (typeof a.pitchSlot === 'number' && typeof b.pitchSlot === 'number') {
+                 return a.pitchSlot - b.pitchSlot;
+             }
+        }
+        return 0;
+    });
+
+    const statsHtml = sortedStats.map(ps => {
         const p = players.find(pl => pl.id === ps.playerId) || { apodo: '?', apellido: '?' };
         if (!ps.played && !ps.isStarter && !ps.goals && !ps.yellowCards && !ps.redCards) return '';
 
@@ -6647,7 +6717,17 @@ function renderEditStatsList(match, allPlayers) {
         const pInfo = allPlayers.find(pl => pl.id === ps.playerId) || { apodo: '?', foto: '' };
         return { ...pInfo, ...ps };
     });
-    participants.sort((a, b) => (b.isStarter - a.isStarter));
+    
+    participants.sort((a, b) => {
+        if (a.isStarter && !b.isStarter) return -1;
+        if (!a.isStarter && b.isStarter) return 1;
+        if (a.isStarter && b.isStarter) {
+             if (typeof a.pitchSlot === 'number' && typeof b.pitchSlot === 'number') {
+                 return a.pitchSlot - b.pitchSlot;
+             }
+        }
+        return 0;
+    });
 
     statsList.innerHTML = participants.map(p => {
         const prefix = 'edit-'; 
@@ -7662,6 +7742,7 @@ function goToStep3() {
             // Buscar en qué slot estaba este jugador para saber si es "Lateral" o "Central"
             const slotKey = Object.keys(currentPitchPlayers).find(key => currentPitchPlayers[key] === id);
             let specificPos = 'Titular'; 
+            let pitchSlot = null;
             
             if (slotKey) {
                 const indexMatch = slotKey.match(/-(\d+)$/);
@@ -7669,9 +7750,10 @@ function goToStep3() {
                     const idx = parseInt(indexMatch[1]);
                     // Usamos tu función auxiliar para sacar el nombre bonito
                     specificPos = getPositionName(currentFormation, idx); 
+                    pitchSlot = idx;
                 }
             }
-            playersToRender.push({ ...p, rol: 'Titular', specificPos: specificPos, isStarter: true });
+            playersToRender.push({ ...p, rol: 'Titular', specificPos: specificPos, isStarter: true, pitchSlot: pitchSlot });
         }
     });
     
@@ -9518,10 +9600,19 @@ function goToEditStats() {
     const coach = players.find(p => p.posicion === 'entrenador');
 
     let roster = [];
-    starterIds.forEach(id => {
+    
+    // Recorremos las entradas para capturar la posición (slot)
+    Object.entries(currentPitchPlayers).forEach(([key, id]) => {
+        if (!id) return;
         const p = players.find(pl => pl.id === id);
-        if(p) roster.push({ ...p, rol: 'Titular', isStarter: true });
+        if(p) {
+            let pitchSlot = null;
+            const match = key.match(/-(\d+)$/);
+            if (match) pitchSlot = parseInt(match[1]);
+            roster.push({ ...p, rol: 'Titular', isStarter: true, pitchSlot: pitchSlot });
+        }
     });
+    
     subIds.forEach(id => {
         const p = players.find(pl => pl.id === id);
         if(p && p.posicion !== 'entrenador' && !roster.find(r => r.id === p.id)) {
@@ -9529,6 +9620,18 @@ function goToEditStats() {
         }
     });
     if(coach) roster.push({ ...coach, rol: 'Entrenador', isStarter: false });
+
+    // Ordenar lista
+    roster.sort((a, b) => {
+        if (a.rol === 'Entrenador') return 1;
+        if (b.rol === 'Entrenador') return -1;
+        if (a.isStarter && !b.isStarter) return -1;
+        if (!a.isStarter && b.isStarter) return 1;
+        if (a.isStarter && b.isStarter && typeof a.pitchSlot === 'number' && typeof b.pitchSlot === 'number') {
+            return a.pitchSlot - b.pitchSlot;
+        }
+        return 0;
+    });
 
     // 2. Renderizar
     const container = document.getElementById('edit-stats-list');
