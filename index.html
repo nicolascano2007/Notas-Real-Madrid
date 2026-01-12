@@ -4580,6 +4580,12 @@ function renderPlayers() {
     
     // --- Ordenación ---
     players.sort((a, b) => {
+        const inactA = a.estado === 'Inactivo' || a.estado === 'Leyenda' || a.estado === 'Retirado';
+        const inactB = b.estado === 'Inactivo' || b.estado === 'Leyenda' || b.estado === 'Retirado';
+
+        if (inactA && !inactB) return 1;
+        if (!inactA && inactB) return -1;
+
         if (a.posicion === 'entrenador') return -1;
         if (b.posicion === 'entrenador') return 1;
         return (parseInt(a.dorsal) || 999) - (parseInt(b.dorsal) || 999);
@@ -8267,7 +8273,7 @@ function restoreData(input) {
             p2Select.innerHTML = '<option value="">Selecciona...</option>';
 
             // Filtrar solo jugadores activos
-            const players = getPlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
+            const players = getActivePlayers().filter(p => p.posicion !== 'entrenador').sort((a,b) => a.dorsal - b.dorsal);
             
             const options = players.map(p => `<option value="${p.id}">${p.nombre} ${p.apellido} (#${p.dorsal})</option>`).join('');
             
