@@ -10755,6 +10755,24 @@ async function downloadTotsCard(playerId) {
     document.body.style.cursor = 'wait';
     if(typeof showToast === 'function') showToast("🎨 Diseñando cromo TOTS...", "info");
 
+    // --- SOLUCIÓN AL ERROR: PROXY A BASE64 ---
+    // Convertimos la imagen remota a local para evitar bloqueo de seguridad (Tainted Canvas)
+    let imgUrl = player.foto;
+    try {
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(player.foto)}`;
+        const response = await fetch(proxyUrl);
+        if (response.ok) {
+            const blob = await response.blob();
+            imgUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+    } catch (e) {
+        console.warn("Proxy falló, intentando carga directa...", e);
+    }
+
     // Crear contenedor temporal fuera de pantalla
     const container = document.createElement('div');
     container.id = "temp-tots-container";
@@ -10782,9 +10800,9 @@ async function downloadTotsCard(playerId) {
                 <div style="font-size: 42px; font-weight: 900; background: linear-gradient(to right, #fff, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; line-height: 1;">TEAM OF THE SEASON</div>
             </div>
 
-            <!-- Foto Jugador -->
+            <!-- Foto Jugador (Usando la URL Base64 segura) -->
             <div style="margin-top: 30px; width: 320px; height: 320px; border-radius: 50%; border: 8px solid #fbbf24; box-shadow: 0 0 50px rgba(251, 191, 36, 0.3); overflow: hidden; position: relative; z-index: 10; background: #000;">
-                <img src="${player.foto}" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
+                <img src="${imgUrl}" style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
             </div>
 
             <!-- Nombre y Datos -->
@@ -10816,13 +10834,14 @@ async function downloadTotsCard(playerId) {
     await new Promise(resolve => setTimeout(resolve, 800)); // Esperar carga de imágenes
 
     try {
-        const canvas = await html2canvas(container.querySelector('#tots-card-render'), { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true, logging: false });
+        // IMPORTANTE: allowTaint: false (default) y useCORS: true
+        const canvas = await html2canvas(container.querySelector('#tots-card-render'), { scale: 2, backgroundColor: null, useCORS: true, logging: false });
         const link = document.createElement('a');
         link.download = `TOTS_${player.nombre}_${player.apellido}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
         if(typeof showToast === 'function') showToast("✅ Cromo guardado", "success");
-    } catch (err) { console.error(err); alert("Error generando el cromo."); } 
+    } catch (err) { console.error(err); alert("Error generando el cromo: " + err.message); } 
     finally { document.body.removeChild(container); document.body.style.cursor = originalText; }
 }
 
