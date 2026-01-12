@@ -3702,6 +3702,7 @@ function renderCoachStats() {
 /* ========================================================= */
 let evolutionChart = null;
 let goalsChart = null;
+let timingChart = null;
 
 function renderCharts(filteredMatches) {
     // 1. PREPARAR EL TERRENO (HTML)
@@ -3715,10 +3716,18 @@ function renderCharts(filteredMatches) {
             <canvas id="chart-season-evolution"></canvas>
         </div>
         
-        <div class="border-t border-gray-100 pt-4">
-            <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Distribución de Goles</h4>
-            <div class="relative h-48 w-full flex justify-center">
-                <canvas id="chart-goals-distribution"></canvas>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-4">
+            <div>
+                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Distribución de Goles</h4>
+                <div class="relative h-48 w-full flex justify-center">
+                    <canvas id="chart-goals-distribution"></canvas>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Cronología (Minutos)</h4>
+                <div class="relative h-48 w-full">
+                    <canvas id="chart-goals-timing"></canvas>
+                </div>
             </div>
         </div>
     `;
@@ -3777,6 +3786,43 @@ function renderCharts(filteredMatches) {
                     }
                 }
             }
+        });
+    }
+    
+    // --- 2.5 GRÁFICO DE CRONOLOGÍA (NUEVO) ---
+    const timingBuckets = { '0-15': 0, '16-30': 0, '31-45+': 0, '46-60': 0, '61-75': 0, '76-90+': 0 };
+    
+    filteredMatches.forEach(m => {
+        if(m.playerStats) {
+            m.playerStats.forEach(ps => {
+                if (ps.detailGoals) {
+                    const goals = ps.detailGoals.split(',').map(s => s.trim()).filter(s => s);
+                    goals.forEach(g => {
+                        let min = parseInt(g);
+                        if (!isNaN(min)) {
+                            if (min <= 15) timingBuckets['0-15']++;
+                            else if (min <= 30) timingBuckets['16-30']++;
+                            else if (min <= 45) timingBuckets['31-45+']++;
+                            else if (min <= 60) timingBuckets['46-60']++;
+                            else if (min <= 75) timingBuckets['61-75']++;
+                            else timingBuckets['76-90+']++;
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+    const ctxTiming = document.getElementById('chart-goals-timing');
+    if (ctxTiming) {
+        if (timingChart) timingChart.destroy();
+        timingChart = new Chart(ctxTiming.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(timingBuckets),
+                datasets: [{ label: 'Goles', data: Object.values(timingBuckets), backgroundColor: '#6366f1', borderRadius: 4 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
         });
     }
 
@@ -4688,7 +4734,13 @@ function viewPlayerDetails(playerId) {
                 if (!isNaN(r)) {
                     stats.totalRating += r;
                     stats.ratingCount++;
-                    ratingsHistory.push({ rating: r, opponent: m.opponent });
+                    
+                    // Calcular media del equipo en ese partido
+                    let teamSum = 0, teamCount = 0;
+                    m.playerStats.forEach(t => { if(t.rating) { teamSum += parseFloat(t.rating); teamCount++; } });
+                    const tAvg = teamCount > 0 ? (teamSum/teamCount).toFixed(2) : 0;
+
+                    ratingsHistory.push({ rating: r, teamAvg: tAvg, opponent: m.opponent, date: m.date });
                 }
             }
             if (m.outcome === 'victoria') stats.wins++;
@@ -4804,6 +4856,7 @@ function viewPlayerDetails(playerId) {
     setTimeout(() => { 
         modal.classList.remove('opacity-0'); 
         runCounters(); 
+        renderPlayerDetailChart(ratingsHistory);
     }, 50);
 }
 
@@ -4903,19 +4956,22 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
         </div>`;
     }
 
-    // --- 3. GRÁFICO (MANTENIDO) ---
-    const chartData = [...ratingsHistory].reverse().slice(-10);
+    // --- 3. GRÁFICO (MODIFICADO A CANVAS) ---
     let chartHTML = '';
-    if(chartData.length > 0) {
-        chartHTML = `<div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 h-32 flex items-end justify-between gap-1 mt-4">` +
-        chartData.map((d, i) => {
-             const color = d.rating >= 8 ? 'bg-emerald-400' : (d.rating >= 6 ? 'bg-blue-400' : 'bg-red-400');
-             const delay = i * 100; 
-             return `<div class="${color} w-full rounded-t relative group animate-bar-up" style="height:${Math.min(d.rating*10, 100)}%; animation-delay:${delay}ms">
-                <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] px-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">${d.rating}</div>
-             </div>`;
-        }).join('') +
-        `</div>`;
+    if(ratingsHistory.length > 0) {
+        chartHTML = `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Evolución vs Equipo</h4>
+                <div class="flex gap-3 text-[10px] font-bold">
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-indigo-500"></div> Jugador</div>
+                    <div class="flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-gray-300"></div> Equipo</div>
+                </div>
+            </div>
+            <div class="relative h-48 w-full">
+                <canvas id="chart-player-detail-evolution"></canvas>
+            </div>
+        </div>`;
     }
 
     // --- 4. TOP ACTUACIONES (MANTENIDO) ---
@@ -4939,6 +4995,41 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
     setTimeout(runCounters, 50);
 
     return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${topPerfHTML}`;
+}
+
+let playerDetailChart = null;
+function renderPlayerDetailChart(history) {
+    const ctx = document.getElementById('chart-player-detail-evolution');
+    if (!ctx) return;
+    if (playerDetailChart) playerDetailChart.destroy();
+
+    const data = [...history].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-15);
+
+    playerDetailChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.map(d => d.opponent),
+            datasets: [
+                {
+                    label: 'Jugador',
+                    data: data.map(d => d.rating),
+                    borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 3, tension: 0.3, pointBackgroundColor: '#fff', pointBorderColor: '#6366f1', pointRadius: 4
+                },
+                {
+                    label: 'Equipo',
+                    data: data.map(d => d.teamAvg),
+                    borderColor: '#9ca3af', borderWidth: 2, borderDash: [5, 5],
+                    tension: 0.3, pointRadius: 0, pointHoverRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.9)', titleColor: '#1f2937', bodyColor: '#1f2937', borderColor: '#e5e7eb', borderWidth: 1 } },
+            scales: { y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, ticks: { stepSize: 1 } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } } }
+        }
+    });
 }
 
 function renderPlayerHistoryTab(player, matches) {
