@@ -4717,7 +4717,7 @@ function viewPlayerDetails(playerId) {
     const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
     const safeAge = (d) => typeof calculateAge === 'function' ? calculateAge(d) : '';
 
-    // --- RENDER HEADER (MODIFICADO CON PIE) ---
+    // --- RENDER HEADER ---
     headerContainer.innerHTML = `
         <div class="px-6 pt-6 pb-2">
             <div class="flex justify-between items-start">
@@ -4767,11 +4767,30 @@ function viewPlayerDetails(playerId) {
         </div>
     `;
 
+    // --- NUEVO: PREPARAR SECCIÓN DE TROFEOS ---
+    const trophiesHtml = (typeof getPlayerBadgesHTML === 'function') ? getPlayerBadgesHTML(player.id) : '';
+    const badgesSection = trophiesHtml ? `
+        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-6">
+             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span>🏆 Sala de Trofeos</span>
+                <div class="h-px bg-gray-100 flex-1"></div>
+            </h3>
+            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                ${trophiesHtml}
+            </div>
+        </div>
+    ` : '';
+
+    // Renderizar contenidos de pestañas
     const visualHTML = renderVisualTab(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
     const historyHTML = typeof renderHistoryTab === 'function' ? renderHistoryTab(player, playerMatches) : '';
 
+    // INYECTAR CONTENIDO (badgesSection añadida al principio de visual)
     contentContainer.innerHTML = `
-        <div id="tab-content-visual" class="animate-fade-in block space-y-6">${visualHTML}</div>
+        <div id="tab-content-visual" class="animate-fade-in block space-y-6">
+            ${badgesSection} 
+            ${visualHTML}
+        </div>
         <div id="tab-content-history" class="animate-fade-in hidden">${historyHTML}</div>
         <div id="tab-content-fut" class="animate-fade-in hidden flex justify-center py-10"></div>
     `;
@@ -11776,6 +11795,127 @@ function generateMatchCardHTML(match) {
             </div>
         </div>
     `;
+}
+/* ========================================================= */
+/* 🏅 SISTEMA DE BADGES (LOGROS EVOLUTIVOS)                  */
+/* ========================================================= */
+
+function getPlayerBadgesHTML(playerId) {
+    const matches = getData('matches');
+    const players = getPlayers();
+    const player = players.find(p => p.id === playerId);
+    
+    if (!player) return '';
+
+    // 1. CALCULAR ESTADÍSTICAS TOTALES
+    let totalGoals = 0;
+    let totalAssists = 0;
+    let totalMatches = 0;
+    let totalMvps = 0;
+    let totalYellows = 0;
+
+    matches.forEach(m => {
+        const stats = m.playerStats.find(ps => ps.playerId === playerId);
+        if (stats && (stats.minutes > 0 || stats.played)) {
+            totalMatches++;
+            totalGoals += (stats.goals || 0);
+            totalAssists += (stats.assists || 0);
+            totalYellows += (stats.yellowCards || 0);
+        }
+        if (m.mvp === playerId) totalMvps++;
+    });
+
+    // 2. DEFINIR REGLAS Y NIVELES
+    // [Bronce, Plata, Oro, Diamante]
+    const criteria = [
+        {
+            id: 'goals',
+            name: 'Depredador',
+            icon: '⚽',
+            count: totalGoals,
+            levels: [5, 10, 20, 30], // Umbrales
+            desc: 'Goles marcados'
+        },
+        {
+            id: 'assists',
+            name: 'El Mago',
+            icon: '🎩',
+            count: totalAssists,
+            levels: [5, 10, 15, 25],
+            desc: 'Asistencias dadas'
+        },
+        {
+            id: 'matches',
+            name: 'Veterano',
+            icon: '🛡️',
+            count: totalMatches,
+            levels: [5, 10, 20, 30],
+            desc: 'Partidos jugados'
+        },
+        {
+            id: 'mvp',
+            name: 'Galáctico',
+            icon: '⭐',
+            count: totalMvps,
+            levels: [2, 5, 8, 12],
+            desc: 'MVPs conseguidos'
+        }
+    ];
+
+    // 3. GENERAR HTML DE LAS MEDALLAS
+    let badgesHtml = '';
+
+    criteria.forEach(c => {
+        // Encontrar el nivel más alto alcanzado
+        let levelIdx = -1;
+        c.levels.forEach((threshold, idx) => {
+            if (c.count >= threshold) levelIdx = idx;
+        });
+
+        if (levelIdx >= 0) {
+            // Configuración visual según nivel
+            const configs = [
+                { color: 'bg-orange-100 text-orange-800 border-orange-200', label: 'BRONCE' },
+                { color: 'bg-slate-100 text-slate-600 border-slate-300', label: 'PLATA' },
+                { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', label: 'ORO' },
+                { color: 'bg-cyan-50 text-cyan-700 border-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.4)]', label: 'DIAMANTE' }
+            ];
+
+            const style = configs[levelIdx];
+            
+            // Efecto especial para Diamante
+            const diamondEffect = levelIdx === 3 ? 'background-image: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%); border: 1px solid #67e8f9;' : '';
+
+            badgesHtml += `
+                <div class="flex flex-col items-center p-2 rounded-lg border ${style.color} transition-transform hover:scale-105" style="${diamondEffect}" title="${c.desc}: ${c.count}">
+                    <div class="text-2xl mb-1 filter drop-shadow-sm">${c.icon}</div>
+                    <div class="text-[10px] font-black uppercase tracking-widest opacity-70">${style.label}</div>
+                    <div class="text-xs font-bold leading-tight">${c.name}</div>
+                    <div class="text-[9px] mt-1 bg-white/50 px-1.5 rounded-full font-mono">${c.count}</div>
+                </div>
+            `;
+        }
+    });
+
+    // BADGE ESPECIAL: FAIR PLAY (Si ha jugado mucho y pega poco)
+    if (totalMatches >= 10 && totalYellows === 0) {
+        badgesHtml += `
+            <div class="flex flex-col items-center p-2 rounded-lg border bg-green-50 text-green-700 border-green-200 hover:scale-105">
+                <div class="text-2xl mb-1">🤝</div>
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-70">HONOR</div>
+                <div class="text-xs font-bold leading-tight">Fair Play</div>
+                <div class="text-[9px] mt-1 bg-white/50 px-1.5 rounded-full font-mono">0 Tarj</div>
+            </div>
+        `;
+    }
+
+    if (badgesHtml === '') {
+        return `<div class="col-span-full text-center text-xs text-gray-400 italic py-2">
+            Aún no ha desbloqueado logros. ¡A jugar!
+        </div>`;
+    }
+
+    return `<div class="grid grid-cols-4 gap-2">${badgesHtml}</div>`;
 }
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
