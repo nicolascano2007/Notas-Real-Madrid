@@ -360,7 +360,7 @@
             position: absolute;
             transform: translate(-50%, -50%);
             display: flex;
-            flex-col: column;
+            flex-direction: column;
             align-items: center;
             width: 80px;
             text-align: center;
@@ -8551,10 +8551,10 @@ function updateComparatorChart() {
             };
 
             // 3. Selección de Jugadores por Posición Real (4-3-3)
-            const gk = getBestByRole('PT', 1);       // Portero
+            const gk = getBestByRole('POR', 1);       // Portero
             
             const lb = getBestByRole('LI', 1);       // Lateral Izquierdo
-            const cbs = getBestByRole('CT', 2);      // Centrales (Top 2)
+            const cbs = getBestByRole('DFC', 2);      // Centrales (Top 2)
             const rb = getBestByRole('LD', 1);       // Lateral Derecho
             
             const cdm = getBestByRole('MCD', 1);     // Pivote
@@ -8566,11 +8566,11 @@ function updateComparatorChart() {
 
             // 4. Asignación al Campo (Coordenadas Tácticas)
             const positions = [
-                { top: 90, left: 50, players: gk },       // Portero
+                { top: 85, left: 50, players: gk },       // Portero
                 
                 { top: 75, left: 15, players: lb },       // Lateral Izq
-                { top: 80, left: 38, players: [cbs[0]] }, // Central 1
-                { top: 80, left: 62, players: [cbs[1]] }, // Central 2
+                { top: 75, left: 38, players: [cbs[0]] }, // Central 1
+                { top: 75, left: 62, players: [cbs[1]] }, // Central 2
                 { top: 75, left: 85, players: rb },       // Lateral Der
 
                 { top: 60, left: 50, players: cdm },      // Pivote (MCD)
