@@ -10835,7 +10835,14 @@ async function downloadTotsCard(playerId) {
 
     try {
         // IMPORTANTE: allowTaint: false (default) y useCORS: true
-        const canvas = await html2canvas(container.querySelector('#tots-card-render'), { scale: 2, backgroundColor: null, useCORS: true, logging: false });
+        const canvas = await html2canvas(container.querySelector('#tots-card-render'), { 
+            scale: 2, 
+            backgroundColor: null, 
+            useCORS: true, 
+            logging: false,
+            // Fix: Eliminar estilos de Tailwind (oklch) del clon para evitar error de parser
+            onclone: (doc) => { doc.querySelectorAll('style').forEach(s => s.remove()); }
+        });
         const link = document.createElement('a');
         link.download = `TOTS_${player.nombre}_${player.apellido}.png`;
         link.href = canvas.toDataURL("image/png");
