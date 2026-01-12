@@ -2041,6 +2041,9 @@ button:active, .btn:active {
                          <button onclick="switchStatsTab('mvp')" id="btn-stats-mvp" class="stats-subtab inactive">
                              🏆 Muro de la Fama
                          </button>
+                         <button onclick="switchStatsTab('coaches')" id="btn-stats-coaches" class="stats-subtab inactive">
+                             👔 Entrenadores
+                         </button>
                         <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
                         <span>🏆</span> Trofeos
                     </button>
@@ -2392,6 +2395,7 @@ button:active, .btn:active {
                         <p>Aún no hay MVPs registrados. Juega partidos y elige al mejor jugador.</p>
                     </div>
                 </div>
+                <div id="stats-coaches" class="hidden fade-in space-y-6"></div>
 
             </section>
         </main>
@@ -2583,7 +2587,9 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
         ];
         const PLANTILLA_MASCULINO = [
             // CUERPO TÉCNICO
-            { id: "dt1", nombre: "Xabi", apellido: "Alonso", apodo: "Xabi Alonso", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "dt1", nombre: "Xabi", apellido: "Alonso", apodo: "Xabi Alonso", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "dt2", nombre: "Álvaro", apellido: "Arbeloa", apodo: "Arbeloa", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1983-01-17", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ALVARO_ARBELOA_550x650-1?$Desktop$&fit=wrap&wid=420" },
+
 
             // PORTEROS
             { id: "p1", nombre: "Thibaut", apellido: "Courtois", apodo: "Courtois", posicion: "portero", rol: "POR", dorsal: 1, piePreferido:'Izquierdo', nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "18", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
@@ -3215,6 +3221,7 @@ function getPositionName(formation, index) {
             document.getElementById('stats-advanced').classList.add('hidden');
             document.getElementById('stats-h2h').classList.add('hidden');
             document.getElementById('stats-mvp').classList.add('hidden'); // <-- AÑADIR ESTA LÍNEA
+            document.getElementById('stats-coaches').classList.add('hidden');
 
             document.getElementById(`stats-${tab}`).classList.remove('hidden');
 
@@ -3224,6 +3231,8 @@ function getPositionName(formation, index) {
                 populateH2HOpponents();
             }else if (tab === 'mvp') { // <-- AÑADIR ESTE BLOQUE
                 renderMVPGallery();
+            } else if (tab === 'coaches') {
+                renderCoachStats();
             }
         }
   
@@ -3418,7 +3427,11 @@ function renderStats() {
 
     let filteredPlayers = [...players];
     if (statusFilter) {
-        filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
+        if (statusFilter === 'Inactivo') {
+             filteredPlayers = filteredPlayers.filter(p => p.estado === 'Inactivo' || p.estado === 'Leyenda');
+        } else {
+             filteredPlayers = filteredPlayers.filter(p => p.estado === statusFilter);
+        }
     }
     
     const playerOnlyCount = filteredPlayers.filter(p => p.posicion !== 'entrenador').length;
@@ -3494,8 +3507,11 @@ function renderStats() {
 
     // 4. ORDENAR
     playerStats.sort((a, b) => {
-        if (a.estado === 'Inactivo' && b.estado !== 'Inactivo') return 1;
-        if (a.estado !== 'Inactivo' && b.estado === 'Inactivo') return -1;
+        const inactA = a.estado === 'Inactivo' || a.estado === 'Leyenda';
+        const inactB = b.estado === 'Inactivo' || b.estado === 'Leyenda';
+
+        if (inactA && !inactB) return 1;
+        if (!inactA && inactB) return -1;
 
         let valA = a[currentSortColumn];
         let valB = b[currentSortColumn];
@@ -3527,16 +3543,17 @@ function renderStats() {
         noStats.classList.add('hidden');
         tableBody.innerHTML = playerStats.map(stats => {
             const isCoach = stats.number === 'DT' || stats.posicion === 'entrenador';
+            const isInactive = stats.estado === 'Inactivo' || stats.estado === 'Leyenda';
             
             return `
-            <tr class="border-t hover:bg-gray-50 cursor-pointer ${stats.estado === 'Inactivo' ? 'opacity-60 bg-gray-50' : ''}" onclick="viewPlayerDetails('${stats.id}')">
+            <tr class="border-t hover:bg-gray-50 cursor-pointer ${isInactive ? 'opacity-60 bg-gray-50' : ''}" onclick="viewPlayerDetails('${stats.id}')">
                 <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
                         <img src="${stats.foto}" class="player-photo-small" onerror="this.src='https://via.placeholder.com/40x40?text=${stats.number}'">
                         <div>
                             <span class="font-medium text-gray-800">${stats.name}</span>
                             <span class="text-gray-500 text-sm ml-1">${stats.number === 'DT' ? 'DT' : '#' + stats.number}</span>
-                            ${stats.estado === 'Inactivo' ? '<span class="text-xs text-red-500 font-bold ml-1">(Inactivo)</span>' : ''}
+                            ${stats.estado !== 'Activo' ? `<span class="text-xs ${stats.estado === 'Leyenda' ? 'text-amber-600' : 'text-red-500'} font-bold ml-1">(${stats.estado})</span>` : ''}
                         </div>
                     </div>
                 </td>
@@ -3593,6 +3610,92 @@ function renderStats() {
     if(typeof renderRegularityAnalysis === 'function') renderRegularityAnalysis();
     if(typeof renderTopPerformances === 'function') renderTopPerformances();
     if(typeof renderFormationStats === 'function') renderFormationStats();
+}
+
+function renderCoachStats() {
+    const container = document.getElementById('stats-coaches');
+    if (!container) return;
+    
+    const matches = getData('matches');
+    const players = getPlayers();
+    const coaches = players.filter(p => p.posicion === 'entrenador');
+
+    if (coaches.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-gray-500">No hay entrenadores registrados.</div>`;
+        return;
+    }
+
+    let html = '<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">';
+
+    coaches.forEach(coach => {
+        const coachMatches = matches.filter(m => 
+            m.playerStats && m.playerStats.some(ps => ps.playerId === coach.id)
+        );
+
+        if (coachMatches.length === 0) return;
+
+        let stats = { played: 0, wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, totalRating: 0, ratingCount: 0 };
+
+        coachMatches.forEach(m => {
+            stats.played++;
+            if (m.outcome === 'victoria') stats.wins++;
+            else if (m.outcome === 'empate') stats.draws++;
+            else stats.losses++;
+
+            const parts = m.result.replace('*','').split('-').map(Number);
+            if (m.venue === 'local') { stats.gf += parts[0]; stats.ga += parts[1]; }
+            else if (m.venue === 'visitante') { stats.gf += parts[1]; stats.ga += parts[0]; }
+            else { stats.gf += parts[0]; stats.ga += parts[1]; }
+
+            const ps = m.playerStats.find(s => s.playerId === coach.id);
+            if (ps && ps.rating) {
+                stats.totalRating += parseFloat(ps.rating);
+                stats.ratingCount++;
+            }
+        });
+
+        const avgRating = stats.ratingCount > 0 ? (stats.totalRating / stats.ratingCount).toFixed(2) : '-';
+        const winRate = stats.played > 0 ? ((stats.wins / stats.played) * 100).toFixed(0) : 0;
+        const ppm = stats.played > 0 ? ((stats.wins * 3 + stats.draws) / stats.played).toFixed(2) : '0.00';
+        const gd = stats.gf - stats.ga;
+
+        html += `
+            <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="bg-slate-800 p-4 flex items-center gap-4 relative overflow-hidden">
+                    <div class="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-white/10 to-transparent"></div>
+                    <img src="${coach.foto}" class="w-16 h-16 rounded-full object-cover border-2 border-white shadow-md z-10 bg-white" onerror="this.src='https://via.placeholder.com/64'">
+                    <div class="z-10 text-white">
+                        <h3 class="font-bold text-lg leading-tight">${coach.nombre} ${coach.apellido}</h3>
+                        <p class="text-xs text-slate-300 uppercase font-bold tracking-wider">Entrenador</p>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-center"><span class="block text-3xl font-black text-slate-700">${stats.played}</span><span class="text-[10px] text-gray-400 uppercase font-bold">Partidos</span></div>
+                        <div class="h-8 w-px bg-gray-200"></div>
+                        <div class="text-center"><span class="block text-3xl font-black text-indigo-600">${ppm}</span><span class="text-[10px] text-gray-400 uppercase font-bold">Pts/Partido</span></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-4">
+                        <div class="bg-green-50 rounded-lg p-2 text-center border border-green-100"><span class="block font-bold text-green-700 text-lg">${stats.wins}</span><span class="text-[10px] text-green-600 uppercase">Vic</span></div>
+                        <div class="bg-amber-50 rounded-lg p-2 text-center border border-amber-100"><span class="block font-bold text-amber-700 text-lg">${stats.draws}</span><span class="text-[10px] text-amber-600 uppercase">Emp</span></div>
+                        <div class="bg-red-50 rounded-lg p-2 text-center border border-red-100"><span class="block font-bold text-red-700 text-lg">${stats.losses}</span><span class="text-[10px] text-red-600 uppercase">Der</span></div>
+                    </div>
+                    <div class="space-y-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div class="flex justify-between"><span>Goles a Favor</span><span class="font-bold text-slate-700">${stats.gf}</span></div>
+                        <div class="flex justify-between"><span>Goles en Contra</span><span class="font-bold text-slate-700">${stats.ga}</span></div>
+                        <div class="flex justify-between border-t border-gray-200 pt-2 mt-2"><span class="font-medium">Diferencia</span><span class="font-bold ${gd > 0 ? 'text-green-600' : (gd < 0 ? 'text-red-600' : 'text-gray-600')}">${gd > 0 ? '+' : ''}${gd}</span></div>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between">
+                        <div class="flex items-center gap-2"><div class="text-xs font-bold text-gray-400 uppercase">Efectividad</div><div class="text-sm font-black text-slate-700">${winRate}%</div></div>
+                        <div class="flex items-center gap-2"><div class="text-xs font-bold text-gray-400 uppercase">Nota Media</div><div class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded font-bold text-sm">${avgRating}</div></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
 }
         /* ========================================================= */
 /* 📈 RENDERIZAR GRÁFICOS (EVOLUCIÓN Y GOLES)                */
@@ -4632,7 +4735,7 @@ function viewPlayerDetails(playerId) {
                             <span>•</span>
                             <span>${player.nacionalidad || '-'}</span>
                             <span>•</span>
-                            <span>${safeAge(player.fechaNacimiento)} años</span>
+                            <span>${formatDate(player.fechaNacimiento)} (${safeAge(player.fechaNacimiento)} años)</span>
                             
                             ${player.piePreferido ? `
                                 <span>•</span>
@@ -7081,6 +7184,7 @@ function closeEditMatchModal() {
                 <div class="space-y-3">
                     <button onclick="changePlayerStatus('${player.id}', 'Activo')" class="w-full py-3 rounded-lg font-medium bg-green-500 text-white">✅ Activo</button>
                     <button onclick="changePlayerStatus('${player.id}', 'Inactivo')" class="w-full py-3 rounded-lg font-medium bg-gray-500 text-white">❌ Inactivo</button>
+                    <button onclick="changePlayerStatus('${player.id}', 'Leyenda')" class="w-full py-3 rounded-lg font-medium bg-amber-500 text-white">👑 Leyenda</button>
                 </div>
             `;
             modal.classList.add('active');
@@ -7410,7 +7514,8 @@ function renderBench(prefix = 'wizard-') {
         const available = allPlayers.filter(p => 
             !activeIds.includes(p.id) && 
             !subIds.includes(p.id) && 
-            p.posicion !== 'entrenador'
+            p.posicion !== 'entrenador' &&
+            p.estado === 'Activo'
         );
 
         // Estilo GRID
