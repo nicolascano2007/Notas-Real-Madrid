@@ -12322,10 +12322,12 @@ function openAdvancedSearch() {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    modal.classList.add('active');
 }
 
 function closeAdvancedSearch() {
     const modal = document.getElementById('advanced-search-modal');
+    modal.classList.remove('active');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
 }
