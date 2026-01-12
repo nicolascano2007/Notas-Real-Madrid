@@ -4768,11 +4768,11 @@ function viewPlayerDetails(playerId) {
     `;
 
     // --- NUEVO: PREPARAR SECCIÓN DE TROFEOS ---
-    const trophiesHtml = (typeof getPlayerBadgesHTML === 'function') ? getPlayerBadgesHTML(player.id) : '';
+    const trophiesHtml = getPlayerBadgesHTML(player.id);
     const badgesSection = trophiesHtml ? `
         <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-6">
              <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span>🏆 Sala de Trofeos</span>
+                <span>🏆 Logros y Trofeos</span>
                 <div class="h-px bg-gray-100 flex-1"></div>
             </h3>
             <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
