@@ -1311,6 +1311,7 @@ button:active, .btn:active {
                     <h2 class="text-2xl font-bold text-gray-800">Panel General</h2>
                     <p class="text-gray-500 text-sm">Resumen de la temporada actual</p>
                 </div>
+                <div id="club-trophies-container" class="hidden fade-in"></div>
                 <div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
@@ -4312,6 +4313,56 @@ function renderPerformanceMatrix(matches) {
         // ==========================================
         // PRINCIPAL / DASHBOARD LOGIC
         // ==========================================
+        
+        function renderClubTrophies() {
+            const container = document.getElementById('club-trophies-container');
+            if (!container) return;
+
+            const matches = getData('matches');
+            const state = getCompetitionState();
+            const trophies = [];
+
+            // 1. Detectar victorias en FINALES (Copa, Champions, Supercopa, Mundial)
+            matches.forEach(m => {
+                if (m.roundId === 'final' && m.outcome === 'victoria') {
+                    trophies.push({ name: m.competition, icon: '🏆' });
+                }
+            });
+
+            // 2. Detectar LIGAS (Marcadas manualmente)
+            Object.entries(state).forEach(([compName, data]) => {
+                if (data.champion) {
+                    // Evitar duplicados si por error hay final y marca manual (raro en liga, pero por seguridad)
+                    if (!trophies.some(t => t.name === compName)) {
+                        trophies.push({ name: compName, icon: '🛡️' });
+                    }
+                }
+            });
+
+            if (trophies.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            container.innerHTML = `
+                <div class="bg-gradient-to-r from-yellow-50 to-amber-100 border border-amber-200 rounded-xl p-5 mb-6 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 text-amber-300 opacity-20 text-9xl rotate-12 select-none">🏆</div>
+                    <div class="relative z-10">
+                        <h3 class="text-amber-900 font-black text-lg mb-1 flex items-center gap-2"><span>🏛️</span> PALMARÉS DE LA TEMPORADA</h3>
+                        <p class="text-amber-700/70 text-xs font-medium mb-4">Títulos oficiales conquistados</p>
+                        <div class="flex flex-wrap gap-4">
+                            ${trophies.map(t => `
+                                <div class="bg-white/90 backdrop-blur-sm pl-3 pr-5 py-2 rounded-xl border border-amber-200 shadow-sm flex items-center gap-3 animate-in zoom-in duration-500 hover:scale-105 transition-transform cursor-default">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-300 to-amber-500 flex items-center justify-center text-xl shadow-inner border-2 border-white">${t.icon}</div>
+                                    <div><p class="text-[10px] text-amber-600 font-black uppercase tracking-widest">CAMPEÓN</p><p class="font-bold text-slate-800 leading-none text-sm">${t.name}</p></div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         function renderPrincipal() {
             const matches = getData('matches');
@@ -4503,6 +4554,7 @@ function renderPerformanceMatrix(matches) {
 
             document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
             renderAIPrediction();
+            renderClubTrophies();
             renderTrafficLight();
         }
 
@@ -4518,6 +4570,7 @@ function renderPerformanceMatrix(matches) {
             document.getElementById(`tab-${tabName}`).classList.add('tab-active');
             if (tabName === 'principal') renderPrincipal();
             renderCompetitionStatus();
+            if (tabName === 'principal') renderClubTrophies();
             if (calendarEvents.length === 0) loadCalendar();
             if (tabName === 'plantilla') renderPlayers();
             if (tabName === 'calendario') renderCalendar();
@@ -5252,6 +5305,8 @@ function goToStep2() {
             container.innerHTML = Object.entries(COMPETICIONES_ACTUALES).map(([name, comp]) => {
                 const isEliminated = state[name]?.eliminated;
                 const eliminatedAtId = state[name]?.eliminatedAt;
+                const isLeague = comp.tipo === 'liga';
+                const isChampion = state[name]?.champion;
                 
                 // Lógica para encontrar el nombre exacto de la ronda de eliminación
                 let eliminatedText = 'ELIMINADO DE LA COMPETICIÓN';
@@ -5277,9 +5332,27 @@ function goToStep2() {
                             ${nextRound ? `<p>➡️ Disponible: <strong>${nextRound.nombre}</strong></p>` : 
                               (isEliminated ? `<p class="text-red-600 font-bold">⛔ ${eliminatedText}</p>` : '<p class="text-green-500">✅ Competición completada</p>')}
                         </div>
+                        ${isLeague ? `
+                            <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                                <span class="text-xs text-gray-500">Estado: ${isChampion ? '<span class="text-amber-600 font-bold">🏆 CAMPEÓN</span>' : 'En curso'}</span>
+                                <button onclick="toggleLeagueChampion('${name}')" class="text-xs px-2 py-1 rounded border ${isChampion ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-amber-50 hover:text-amber-600'} transition-colors">
+                                    ${isChampion ? 'Desmarcar' : '🏆 Ganar Título'}
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
+        }
+        
+        function toggleLeagueChampion(compName) {
+            const state = getCompetitionState();
+            if (!state[compName]) state[compName] = {};
+            state[compName].champion = !state[compName].champion;
+            saveCompetitionState(state);
+            renderCompetitionStatus();
+            renderClubTrophies();
+            if (state[compName].champion) { triggerConfetti(); showToast(`🏆 ¡Felicidades! Campeones de ${compName}`, 'success'); }
         }
 
         function populateCompetitionSelect() {
@@ -10634,6 +10707,12 @@ function renderFutTab(player, stats, avgRating) {
             <p class="text-center text-xs text-gray-400 mt-6 italic opacity-50">
                 Resumen de Temporada
             </p>
+
+            <div class="flex justify-center gap-4 mt-4">
+                <button onclick="downloadTotsCard('${player.id}')" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-2 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all flex items-center gap-2 border border-blue-400">
+                    <span>📸</span> Descargar TOTS
+                </button>
+            </div>
         </div>
     `;
     
@@ -10644,6 +10723,109 @@ function renderFutTab(player, stats, avgRating) {
 function downloadFutCard() {
     alert("Para descargar la carta, haz una captura de pantalla.");
 }
+
+async function downloadTotsCard(playerId) {
+    const players = getPlayers();
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Recalcular estadísticas para asegurar datos frescos
+    const matches = getData('matches');
+    let stats = { matches: 0, goals: 0, assists: 0, ratingSum: 0, ratingCount: 0, mvps: 0, minutes: 0 };
+    
+    matches.forEach(m => {
+        const ps = m.playerStats.find(s => s.playerId === playerId);
+        if (ps && (ps.played || ps.minutes > 0)) {
+            stats.matches++;
+            stats.goals += ps.goals || 0;
+            stats.assists += ps.assists || 0;
+            stats.minutes += ps.minutes || 0;
+            if (ps.rating) {
+                stats.ratingSum += parseFloat(ps.rating);
+                stats.ratingCount++;
+            }
+        }
+        if (m.mvp === playerId) stats.mvps++;
+    });
+    
+    const avgRating = stats.ratingCount > 0 ? (stats.ratingSum / stats.ratingCount).toFixed(2) : '-';
+
+    // Notificar al usuario
+    const originalText = document.body.style.cursor;
+    document.body.style.cursor = 'wait';
+    if(typeof showToast === 'function') showToast("🎨 Diseñando cromo TOTS...", "info");
+
+    // Crear contenedor temporal fuera de pantalla
+    const container = document.createElement('div');
+    container.id = "temp-tots-container";
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.zIndex = '-50';
+    container.style.width = '600px';
+    container.style.height = '900px';
+    container.style.overflow = 'hidden';
+    document.body.appendChild(container);
+
+    // Generar HTML del Cromo
+    container.innerHTML = `
+        <div id="tots-card-render" style="width: 600px; height: 900px; background: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 60%, #020617 100%); font-family: 'Inter', sans-serif; position: relative; display: flex; flex-direction: column; align-items: center; color: white; overflow: hidden;">
+            
+            <!-- Fondo Decorativo -->
+            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('https://www.transparenttextures.com/patterns/cubes.png'); opacity: 0.1;"></div>
+            <div style="position: absolute; top: -100px; left: -100px; width: 400px; height: 400px; background: #3b82f6; filter: blur(150px); opacity: 0.4;"></div>
+            <div style="position: absolute; bottom: -100px; right: -100px; width: 400px; height: 400px; background: #fbbf24; filter: blur(150px); opacity: 0.3;"></div>
+
+            <!-- Header -->
+            <div style="margin-top: 40px; text-align: center; z-index: 10;">
+                <div style="font-size: 16px; letter-spacing: 4px; color: #fbbf24; font-weight: bold; text-transform: uppercase; margin-bottom: 5px;">Real Madrid CF</div>
+                <div style="font-size: 42px; font-weight: 900; background: linear-gradient(to right, #fff, #93c5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; line-height: 1;">TEAM OF THE SEASON</div>
+            </div>
+
+            <!-- Foto Jugador -->
+            <div style="margin-top: 30px; width: 320px; height: 320px; border-radius: 50%; border: 8px solid #fbbf24; box-shadow: 0 0 50px rgba(251, 191, 36, 0.3); overflow: hidden; position: relative; z-index: 10; background: #000;">
+                <img src="${player.foto}" crossorigin="anonymous" style="width: 100%; height: 100%; object-fit: cover; object-position: top;">
+            </div>
+
+            <!-- Nombre y Datos -->
+            <div style="margin-top: 20px; text-align: center; z-index: 10;">
+                <div style="font-size: 48px; font-weight: 900; text-transform: uppercase; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">${player.apodo || player.apellido}</div>
+                <div style="font-size: 24px; color: #94a3b8; font-weight: bold;">${player.posicion.toUpperCase()} <span style="color: #fbbf24;">•</span> #${player.dorsal}</div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 80%; z-index: 10;">
+                ${[
+                    { l: 'PARTIDOS', v: stats.matches }, { l: 'NOTA MEDIA', v: avgRating }, { l: 'MINUTOS', v: stats.minutes },
+                    { l: 'GOLES', v: stats.goals }, { l: 'ASISTENCIAS', v: stats.assists }, { l: 'MVPs', v: stats.mvps }
+                ].map(s => `
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; text-align: center;">
+                        <div style="font-size: 32px; font-weight: 900; color: #fbbf24; line-height: 1; margin-bottom: 5px;">${s.v}</div>
+                        <div style="font-size: 10px; font-weight: bold; color: #94a3b8; letter-spacing: 1px;">${s.l}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Footer -->
+            <div style="margin-top: auto; margin-bottom: 30px; font-size: 12px; color: rgba(255,255,255,0.3); z-index: 10;">
+                Generado por Análisis Real Madrid
+            </div>
+        </div>
+    `;
+
+    await new Promise(resolve => setTimeout(resolve, 800)); // Esperar carga de imágenes
+
+    try {
+        const canvas = await html2canvas(container.querySelector('#tots-card-render'), { scale: 2, backgroundColor: null, useCORS: true, allowTaint: true, logging: false });
+        const link = document.createElement('a');
+        link.download = `TOTS_${player.nombre}_${player.apellido}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        if(typeof showToast === 'function') showToast("✅ Cromo guardado", "success");
+    } catch (err) { console.error(err); alert("Error generando el cromo."); } 
+    finally { document.body.removeChild(container); document.body.style.cursor = originalText; }
+}
+
 function renderTierList() {
     // Solo jugadores Activos
     const players = getPlayers().filter(p => p.estado === 'Activo');
