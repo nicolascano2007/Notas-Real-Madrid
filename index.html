@@ -2059,6 +2059,12 @@ button:active, .btn:active {
                          <button onclick="switchStatsTab('cantera')" id="btn-stats-cantera" class="stats-subtab inactive">
                              🎓 La Fábrica
                          </button>
+                         <button onclick="switchStatsTab('timeline')" id="btn-stats-timeline" class="stats-subtab inactive">
+                             📜 Historia
+                         </button>
+                         <button onclick="switchStatsTab('bench')" id="btn-stats-bench" class="stats-subtab inactive">
+                             🔄 Banquillo
+                         </button>
                         <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
                         <span>🏆</span> Trofeos
                     </button>
@@ -2413,6 +2419,8 @@ button:active, .btn:active {
                 <div id="stats-coaches" class="hidden fade-in space-y-6"></div>
                 <div id="stats-goalkeepers" class="hidden fade-in space-y-6"></div>
                 <div id="stats-cantera" class="hidden fade-in space-y-6"></div>
+                <div id="stats-timeline" class="hidden fade-in space-y-6"></div>
+                <div id="stats-bench" class="hidden fade-in space-y-6"></div>
 
             </section>
         </main>
@@ -2715,7 +2723,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Cantera", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p21", nombre: "Brahim", apellido: "Díaz", apodo: "Brahim", posicion: "extremo", rol: "ED", dorsal: 21,piePreferido:'Derecho', nacionalidad: "Marruecos", fechaNacimiento: "1999-08-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "35", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BRAHIM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p30", nombre: "Franco", apellido: "Mastantuono", apodo: "Mastantuono", posicion: "extremo", rol: "ED", dorsal: 30,piePreferido:'Izquierdo', nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p44", nombre: "Víctor", apellido: "Muñoz", apodo: "Víctor Múñoz", posicion: "extremo", rol: "EI", dorsal: 44,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
@@ -2753,7 +2761,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // DELANTERAS Y EXTREMOS
-            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-01-12", categoria: "Cantera", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-01-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "650", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", valorMercado: "325", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "480", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
@@ -3313,6 +3321,8 @@ function getPositionName(formation, index) {
             document.getElementById('stats-coaches').classList.add('hidden');
             document.getElementById('stats-goalkeepers').classList.add('hidden');
             document.getElementById('stats-cantera').classList.add('hidden');
+            document.getElementById('stats-timeline').classList.add('hidden');
+            document.getElementById('stats-bench').classList.add('hidden');
 
             document.getElementById(`stats-${tab}`).classList.remove('hidden');
 
@@ -3328,6 +3338,10 @@ function getPositionName(formation, index) {
                 renderGoalkeeperStats();
             } else if (tab === 'cantera') {
                 renderCanteraStats();
+            } else if (tab === 'timeline') {
+                renderSeasonTimeline();
+            } else if (tab === 'bench') {
+                renderBenchImpact();
             }
         }
   
@@ -4001,6 +4015,256 @@ function renderCanteraStats() {
 
     html += `</div>`;
     container.innerHTML = html;
+}
+
+// ==========================================
+// 2. TIMELINE NARRATIVO
+// ==========================================
+function renderSeasonTimeline() {
+    const container = document.getElementById('stats-timeline');
+    if (!container) return;
+    
+    const matches = getData('matches').sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-gray-500">Juega partidos para generar la historia de la temporada.</div>';
+        return;
+    }
+
+    let events = [];
+    let winStreak = 0;
+    let cleanSheetStreak = 0;
+    let maxWinMargin = 0;
+
+    // 1. Inicio
+    events.push({ date: matches[0].date, icon: '🏁', title: 'Inicio de Temporada', desc: `Debut contra ${matches[0].opponent}`, type: 'neutral' });
+
+    matches.forEach((m, index) => {
+        const parts = m.result.replace('*','').split('-').map(Number);
+        let gf = 0, ga = 0;
+        if (m.venue === 'local') { gf = parts[0]; ga = parts[1]; }
+        else { gf = parts[1]; ga = parts[0]; }
+        
+        const diff = gf - ga;
+        
+        // Goleadas
+        if (diff >= 3) {
+            if (diff > maxWinMargin) {
+                maxWinMargin = diff;
+                events.push({ date: m.date, icon: '🚀', title: 'Mayor Goleada', desc: `${m.result} vs ${m.opponent}`, type: 'good' });
+            } else if (gf >= 5) {
+                events.push({ date: m.date, icon: '🖐️', title: 'Manita', desc: `5 goles o más vs ${m.opponent}`, type: 'good' });
+            }
+        }
+
+        // Rachas Victorias
+        if (m.outcome === 'victoria') {
+            winStreak++;
+        } else {
+            if (winStreak >= 3) {
+                events.push({ date: matches[index-1].date, icon: '🔥', title: 'Racha de Victorias', desc: `${winStreak} victorias consecutivas`, type: 'good' });
+            }
+            winStreak = 0;
+        }
+
+        // Portería a Cero
+        if (ga === 0) {
+            cleanSheetStreak++;
+        } else {
+            if (cleanSheetStreak >= 3) {
+                events.push({ date: matches[index-1].date, icon: '🧱', title: 'Muro Defensivo', desc: `${cleanSheetStreak} partidos imbatido`, type: 'good' });
+            }
+            cleanSheetStreak = 0;
+        }
+        
+        // Títulos (Finales ganadas)
+        if (m.roundId === 'final' && m.outcome === 'victoria') {
+             events.push({ date: m.date, icon: '🏆', title: `Campeones de ${m.competition}`, desc: `Victoria en la final vs ${m.opponent}`, type: 'gold' });
+        }
+    });
+
+    // Cerrar rachas activas al final
+    if (winStreak >= 3) events.push({ date: matches[matches.length-1].date, icon: '🔥', title: 'Racha Vigente', desc: `${winStreak} victorias seguidas`, type: 'good' });
+
+    // Ordenar eventos por fecha inversa (lo más nuevo arriba)
+    events.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Render HTML
+    let html = `<div class="relative border-l-4 border-slate-200 ml-6 space-y-8 my-6">`;
+    
+    events.forEach(e => {
+        let colorClass = 'bg-gray-100 border-gray-200';
+        if (e.type === 'good') colorClass = 'bg-green-50 border-green-200 text-green-800';
+        if (e.type === 'gold') colorClass = 'bg-amber-50 border-amber-200 text-amber-800';
+        
+        html += `
+            <div class="relative pl-8">
+                <div class="absolute -left-[21px] top-0 w-10 h-10 rounded-full bg-white border-4 border-slate-200 flex items-center justify-center text-xl shadow-sm">
+                    ${e.icon}
+                </div>
+                <div class="bg-white p-4 rounded-xl border shadow-sm ${e.type === 'gold' ? 'border-amber-300 ring-1 ring-amber-100' : 'border-gray-200'}">
+                    <span class="text-xs text-gray-400 font-mono block mb-1">${formatDate(e.date)}</span>
+                    <h4 class="font-bold text-gray-800 ${e.type === 'gold' ? 'text-amber-600' : ''}">${e.title}</h4>
+                    <p class="text-sm text-gray-600">${e.desc}</p>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// 5. IMPACTO DEL BANQUILLO
+// ==========================================
+function renderBenchImpact() {
+    const container = document.getElementById('stats-bench');
+    if (!container) return;
+
+    const matches = getData('matches');
+    const players = getPlayers();
+    
+    let starters = { goals: 0, assists: 0, minutes: 0, ratingSum: 0, ratingCount: 0 };
+    let subs = { goals: 0, assists: 0, minutes: 0, ratingSum: 0, ratingCount: 0 };
+    
+    // Track individual subs
+    const subPerformances = {};
+
+    matches.forEach(m => {
+        m.playerStats.forEach(ps => {
+            const target = ps.isStarter ? starters : subs;
+            
+            target.goals += (ps.goals || 0);
+            target.assists += (ps.assists || 0);
+            target.minutes += (ps.minutes || 0);
+            if (ps.rating) {
+                target.ratingSum += parseFloat(ps.rating);
+                target.ratingCount++;
+            }
+
+            if (!ps.isStarter && (ps.played || ps.minutes > 0)) {
+                if (!subPerformances[ps.playerId]) subPerformances[ps.playerId] = { goals: 0, assists: 0, minutes: 0, ratingSum: 0, count: 0 };
+                const sp = subPerformances[ps.playerId];
+                sp.goals += (ps.goals || 0);
+                sp.assists += (ps.assists || 0);
+                sp.minutes += (ps.minutes || 0);
+                if (ps.rating) { sp.ratingSum += parseFloat(ps.rating); sp.count++; }
+            }
+        });
+    });
+
+    // Calculate metrics per 90 min
+    const calcPer90 = (val, mins) => mins > 0 ? (val * 90 / mins).toFixed(2) : 0;
+    
+    const sG90 = calcPer90(starters.goals, starters.minutes);
+    const bG90 = calcPer90(subs.goals, subs.minutes);
+    const sAvg = starters.ratingCount > 0 ? (starters.ratingSum / starters.ratingCount).toFixed(2) : 0;
+    const bAvg = subs.ratingCount > 0 ? (subs.ratingSum / subs.ratingCount).toFixed(2) : 0;
+
+    // Find Best Super Sub
+    let bestSubId = null;
+    let bestSubScore = -1;
+    
+    Object.entries(subPerformances).forEach(([pid, s]) => {
+        const score = (s.goals * 2) + s.assists + (s.count > 0 ? (s.ratingSum/s.count) : 0);
+        if (score > bestSubScore && s.minutes > 0) {
+            bestSubScore = score;
+            bestSubId = pid;
+        }
+    });
+    
+    const bestSub = bestSubId ? players.find(p => p.id === bestSubId) : null;
+    const bestSubStats = bestSubId ? subPerformances[bestSubId] : null;
+
+    // Render HTML
+    container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">Titulares vs Suplentes (Goles/90')</h3>
+                <div class="relative h-48">
+                    <canvas id="chart-bench-comparison"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 text-8xl">🔄</div>
+                <h3 class="font-bold text-lg mb-4 text-indigo-200 uppercase tracking-wider">Mejor Revulsivo</h3>
+                ${bestSub ? `
+                    <div class="flex items-center gap-4 relative z-10">
+                        <img src="${bestSub.foto}" class="w-20 h-20 rounded-full border-4 border-indigo-400 object-cover bg-white">
+                        <div>
+                            <div class="text-2xl font-black">${bestSub.apodo || bestSub.apellido}</div>
+                            <div class="text-sm text-indigo-300 mb-2">Desde el banquillo:</div>
+                            <div class="flex gap-3 text-center">
+                                <div class="bg-white/10 rounded p-2 min-w-[50px]">
+                                    <div class="text-xl font-bold text-green-400">${bestSubStats.goals}</div>
+                                    <div class="text-[10px] uppercase">Goles</div>
+                                </div>
+                                <div class="bg-white/10 rounded p-2 min-w-[50px]">
+                                    <div class="text-xl font-bold text-blue-400">${bestSubStats.assists}</div>
+                                    <div class="text-[10px] uppercase">Asist</div>
+                                </div>
+                                <div class="bg-white/10 rounded p-2 min-w-[50px]">
+                                    <div class="text-xl font-bold text-amber-400">${(bestSubStats.ratingSum/bestSubStats.count).toFixed(1)}</div>
+                                    <div class="text-[10px] uppercase">Nota</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ` : '<div class="text-center py-8 text-indigo-300">Sin datos suficientes</div>'}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                    <tr>
+                        <th class="px-4 py-3">Grupo</th>
+                        <th class="px-4 py-3 text-center">Minutos</th>
+                        <th class="px-4 py-3 text-center">Goles</th>
+                        <th class="px-4 py-3 text-center">Asist</th>
+                        <th class="px-4 py-3 text-center">Nota Media</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr>
+                        <td class="px-4 py-3 font-bold text-emerald-700">Titulares</td>
+                        <td class="px-4 py-3 text-center">${starters.minutes}'</td>
+                        <td class="px-4 py-3 text-center font-bold">${starters.goals}</td>
+                        <td class="px-4 py-3 text-center">${starters.assists}</td>
+                        <td class="px-4 py-3 text-center font-bold">${sAvg}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-3 font-bold text-blue-600">Suplentes</td>
+                        <td class="px-4 py-3 text-center">${subs.minutes}'</td>
+                        <td class="px-4 py-3 text-center font-bold">${subs.goals}</td>
+                        <td class="px-4 py-3 text-center">${subs.assists}</td>
+                        <td class="px-4 py-3 text-center font-bold">${bAvg}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Render Chart
+    const ctx = document.getElementById('chart-bench-comparison');
+    if (ctx) {
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Goles / 90min', 'Nota Media'],
+                datasets: [
+                    { label: 'Titulares', data: [sG90, sAvg], backgroundColor: '#10b981', borderRadius: 4 },
+                    { label: 'Suplentes', data: [bG90, bAvg], backgroundColor: '#3b82f6', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
 }
         /* ========================================================= */
 /* 📈 RENDERIZAR GRÁFICOS (EVOLUCIÓN Y GOLES)                */
