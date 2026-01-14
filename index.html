@@ -2739,15 +2739,102 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "dt2", nombre: "Álvaro", apellido: "Arbeloa", apodo: "Arbeloa", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1983-01-17", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ALVARO_ARBELOA_550x650-1?$Desktop$&fit=wrap&wid=420" },
 
 
-            // PORTEROS
-            { id: "p1", nombre: "Thibaut", apellido: "Courtois", apodo: "Courtois", posicion: "portero", rol: "POR", dorsal: 1, piePreferido:'Izquierdo', nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "18", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p13", nombre: "Andriy", apellido: "Lunin", apodo: "Lunin", posicion: "portero", rol: "POR", dorsal: 13, piePreferido:'Derecho', nacionalidad: "Ucrania", fechaNacimiento: "1999-02-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20LUNIN_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-
+             { id: "p1", nombre: "Thibaut", apellido: "Courtois", apodo: "Courtois", posicion: "portero", rol: "POR", dorsal: 1, piePreferido:'Izquierdo', nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "18", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384",
+                historialValor: [
+                                { fecha: '21-12-2018', valor: 65 },
+                                { fecha: '11-06-2019', valor: 55 },
+                                { fecha: '20-12-2019', valor: 55 },
+                                { fecha: '05-03-2020', valor: 60 },
+                                { fecha: '08-04-2020', valor: 48 },
+                                { fecha: '23-07-2020', valor: 60 },
+                                { fecha: '08-10-2020', valor: 75 },
+                                { fecha: '05-01-2021', valor: 75 },
+                                { fecha: '26-05-2021', valor: 60 },
+                                { fecha: '30-12-2021', valor: 65 },
+                                { fecha: '03-06-2022', valor: 60 },
+                                { fecha: '07-11-2022', valor: 60 },
+                                { fecha: '13-06-2023', valor: 45 },
+                                { fecha: '22-12-2023', valor: 35 },
+                                { fecha: '21-03-2024', valor: 30 },
+                                { fecha: '07-06-2024', valor: 28 },
+                                { fecha: '11-10-2024', valor: 25 },
+                                { fecha: '27-12-2024', valor: 25 },
+                                { fecha: '09-06-2025', valor: 20 },
+                                { fecha: '12-12-2025', valor: 18 }
+              ]  },
+            { id: "p13", nombre: "Andriy", apellido: "Lunin", apodo: "Lunin", posicion: "portero", rol: "POR", dorsal: 13, piePreferido:'Derecho', nacionalidad: "Ucrania", fechaNacimiento: "1999-02-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20LUNIN_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384",
+                historialValor: [
+                  { fecha: '12-07-2018', valor: 8.5 },
+                  { fecha: '08-10-2020', valor: 3 },
+                  { fecha: "05-01-2021", valor: 3 },
+                  { fecha: "27-05-2021", valor: 3 },
+                  { fecha: '30-12-2021', valor: 2 },
+                  { fecha: '03-06-2022', valor: 2.5},
+                  { fecha: '07-11-2022', valor: 4 },
+                  { fecha: '23-03-2023', valor: 5 },
+                  { fecha: "13-06-2023", valor: 5 },
+                  { fecha: '22-12-2023', valor: 8 },
+                  { fecha: '21-03-2024', valor: 16 },
+                  { fecha: '07-06-2024', valor: 25 },
+                  { fecha: '27-12-2024', valor: 20 },
+                  { fecha: '09-06-2025', valor: 18 },
+                  { fecha: '12-12-2025', valor: 15 }
+              ]  },
             // DEFENSAS
-            { id: "p2", nombre: "Dani", apellido: "Carvajal", apodo: "Carvajal", posicion: "defensa", rol: "LD", dorsal: 2, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1992-01-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "7", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARVAJAL_EQUIPO_CARITA_380x501%20%E2%80%93%206?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p3", nombre: "Éder", apellido: "Militão", apodo: "Militão", posicion: "defensa", rol: "DFC", dorsal: 3, piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p4", nombre: "David", apellido: "Alaba", apodo: "Alaba", posicion: "defensa", rol: "DFC", dorsal: 4, piePreferido:'Izquierdo', nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "4", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", apodo: "Alexander-Arnold", posicion: "defensa", rol: "LD", dorsal: 12, piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p2", nombre: "Dani", apellido: "Carvajal", apodo: "Carvajal", posicion: "defensa", rol: "LD", dorsal: 2, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1992-01-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "7", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARVAJAL_EQUIPO_CARITA_380x501%20%E2%80%93%206?Desktop&fit=wrap&wid=288&hei=384",
+                            historialValor: [
+                  { fecha: '22-03-2018', valor: 60 },
+                  { fecha: '11-06-2019', valor: 50 },
+                  { fecha: '08-04-2020', valor: 40 },
+                  { fecha: '10-06-2021', valor: 30 },
+                  { fecha: '13-10-2021', valor: 25 },
+                  { fecha: '30-12-2021', valor: 20 },
+                  { fecha: '21-03-2022', valor: 18 },
+                  { fecha: '23-03-2023', valor: 15 },
+                  { fecha: '13-06-2023', valor: 12 },
+                  { fecha: '27-12-2024', valor: 10 },
+                  { fecha: '09-06-2025', valor: 8  },
+                  { fecha: '12-12-2025', valor: 7  }
+
+              ]},
+            { id: "p3", nombre: "Éder", apellido: "Militão", apodo: "Militão", posicion: "defensa", rol: "DFC", dorsal: 3, piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384",
+                                      historialValor: [
+                                { fecha: '20-12-2019', valor: 45 },
+                                { fecha: '05-03-2020', valor: 40 },
+                                { fecha: '08-04-2020', valor: 36 },
+                                { fecha: '08-10-2020', valor: 40 },
+                                { fecha: '05-01-2021', valor: 30 },
+                                { fecha: '10-06-2021', valor: 40 },                               
+                                { fecha: '30-12-2021', valor: 60 },
+                                { fecha: '03-06-2022', valor: 60 },
+                                { fecha: '07-11-2022', valor: 60 },
+                                { fecha: '23-03-2023', valor: 70 },
+                                { fecha: '13-06-2023', valor: 70 },
+                                { fecha: '22-12-2023', valor: 70 },
+                                { fecha: '07-06-2024', valor: 60 },
+                                { fecha: '27-12-2024', valor: 40 },
+                                { fecha: '09-06-2025', valor: 30 },
+                                { fecha: '12-12-2025', valor: 30 }          
+              ]},
+            { id: "p4", nombre: "David", apellido: "Alaba", apodo: "Alaba", posicion: "defensa", rol: "DFC", dorsal: 4, piePreferido:'Izquierdo', nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "4", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+                          historialValor: [
+                                { fecha: '30-12-2021', valor: 55 },
+                                { fecha: '03-06-2022', valor: 55 },
+                                { fecha: '07-11-2022', valor: 55 },
+                                { fecha: '23-03-2023', valor: 50 },
+                                { fecha: '13-06-2023', valor: 40 },
+                                { fecha: '22-12-2023', valor: 30 },
+                                { fecha: '21-03-2024', valor: 25 },
+                                { fecha: '07-06-2024', valor: 20 },
+                                { fecha: '11-10-2024', valor: 15 },
+                                { fecha: '27-12-2024', valor: 10 },
+                                { fecha: '09-06-2025', valor:  6 },
+                                { fecha: '12-12-2025', valor: 4 }
+              ] },
+            { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", apodo: "Alexander-Arnold", posicion: "defensa", rol: "LD", dorsal: 12, piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384",
+                          historialValor: [
+                  { fecha: '12-12-2025', valor: 70 }
+              ] },
             { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
             { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "DFC", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p18", nombre: "Álvaro", apellido: "Carreras", apodo: "Carreras", posicion: "defensa", rol: "LI", dorsal: 18, piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2003-03-23", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARRERAS_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
@@ -2760,7 +2847,15 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40,piePreferido:'Izquierdo',nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", valorMercado: "5", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
 
             // CENTROCAMPISTAS
-            { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MCO", dorsal: 5,piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MCO", dorsal: 5,piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+              historialValor: [
+                  { fecha: '01-06-2023', valor: 120 },
+                  { fecha: '01-10-2023', valor: 150 },
+                  { fecha: '01-01-2024', valor: 180 },
+                  { fecha: '01-06-2024', valor: 180 },
+                  { fecha: '01-01-2025', valor: 160 }
+              ]
+            },
             { id: "p6", nombre: "Eduardo", apellido: "Camavinga", apodo: "Camavinga", posicion: "centrocampista", rol: "MC", dorsal: 6,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2002-11-10", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CAMAVINGA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p8", nombre: "Federico", apellido: "Valverde", apodo: "Valverde", posicion: "centrocampista", rol: "MC", dorsal: 8,piePreferido:'Derecho', nacionalidad: "Uruguay", fechaNacimiento: "1998-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VALVERDE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p10b", nombre: "Luka", apellido: "Modrić", apodo: "Modrić", posicion: "centrocampista", rol: "MC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1" },
@@ -2768,10 +2863,12 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             { id: "p15", nombre: "Arda", apellido: "Güler", apodo: "Arda Güler", posicion: "centrocampista", rol: "MCO", dorsal: 15,piePreferido:'Izquierdo', nacionalidad: "Turquía", fechaNacimiento: "2005-02-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "90", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ARDA_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p19", nombre: "Dani", apellido: "Ceballos", apodo: "Ceballos", posicion: "centrocampista", rol: "MC", dorsal: 19,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p28", nombre: "Jorge", apellido: "Cestero", apodo: "Cestero", posicion: "centrocampista", rol: "MC", dorsal: 28,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2006-03-24", categoria: "Cantera", estado: "Activo", valorMercado: "3", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/JORGE_CESTERO_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p37", nombre: "Manuel Ángel", apellido: "Morán", apodo: "Manuel Ángel", posicion: "centrocampista", rol: "MC", dorsal: 37,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-15", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MANUEL_ANGEL_550x650-1?$Desktop$&fit=wrap&wid=420" },
+            { id: "p38", nombre: "César", apellido: "Palacios", apodo: "Palacios", posicion: "centrocampista", rol: "MC", dorsal: 38,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-11-11", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/CESAR_PALACIOS_550x650-1?$Desktop$&fit=wrap&wid=420" },
 
             // DELANTEROS Y EXTREMOS
             { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Cedido", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
@@ -5729,6 +5826,7 @@ function viewPlayerDetails(playerId) {
         modal.classList.remove('opacity-0'); 
         runCounters(); 
         renderPlayerDetailChart(ratingsHistory);
+        renderMarketValueChart(player);
     }, 50);
 }
 
@@ -5846,6 +5944,21 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
         </div>`;
     }
 
+    // --- 3.5 GRÁFICO VALOR DE MERCADO (NUEVO) ---
+    let marketChartHTML = '';
+    if (player.historialValor && player.historialValor.length > 0) {
+        marketChartHTML = `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Evolución Valor de Mercado</h4>
+                <div class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Actual: ${player.valorMercado} ${player.unidad || 'M€'}</div>
+            </div>
+            <div class="relative h-48 w-full">
+                <canvas id="chart-player-market-value"></canvas>
+            </div>
+        </div>`;
+    }
+
     // --- 4. TOP ACTUACIONES (MANTENIDO) ---
     let topPerfHTML = '';
     if (!isCoach) {
@@ -5866,7 +5979,7 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
     
     setTimeout(runCounters, 50);
 
-    return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${topPerfHTML}`;
+    return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${marketChartHTML}${topPerfHTML}`;
 }
 
 let playerDetailChart = null;
@@ -5900,6 +6013,79 @@ function renderPlayerDetailChart(history) {
             responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
             plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.9)', titleColor: '#1f2937', bodyColor: '#1f2937', borderColor: '#e5e7eb', borderWidth: 1 } },
             scales: { y: { min: 0, max: 10, grid: { color: '#f3f4f6' }, ticks: { stepSize: 1 } }, x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } } }
+        }
+    });
+}
+
+let marketValueChart = null;
+function renderMarketValueChart(player) {
+    const ctx = document.getElementById('chart-player-market-value');
+    if (!ctx || !player.historialValor || player.historialValor.length === 0) return;
+    
+    if (marketValueChart) marketValueChart.destroy();
+
+    // Helper para parsear fecha DD-MM-YYYY (Día-Mes-Año)
+    const parseDate = (str) => {
+        if (!str) return new Date();
+        // Si detectamos formato DD-MM-YYYY (el día tiene 1 o 2 dígitos al principio)
+        if (str.includes('-') && str.split('-')[0].length <= 2) {
+             const [day, month, year] = str.split('-').map(Number);
+             const fullYear = year < 100 ? 2000 + year : year; // Soporte para 2 dígitos (AA)
+             return new Date(fullYear, month - 1, day);
+        }
+        return new Date(str); // Fallback para formato estándar
+    };
+
+    // Ordenar por fecha
+    const history = [...player.historialValor].sort((a, b) => parseDate(a.fecha) - parseDate(b.fecha));
+    
+    const labels = history.map(h => {
+        const d = parseDate(h.fecha);
+        // CAMBIO: Mes y Año (ej: Jun. 2023)
+        return d.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
+    });
+    const data = history.map(h => h.valor);
+
+    marketValueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: `Valor (${player.unidad || 'M€'})`,
+                data: data,
+                borderColor: '#10b981', // Emerald 500
+                backgroundColor: (context) => {
+                    const ctx = context.chart.ctx;
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+                    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+                    return gradient;
+                },
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#10b981',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { 
+                    beginAtZero: false, 
+                    grid: { color: '#f3f4f6' },
+                    ticks: { callback: (val) => val + (player.unidad || 'M€') }
+                },
+                x: { 
+                    grid: { display: false }, 
+                    ticks: { font: { size: 10 } } 
+                }
+            }
         }
     });
 }
