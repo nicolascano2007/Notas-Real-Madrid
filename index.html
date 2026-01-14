@@ -567,6 +567,20 @@
     z-index: 10;
 }
 
+/* 3. CEDIDO (Amarillo/Avión) */
+.player-card.status-cedido {
+    background: #fefce8;
+    border-color: #fde047;
+}
+.player-card.status-cedido::after {
+    content: '✈️ CEDIDO';
+    position: absolute;
+    top: 0; right: 0;
+    background: #eab308;
+    color: white;
+    font-size: 9px; font-weight: bold; padding: 2px 6px; border-bottom-left-radius: 8px; z-index: 10;
+}
+
 /* Textos en color dorado/bronce para que combinen */
 .player-card.status-leyenda h3 { color: #92400e !important; }
 .player-card.status-leyenda .text-slate-700 { color: #b45309 !important; }
@@ -1264,12 +1278,34 @@ button:active, .btn:active {
                             <p id="header-subtitle" class="text-blue-200 text-sm">Real Madrid CF</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition" onclick="returnToWelcome()" ...>
+
+                    <!-- MATCHDAY BANNER (Desktop) -->
+                    <div id="matchday-banner-desktop" class="hidden md:flex items-center gap-4 bg-white/10 px-4 py-2 rounded-lg border border-white/10 backdrop-blur-sm animate-pulse">
+                        <span class="text-2xl">⚽</span>
+                        <div class="text-right">
+                            <div class="text-xs font-bold text-amber-400 uppercase tracking-widest">DÍA DE PARTIDO</div>
+                            <div class="font-bold text-sm leading-none text-white" id="matchday-desktop-text">vs Rival</div>
+                            <div class="text-[10px] text-blue-200" id="matchday-desktop-info">21:00 • Liga</div>
                         </div>
+                    </div>
 
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
+                </div>
+
+                <!-- MATCHDAY BANNER (Mobile) -->
+                <div id="matchday-banner-mobile" class="md:hidden hidden mt-4 bg-gradient-to-r from-amber-600 to-orange-600 rounded-lg p-3 shadow-lg flex items-center justify-between animate-in slide-in-from-top-2">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white/20 p-2 rounded-full">⚽</div>
+                        <div>
+                            <div class="text-[10px] font-black text-amber-100 uppercase tracking-widest">HOY JUEGA EL MADRID</div>
+                            <div class="font-bold text-sm text-white" id="matchday-mobile-text">vs Rival</div>
+                        </div>
+                    </div>
+                    <div class="text-right text-xs text-white font-mono bg-black/20 px-2 py-1 rounded" id="matchday-mobile-time">
+                        21:00
+                    </div>
                 </div>
             </div>
         </header>
@@ -1312,6 +1348,11 @@ button:active, .btn:active {
                         <h2 class="text-2xl font-bold text-gray-800">Panel General</h2>
                         <p class="text-gray-500 text-sm">Resumen de la temporada actual</p>
                     </div>
+                    <div class="flex gap-2">
+                        <button onclick="toggleDashboardEditMode()" id="btn-edit-dashboard" class="bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 font-bold py-2 px-4 rounded-lg shadow-sm flex items-center gap-2 transition-all text-sm">
+                            <span>✏️</span> Editar Panel
+                        </button>
+                    </div>
                     <button onclick="showCrystalBall()" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105 text-sm">
                         <span>🔮</span> Bola de Cristal
                     </button>
@@ -1319,7 +1360,9 @@ button:active, .btn:active {
                 <div id="club-trophies-container" class="hidden fade-in"></div>
                 <div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                
+                <div id="dashboard-widgets-area" class="space-y-6">
+                <div id="widget-top-stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" draggable="false">
                     
                     <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-slate-800 relative overflow-hidden">
                         <div class="absolute top-0 right-0 p-4 opacity-10 text-slate-800 text-6xl">📅</div>
@@ -1364,8 +1407,8 @@ button:active, .btn:active {
                              </div>
                         </div>
                     </div>
-                </div>
-                  <div id="ai-prediction-card" class="hidden mb-8 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden">
+                </div> <!-- End Top Stats -->
+                  <div id="ai-prediction-card" class="hidden bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl shadow-lg p-1 text-white relative overflow-hidden" draggable="false">
                     <div class="absolute top-0 right-0 p-8 opacity-10 text-9xl">🤖</div>
                     
                     <div class="bg-slate-900/40 backdrop-blur-md rounded-lg p-5">
@@ -1420,7 +1463,7 @@ button:active, .btn:active {
                         </div>
                     </div>
                 </div>
-              <div class="mb-8">
+              <div id="widget-semaforo" class="" draggable="false">
                 <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                       🚦 Semáforo de Forma <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Últimos 3 partidos</span>
               </h3>
@@ -1435,15 +1478,15 @@ button:active, .btn:active {
                Ver todos los jugadores ▼
                        </button>
                         </div>
-            </div>
-            <div id="top-performances-container" class="mt-6 mb-8 animate-fade-in hidden">
+            </div> <!-- End Semaforo -->
+            <div id="top-performances-container" class="animate-fade-in hidden" draggable="false">
     <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
         <span>🌟</span> Actuaciones Legendarias (Top 5)
     </h3>
     <div id="top-performances-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         </div>
-</div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+</div> <!-- End Top Perf -->
+                <div id="widget-bottom-stats" class="grid grid-cols-1 lg:grid-cols-3 gap-6" draggable="false">
                     
                     <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
@@ -1462,8 +1505,9 @@ button:active, .btn:active {
                              </div>
                     </div>
 
-                </div>
-                <div class="mt-8 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                </div> <!-- End Bottom Stats -->
+                </div> <!-- End Dashboard Widgets Area -->
+                <div class="mt-8 bg-white rounded-xl shadow-sm p-6 border border-gray-200" id="widget-data-management">
                     <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                         💾 Gestión de Datos
                     </h3>
@@ -1563,6 +1607,9 @@ button:active, .btn:active {
                         </button>
                         <button onclick="filterPlayers('inactive')" id="filter-inactive" class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
                             Inactivos
+                        </button>
+                        <button onclick="filterPlayers('loaned')" id="filter-loaned" class="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                            Cedidos
                         </button>
                     </div>
                 </div>
@@ -2065,6 +2112,9 @@ button:active, .btn:active {
                          <button onclick="switchStatsTab('bench')" id="btn-stats-bench" class="stats-subtab inactive">
                              🔄 Banquillo
                          </button>
+                         <button onclick="switchStatsTab('awards')" id="btn-stats-awards" class="stats-subtab inactive">
+                             🏆 Gala
+                         </button>
                         <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
                         <span>🏆</span> Trofeos
                     </button>
@@ -2421,6 +2471,7 @@ button:active, .btn:active {
                 <div id="stats-cantera" class="hidden fade-in space-y-6"></div>
                 <div id="stats-timeline" class="hidden fade-in space-y-6"></div>
                 <div id="stats-bench" class="hidden fade-in space-y-6"></div>
+                <div id="stats-awards" class="hidden fade-in space-y-6"></div>
 
             </section>
         </main>
@@ -2720,7 +2771,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
 
             // DELANTEROS Y EXTREMOS
             { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Cedido", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384" },
             { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384" },
@@ -3096,6 +3147,10 @@ function getPositionName(formation, index) {
         function getActivePlayers() {
             return getPlayers().filter(p => p.estado === 'Activo');
         }
+        
+        function getLoanedPlayers() {
+            return getPlayers().filter(p => p.estado === 'Cedido');
+        }
 
         function updatePlayerState(playerId, newState) {
             let customStates = getData('playerStates');
@@ -3323,6 +3378,7 @@ function getPositionName(formation, index) {
             document.getElementById('stats-cantera').classList.add('hidden');
             document.getElementById('stats-timeline').classList.add('hidden');
             document.getElementById('stats-bench').classList.add('hidden');
+            document.getElementById('stats-awards').classList.add('hidden');
 
             document.getElementById(`stats-${tab}`).classList.remove('hidden');
 
@@ -3342,6 +3398,8 @@ function getPositionName(formation, index) {
                 renderSeasonTimeline();
             } else if (tab === 'bench') {
                 renderBenchImpact();
+            } else if (tab === 'awards') {
+                renderSeasonAwards();
             }
         }
   
@@ -4113,6 +4171,107 @@ function renderSeasonTimeline() {
     html += `</div>`;
     container.innerHTML = html;
 }
+
+// ==========================================
+// 3. GALA DE PREMIOS (SEASON AWARDS)
+// ==========================================
+function renderSeasonAwards() {
+    const container = document.getElementById('stats-awards');
+    if (!container) return;
+
+    const matches = getData('matches');
+    const players = getPlayers();
+    
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-gray-500">Juega partidos para celebrar la Gala de Premios.</div>';
+        return;
+    }
+
+    // Calcular estadísticas
+    const stats = {};
+    players.forEach(p => {
+        stats[p.id] = { 
+            player: p, goals: 0, assists: 0, ratingSum: 0, ratingCount: 0, 
+            cleanSheets: 0, matches: 0, mvps: 0 
+        };
+    });
+
+    matches.forEach(m => {
+        // Clean Sheet check
+        const parts = m.result.replace('*','').split('-').map(Number);
+        const ga = m.venue === 'local' ? parts[1] : parts[0];
+        const isCleanSheet = ga === 0;
+
+        if (m.mvp && stats[m.mvp]) stats[m.mvp].mvps++;
+
+        m.playerStats.forEach(ps => {
+            const s = stats[ps.playerId];
+            if (s && (ps.played || ps.minutes > 0)) {
+                s.matches++;
+                s.goals += (ps.goals || 0);
+                s.assists += (ps.assists || 0);
+                if (ps.rating) { s.ratingSum += parseFloat(ps.rating); s.ratingCount++; }
+                if (isCleanSheet && (s.player.posicion === 'portero' || s.player.posicion === 'portera') && ps.isStarter) {
+                    s.cleanSheets++;
+                }
+            }
+        });
+    });
+
+    // Determinar Ganadores
+    const getWinner = (sortFn, filterFn = () => true) => {
+        const candidates = Object.values(stats).filter(s => s.matches > 0 && filterFn(s));
+        candidates.sort(sortFn);
+        return candidates.length > 0 ? candidates[0] : null;
+    };
+
+    const pichichi = getWinner((a, b) => b.goals - a.goals || b.matches - a.matches);
+    const mvpSeason = getWinner((a, b) => (b.ratingSum/b.ratingCount) - (a.ratingSum/a.ratingCount), s => s.matches >= 5);
+    const goldenBoy = getWinner((a, b) => (b.ratingSum/b.ratingCount) - (a.ratingSum/a.ratingCount), s => {
+        const age = calculateAge(s.player.fechaNacimiento);
+        return age < 21 && s.matches >= 3;
+    });
+    const zamora = getWinner((a, b) => b.cleanSheets - a.cleanSheets, s => s.player.posicion === 'portero' || s.player.posicion === 'portera');
+    const assistant = getWinner((a, b) => b.assists - a.assists);
+
+    // Render HTML
+    const renderCard = (title, icon, winner, statLabel, statValue) => {
+        if (!winner) return '';
+        return `
+            <div class="award-card rounded-xl p-6 text-center shadow-lg transform hover:scale-105 transition-transform">
+                <div class="award-icon">${icon}</div>
+                <h3 class="text-xl font-black text-amber-600 mb-1 uppercase tracking-widest">${title}</h3>
+                <div class="w-16 h-1 bg-amber-400 mx-auto mb-4 rounded-full"></div>
+                
+                <div class="relative w-24 h-24 mx-auto mb-3">
+                    <img src="${winner.player.foto}" class="w-full h-full rounded-full object-cover border-4 border-amber-300 shadow-md">
+                    <div class="absolute -bottom-2 -right-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full border-2 border-white">
+                        ${statValue}
+                    </div>
+                </div>
+                
+                <h4 class="text-lg font-bold text-gray-800">${winner.player.apodo || winner.player.apellido}</h4>
+                <p class="text-xs text-gray-500 uppercase font-bold mt-1">${statLabel}</p>
+            </div>
+        `;
+    };
+
+    container.innerHTML = `
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-black text-slate-800">✨ GALA DE PREMIOS</h2>
+            <p class="text-gray-500">Los mejores de la temporada ${currentTeam === 'masculino' ? '2025/26' : '2025/26'}</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            ${renderCard('MVP Temporada', '👑', mvpSeason, 'Nota Media', mvpSeason ? (mvpSeason.ratingSum/mvpSeason.ratingCount).toFixed(2) : 0)}
+            ${renderCard('Pichichi', '👟', pichichi, 'Goles', pichichi ? pichichi.goals : 0)}
+            ${renderCard('Golden Boy', '💎', goldenBoy, 'Nota Media (<21)', goldenBoy ? (goldenBoy.ratingSum/goldenBoy.ratingCount).toFixed(2) : 0)}
+            ${renderCard('Guante de Oro', '🧤', zamora, 'Porterías a 0', zamora ? zamora.cleanSheets : 0)}
+            ${renderCard('Asistente', '🎯', assistant, 'Asistencias', assistant ? assistant.assists : 0)}
+        </div>
+    `;
+}
+
 
 // ==========================================
 // 5. IMPACTO DEL BANQUILLO
@@ -5127,6 +5286,85 @@ function renderPerformanceMatrix(matches) {
         }
 
         // ==========================================
+        // DASHBOARD EDIT MODE (DRAG & DROP)
+        // ==========================================
+        let isDashboardEditing = false;
+
+        function toggleDashboardEditMode() {
+            isDashboardEditing = !isDashboardEditing;
+            const btn = document.getElementById('btn-edit-dashboard');
+            const container = document.getElementById('dashboard-widgets-area');
+            const widgets = container.children;
+
+            if (isDashboardEditing) {
+                btn.innerHTML = '<span>💾</span> Guardar Panel';
+                btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200');
+                btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-300');
+                
+                Array.from(widgets).forEach(w => {
+                    w.setAttribute('draggable', 'true');
+                    w.classList.add('dashboard-draggable');
+                    w.addEventListener('dragstart', handleDashDragStart);
+                    w.addEventListener('dragover', handleDashDragOver);
+                    w.addEventListener('drop', handleDashDrop);
+                });
+            } else {
+                btn.innerHTML = '<span>✏️</span> Editar Panel';
+                btn.classList.remove('bg-green-50', 'text-green-700', 'border-green-200');
+                btn.classList.add('bg-white', 'text-gray-600', 'border-gray-300');
+                
+                Array.from(widgets).forEach(w => {
+                    w.setAttribute('draggable', 'false');
+                    w.classList.remove('dashboard-draggable');
+                    w.removeEventListener('dragstart', handleDashDragStart);
+                    w.removeEventListener('dragover', handleDashDragOver);
+                    w.removeEventListener('drop', handleDashDrop);
+                });
+                saveDashboardLayout();
+            }
+        }
+
+        function handleDashDragStart(e) { e.dataTransfer.setData('text/plain', e.target.id); }
+        function handleDashDragOver(e) { e.preventDefault(); }
+        function handleDashDrop(e) {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text/plain');
+            const draggable = document.getElementById(id);
+            const dropzone = e.target.closest('[draggable="true"]');
+            if (draggable && dropzone && draggable !== dropzone) {
+                const container = document.getElementById('dashboard-widgets-area');
+                // Simple swap logic: insert before
+                const children = Array.from(container.children);
+                const dragIdx = children.indexOf(draggable);
+                const dropIdx = children.indexOf(dropzone);
+                if (dragIdx < dropIdx) dropzone.after(draggable);
+                else container.insertBefore(draggable, dropzone);
+            }
+        }
+
+        function saveDashboardLayout() {
+            const container = document.getElementById('dashboard-widgets-area');
+            const order = Array.from(container.children).map(c => c.id);
+            saveData('dashboardLayout', order);
+            if(typeof showToast === 'function') showToast('Diseño del panel guardado', 'success');
+        }
+
+        function restoreDashboardLayout() {
+            const order = getData('dashboardLayout');
+            if (!order || order.length === 0) return;
+            
+            const container = document.getElementById('dashboard-widgets-area');
+            // Create a map of current children
+            const childrenMap = {};
+            Array.from(container.children).forEach(c => childrenMap[c.id] = c);
+            
+            // Re-append in order
+            order.forEach(id => {
+                if (childrenMap[id]) container.appendChild(childrenMap[id]);
+            });
+        }
+
+        // ==========================================
         // TAB NAVIGATION
         // ==========================================
         
@@ -5137,6 +5375,7 @@ function renderPerformanceMatrix(matches) {
             document.getElementById(`section-${tabName}`).classList.remove('hidden');
             document.getElementById(`tab-${tabName}`).classList.add('tab-active');
             if (tabName === 'principal') renderPrincipal();
+            if (tabName === 'principal') restoreDashboardLayout();
             renderCompetitionStatus();
             if (tabName === 'principal') renderClubTrophies();
             if (calendarEvents.length === 0) loadCalendar();
@@ -5186,6 +5425,8 @@ function renderPlayers() {
         players = players.filter(p => p.estado === 'Activo');
     } else if (currentPlayerFilter === 'inactive') {
         players = players.filter(p => p.estado === 'Inactivo' || p.estado === 'Leyenda');
+    } else if (currentPlayerFilter === 'loaned') {
+        players = players.filter(p => p.estado === 'Cedido');
     }
     
     if (currentPositionFilter) players = players.filter(p => p.posicion === currentPositionFilter);
@@ -5230,6 +5471,10 @@ function renderPlayers() {
             badgeClass = 'bg-amber-100 text-amber-800 border-amber-200';
             photoBorderClass = 'border-amber-400';
             holoClass = 'holo-effect'; 
+        } else if (player.estado === 'Cedido') {
+            statusClass = 'status-cedido';
+            badgeClass = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            photoBorderClass = 'border-yellow-400';
         } else if (player.estado === 'Inactivo' || player.estado === 'Retirado') {
             statusClass = 'status-inactivo';
             badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
@@ -6590,6 +6835,7 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             // 2. Si estamos en la pestaña Principal -> Pintar Principal (Próximo partido + IA)
             if (!document.getElementById('section-principal').classList.contains('hidden')) {
                 renderPrincipal();
+                restoreDashboardLayout(); // Restaurar orden
             }
         }
 
@@ -7987,6 +8233,7 @@ function closeEditMatchModal() {
                 <div class="space-y-3">
                     <button onclick="changePlayerStatus('${player.id}', 'Activo')" class="w-full py-3 rounded-lg font-medium bg-green-500 text-white">✅ Activo</button>
                     <button onclick="changePlayerStatus('${player.id}', 'Inactivo')" class="w-full py-3 rounded-lg font-medium bg-gray-500 text-white">❌ Inactivo</button>
+                    <button onclick="changePlayerStatus('${player.id}', 'Cedido')" class="w-full py-3 rounded-lg font-medium bg-yellow-500 text-white">✈️ Cedido</button>
                     <button onclick="changePlayerStatus('${player.id}', 'Leyenda')" class="w-full py-3 rounded-lg font-medium bg-amber-500 text-white">👑 Leyenda</button>
                 </div>
             `;
