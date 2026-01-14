@@ -6542,9 +6542,9 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             // Añadir partidos manuales (Mundial de Clubes) si corresponde
             if (config.manualJuneMatches) {
                 const manualMatches = [
-                    { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: 'Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
-                    { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: 'Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
-                    { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: 'Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
+                    { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: ' 🏟⚽Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
+                    { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: ' 🏟⚽Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
+                    { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: ' 🏟⚽Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
                 ];
                 events = [...manualMatches, ...events];
                 events.sort((a, b) => a.start - b.start);
@@ -6579,6 +6579,9 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             // Descargar datos (Esperamos aquí)
             calendarEvents = await getCalendarEvents(currentTeam);
             
+            // Comprobar si es día de partido
+            checkMatchDay();
+            
             // 1. Si estamos en la pestaña Calendario -> Pintar calendario
             if (!document.getElementById('section-calendario').classList.contains('hidden')) {
                 renderCalendar();
@@ -6587,6 +6590,47 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
             // 2. Si estamos en la pestaña Principal -> Pintar Principal (Próximo partido + IA)
             if (!document.getElementById('section-principal').classList.contains('hidden')) {
                 renderPrincipal();
+            }
+        }
+
+        function checkMatchDay() {
+            const desktopBanner = document.getElementById('matchday-banner-desktop');
+            const mobileBanner = document.getElementById('matchday-banner-mobile');
+            
+            if (!desktopBanner || !mobileBanner) return;
+
+            const now = new Date();
+            
+            // Buscar partido de HOY
+            const todayMatch = calendarEvents.find(e => {
+                const eDate = new Date(e.start);
+                return eDate.getDate() === now.getDate() && 
+                       eDate.getMonth() === now.getMonth() && 
+                       eDate.getFullYear() === now.getFullYear();
+            });
+
+            if (todayMatch) {
+                const timeStr = todayMatch.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                const opponent = todayMatch.opponent;
+                const location = todayMatch.location || 'Estadio';
+                const comp = todayMatch.competition || 'Partido Oficial';
+
+                // Desktop
+                document.getElementById('matchday-desktop-text').textContent = `vs ${opponent}`;
+                document.getElementById('matchday-desktop-info').textContent = `${timeStr} • ${location} • ${comp}`;
+                desktopBanner.classList.remove('hidden');
+                desktopBanner.classList.add('flex');
+
+                // Mobile
+                document.getElementById('matchday-mobile-text').textContent = `vs ${opponent}`;
+                document.getElementById('matchday-mobile-time').textContent = timeStr;
+                mobileBanner.classList.remove('hidden');
+                mobileBanner.classList.add('flex');
+            } else {
+                desktopBanner.classList.add('hidden');
+                desktopBanner.classList.remove('flex');
+                mobileBanner.classList.add('hidden');
+                mobileBanner.classList.remove('flex');
             }
         }
 
