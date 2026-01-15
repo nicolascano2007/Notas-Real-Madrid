@@ -2115,6 +2115,9 @@ button:active, .btn:active {
                          <button onclick="switchStatsTab('awards')" id="btn-stats-awards" class="stats-subtab inactive">
                              🏆 Gala
                          </button>
+                         <button onclick="switchStatsTab('records')" id="btn-stats-records" class="stats-subtab inactive">
+                             📜 Récords
+                         </button>
                         <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
                         <span>🏆</span> Trofeos
                     </button>
@@ -2472,6 +2475,7 @@ button:active, .btn:active {
                 <div id="stats-timeline" class="hidden fade-in space-y-6"></div>
                 <div id="stats-bench" class="hidden fade-in space-y-6"></div>
                 <div id="stats-awards" class="hidden fade-in space-y-6"></div>
+                <div id="stats-records" class="hidden fade-in space-y-6"></div>
 
             </section>
         </main>
@@ -2845,8 +2849,8 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                           historialValor: [
                   { fecha: '12-12-2025', valor: 70 }
               ] },
-            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1", },
-            { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "DFC", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
+            { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "DFC", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
                 { fecha: '24-06-2024', valor: 0.3 },
                 { fecha: '27-12-2024', valor: 75 },
@@ -2912,8 +2916,8 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 70 }
             ]  },
             { id: "p31", nombre: "Jacobo", apellido: "Ramón", apodo: "Jacobo Ramón", posicion: "defensa", rol: "DFC", dorsal: 31,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
-            { id: "p35", nombre: "David", apellido: "Jiménez", apodo: "David Jiménez", posicion: "defensa", rol: "LD", dorsal: 35,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", valorMercado: "4", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420", },
-            { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40,piePreferido:'Izquierdo',nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", valorMercado: "5", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p35", nombre: "David", apellido: "Jiménez", apodo: "David Jiménez", posicion: "defensa", rol: "LD", dorsal: 35,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", valorMercado: "4", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", valorMercado: "5", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
 
             // CENTROCAMPISTAS
             { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MCO", dorsal: 5,piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
@@ -2995,7 +2999,22 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             ]  },
             { id: "p19", nombre: "Dani", apellido: "Ceballos", apodo: "Ceballos", posicion: "centrocampista", rol: "MC", dorsal: 19,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '13-10-2021', valor: 20 },
+                { fecha: '30-12-2021', valor: 18 },
+                { fecha: '21-03-2021', valor: 15 },
+                { fecha: '03-06-2022', valor: 14 },
+                { fecha: '07-11-2022', valor: 9 },
+                { fecha: '23-03-2023', valor: 12 },
+                { fecha: '13-06-2023', valor: 12 },
+                { fecha: '22-12-2023', valor: 9 },
+                { fecha: '21-03-2024', valor: 8 },
+                { fecha: '07-06-2024', valor: 6 },
+                { fecha: '11-10-2024', valor: 4 },
+                { fecha: '27-12-2024', valor: 4 },
+                { fecha: '21-03-2025', valor: 10 },
+                { fecha: '09-06-2025', valor: 10 },
+                { fecha: '02-10-2025', valor: 8 },
+                { fecha: '12-12-2025', valor: 8 }
             ]  },
             { id: "p28", nombre: "Jorge", apellido: "Cestero", apodo: "Cestero", posicion: "centrocampista", rol: "MC", dorsal: 28,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2006-03-24", categoria: "Cantera", estado: "Activo", valorMercado: "3", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/JORGE_CESTERO_550x650?$Desktop$&fit=wrap&wid=420" },
             { id: "p37", nombre: "Manuel Ángel", apellido: "Morán", apodo: "Manuel Ángel", posicion: "centrocampista", rol: "MC", dorsal: 37,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-15", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MANUEL_ANGEL_550x650-1?$Desktop$&fit=wrap&wid=420" },
@@ -3004,31 +3023,78 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
             // DELANTEROS Y EXTREMOS
             { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '21-12-2018', valor: 35 },
+                { fecha: '28-02-2019', valor: 70 },
+                { fecha: '11-06-2019', valor: 70 },
+                { fecha: '20-12-2019', valor: 50 },
+                { fecha: '08-04-2020', valor: 45 },
+                { fecha: '05-01-2021', valor: 40 },
+                { fecha: '10-06-2021', valor: 40 },
+                { fecha: '13-10-2021', valor: 50 },
+                { fecha: '30-12-2021', valor: 100 },
+                { fecha: '03-06-2022', valor: 100 },
+                { fecha: '23-09-2022', valor: 120 },
+                { fecha: '07-11-2022', valor: 120 },
+                { fecha: '13-06-2023', valor: 150 },
+                { fecha: '22-12-2023', valor: 150 },
+                { fecha: '07-06-2024', valor: 180 },
+                { fecha: '11-10-2024', valor: 200 },
+                { fecha: '27-12-2024', valor: 200 },
+                { fecha: '09-06-2025', valor: 170 },
+                { fecha: '02-10-2025', valor: 150 },
+                { fecha: '12-12-2025', valor: 150 }
             ]  },
             { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '25-07-2024', valor: 25 }
             ]  },
             { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '27-12-2024', valor: 160 },
+                { fecha: '21-03-2025', valor: 170 },
+                { fecha: '09-06-2025', valor: 180 },
+                { fecha: '12-12-2025', valor: 200 }
             ]  },
             { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '01-08-2019', valor: 40 },
+                { fecha: '20-12-2019', valor: 50 },
+                { fecha: '08-04-2020', valor: 45 },
+                { fecha: '08-10-2020', valor: 45 },
+                { fecha: '05-01-2021', valor: 45 },
+                { fecha: '10-06-2021', valor: 35 },
+                { fecha: '30-12-2021', valor: 40 },
+                { fecha: '03-06-2022', valor: 60 },
+                { fecha: '23-09-2022', valor: 70 },
+                { fecha: '07-11-2022', valor: 80 },
+                { fecha: '13-06-2023', valor: 100 },
+                { fecha: '22-12-2023', valor: 100 },
+                { fecha: '07-06-2024', valor: 110 },
+                { fecha: '27-12-2024', valor: 100 },
+                { fecha: '09-06-2025', valor: 90 },
+                { fecha: '02-10-2025', valor: 80 },
+                { fecha: '12-12-2025', valor: 60 }
             ]  },
             { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '25-06-2025', valor: 8 },
+                { fecha: '02-10-2025', valor: 15 },
+                { fecha: '12-12-2025', valor: 15 }
             ]  },
             { id: "p21", nombre: "Brahim", apellido: "Díaz", apodo: "Brahim", posicion: "extremo", rol: "ED", dorsal: 21,piePreferido:'Derecho', nacionalidad: "Marruecos", fechaNacimiento: "1999-08-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "35", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BRAHIM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '22-12-2023', valor: 20 },
+                { fecha: '21-03-2024', valor: 35 },
+                { fecha: '07-06-2024', valor: 40 },
+                { fecha: '27-12-2024', valor: 35 },
+                { fecha: '21-03-2025', valor: 45 },
+                { fecha: '09-06-2025', valor: 40 },
+                { fecha: '12-12-2025', valor: 35 }
             ]  },
             { id: "p30", nombre: "Franco", apellido: "Mastantuono", apodo: "Mastantuono", posicion: "extremo", rol: "ED", dorsal: 30,piePreferido:'Izquierdo', nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
-                
+                { fecha: '02-10-2025', valor: 50 },
+                { fecha: '12-12-2025', valor: 50 }               
             ]  },
             { id: "p44", nombre: "Víctor", apellido: "Muñoz", apodo: "Víctor Múñoz", posicion: "extremo", rol: "EI", dorsal: 44,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
         ];
@@ -3632,6 +3698,7 @@ function getPositionName(formation, index) {
             document.getElementById('stats-timeline').classList.add('hidden');
             document.getElementById('stats-bench').classList.add('hidden');
             document.getElementById('stats-awards').classList.add('hidden');
+            document.getElementById('stats-records').classList.add('hidden');
 
             document.getElementById(`stats-${tab}`).classList.remove('hidden');
 
@@ -3653,6 +3720,8 @@ function getPositionName(formation, index) {
                 renderBenchImpact();
             } else if (tab === 'awards') {
                 renderSeasonAwards();
+            } else if (tab === 'records') {
+                renderRecords();
             }
         }
   
@@ -4525,6 +4594,105 @@ function renderSeasonAwards() {
     `;
 }
 
+function renderRecords() {
+    const container = document.getElementById('stats-records');
+    if (!container) return;
+
+    const matches = getData('matches');
+    const players = getPlayers();
+
+    if (matches.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-gray-500">Juega partidos para generar el Libro de Récords.</div>';
+        return;
+    }
+
+    let fastestGoal = { min: 999, player: null, match: null };
+    let latestGoal = { min: -1, player: null, match: null };
+    let youngestScorer = { age: 999, player: null, match: null, exactAge: '' };
+    let oldestScorer = { age: -1, player: null, match: null, exactAge: '' };
+    
+    let maxGoalsMatch = { count: -1, match: null };
+    let biggestWin = { diff: -1, match: null };
+    
+    let currentWinStreak = 0, maxWinStreak = 0;
+    let currentCleanSheet = 0, maxCleanSheet = 0;
+
+    const sortedMatches = [...matches].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    sortedMatches.forEach(m => {
+        if (m.outcome === 'victoria') currentWinStreak++;
+        else currentWinStreak = 0;
+        if (currentWinStreak > maxWinStreak) maxWinStreak = currentWinStreak;
+
+        const parts = m.result.replace('*','').split('-').map(Number);
+        const ga = m.venue === 'local' ? parts[1] : parts[0];
+        const gf = m.venue === 'local' ? parts[0] : parts[1];
+        const totalGoals = gf + ga;
+        const diff = gf - ga;
+
+        if (ga === 0) currentCleanSheet++;
+        else currentCleanSheet = 0;
+        if (currentCleanSheet > maxCleanSheet) maxCleanSheet = currentCleanSheet;
+
+        if (totalGoals > maxGoalsMatch.count) maxGoalsMatch = { count: totalGoals, match: m };
+        if (diff > biggestWin.diff) biggestWin = { diff: diff, match: m };
+
+        m.playerStats.forEach(ps => {
+            if (ps.detailGoals) {
+                const goals = ps.detailGoals.split(',').map(s => s.trim());
+                goals.forEach(gStr => {
+                    const min = parseInt(gStr);
+                    if (!isNaN(min)) {
+                        const p = players.find(pl => pl.id === ps.playerId);
+                        if (p) {
+                            if (min < fastestGoal.min) fastestGoal = { min: min, player: p, match: m };
+                            if (min > latestGoal.min) latestGoal = { min: min, player: p, match: m };
+
+                            if (p.fechaNacimiento) {
+                                const birth = new Date(p.fechaNacimiento);
+                                const matchDate = new Date(m.date);
+                                const ageInDays = (matchDate - birth) / (1000 * 60 * 60 * 24);
+                                const years = Math.floor(ageInDays / 365.25);
+                                const days = Math.floor(ageInDays % 365.25);
+                                const exactAge = `${years}a ${days}d`;
+                                
+                                if (ageInDays < youngestScorer.age) youngestScorer = { age: ageInDays, player: p, match: m, exactAge };
+                                if (ageInDays > oldestScorer.age) oldestScorer = { age: ageInDays, player: p, match: m, exactAge };
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    const createRecordCard = (icon, title, value, subtext, colorClass) => `
+        <div class="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl ${colorClass} bg-opacity-20 shrink-0">
+                ${icon}
+            </div>
+            <div class="min-w-0">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider truncate">${title}</p>
+                <p class="text-lg font-black text-gray-800 leading-tight truncate">${value}</p>
+                <p class="text-xs text-gray-500 truncate" title="${subtext}">${subtext}</p>
+            </div>
+        </div>
+    `;
+
+    let html = `<div class="mb-6"><h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">📜 Libro de Récords <span class="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Hitos de la Temporada</span></h3></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">`;
+
+    if (fastestGoal.player) html += createRecordCard('⚡', 'Gol más Rápido', `${fastestGoal.min}'`, `${fastestGoal.player.apodo} vs ${fastestGoal.match.opponent}`, 'bg-yellow-500 text-yellow-600');
+    if (latestGoal.player) html += createRecordCard('⏱️', 'Gol más Tardío', `${latestGoal.min}'`, `${latestGoal.player.apodo} vs ${latestGoal.match.opponent}`, 'bg-gray-500 text-gray-600');
+    if (maxWinStreak > 0) html += createRecordCard('🔥', 'Mejor Racha Victorias', `${maxWinStreak}`, `Partidos consecutivos`, 'bg-green-500 text-green-600');
+    if (maxCleanSheet > 0) html += createRecordCard('🧱', 'Muro Defensivo', `${maxCleanSheet}`, `Partidos seguidos sin encajar`, 'bg-blue-500 text-blue-600');
+    if (maxGoalsMatch.match) html += createRecordCard('🍿', 'Partido con más Goles', `${maxGoalsMatch.count}`, `${maxGoalsMatch.match.result} vs ${maxGoalsMatch.match.opponent}`, 'bg-purple-500 text-purple-600');
+    if (biggestWin.match) html += createRecordCard('🚀', 'Mayor Goleada', `+${biggestWin.diff}`, `${biggestWin.match.result} vs ${biggestWin.match.opponent}`, 'bg-red-500 text-red-600');
+    if (youngestScorer.player) html += createRecordCard('👶', 'Goleador más Joven', `${youngestScorer.exactAge}`, `${youngestScorer.player.apodo}`, 'bg-pink-500 text-pink-600');
+    if (oldestScorer.player) html += createRecordCard('👴', 'Goleador más Veterano', `${oldestScorer.exactAge}`, `${oldestScorer.player.apodo}`, 'bg-indigo-500 text-indigo-600');
+
+    html += `</div>`;
+    container.innerHTML = html;
+}
 
 // ==========================================
 // 5. IMPACTO DEL BANQUILLO
