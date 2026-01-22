@@ -1229,6 +1229,25 @@ button:active, .btn:active {
     z-index: 60;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
+
+/* --- MEJORAS DE INTERFAZ (SCROLLBARS & TRANSICIONES) --- */
+/* Scrollbar personalizado y elegante */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 5px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+
+.dark-mode ::-webkit-scrollbar-thumb { background-color: #475569; }
+.dark-mode ::-webkit-scrollbar-thumb:hover { background-color: #64748b; }
+
+/* Transiciones suaves de tema */
+body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .card {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Patrón de fondo sutil para dar profundidad */
+#app-container { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px; }
+.dark-mode #app-container { background-image: radial-gradient(#1e293b 1px, transparent 1px); }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>    
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
@@ -2707,6 +2726,10 @@ button:active, .btn:active {
         </div>
     </div>
 
+    <!-- BOTÓN VOLVER ARRIBA -->
+    <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed bottom-6 right-6 bg-slate-800 text-white p-3 rounded-full shadow-lg z-40 hidden hover:bg-slate-700 transition-all transform hover:scale-110 border-2 border-white/20">
+        ⬆️
+    </button>
 </div> </div> 
 
 <script>
@@ -2739,11 +2762,11 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
         ];
         const PLANTILLA_MASCULINO = [
             // CUERPO TÉCNICO
-            { id: "dt1", nombre: "Xabi", apellido: "Alonso", apodo: "Xabi Alonso", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Inactivo", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "dt2", nombre: "Álvaro", apellido: "Arbeloa", apodo: "Arbeloa", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1983-01-17", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/ALVARO_ARBELOA_550x650-1?$Desktop$&fit=wrap&wid=420" },
+            { id: "dt1", nombre: "Xabi", apellido: "Alonso", apodo: "Xabi Alonso", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1981-11-25", categoria: "Primer Equipo", estado: "Inactivo", altura: "1.83 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20XABI_CARITA_380x501%20%E2%80%93%202?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "dt2", nombre: "Álvaro", apellido: "Arbeloa", apodo: "Arbeloa", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1983-01-17", categoria: "Primer Equipo", estado: "Activo", altura: "1.84 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ALVARO_ARBELOA_550x650-1?$Desktop$&fit=wrap&wid=420" },
 
 
-             { id: "p1", nombre: "Thibaut", apellido: "Courtois", apodo: "Courtois", posicion: "portero", rol: "POR", dorsal: 1, piePreferido:'Izquierdo', nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "18", unidad:"M€", fechaFichaje: "09-08-2018", costeFichaje: "35 M€", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384",
+             { id: "p1", nombre: "Thibaut", apellido: "Courtois", apodo: "Courtois", posicion: "portero", rol: "POR", dorsal: 1, piePreferido:'Izquierdo', nacionalidad: "Bélgica", fechaNacimiento: "1992-05-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "18", unidad:"M€", fechaFichaje: "09-08-2018", costeFichaje: "35 M€", finContrato: "30-06-2027", altura: "2.00 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20COURTOIS_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                 historialValor: [
                                 { fecha: '21-12-2018', valor: 65 },
                                 { fecha: '11-06-2019', valor: 55 },
@@ -2766,7 +2789,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                                 { fecha: '09-06-2025', valor: 20 },
                                 { fecha: '12-12-2025', valor: 18 }
               ]  },
-            { id: "p13", nombre: "Andriy", apellido: "Lunin", apodo: "Lunin", posicion: "portero", rol: "POR", dorsal: 13, piePreferido:'Derecho', nacionalidad: "Ucrania", fechaNacimiento: "1999-02-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "01-07-2018", costeFichaje: "8.5 M€", finContrato: "30-06-2030", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20LUNIN_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p13", nombre: "Andriy", apellido: "Lunin", apodo: "Lunin", posicion: "portero", rol: "POR", dorsal: 13, piePreferido:'Derecho', nacionalidad: "Ucrania", fechaNacimiento: "1999-02-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "01-07-2018", costeFichaje: "8.5 M€", finContrato: "30-06-2030", altura: "1.91 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20LUNIN_EQUIPO_CARITA_380x501?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                 historialValor: [
                   { fecha: '12-07-2018', valor: 8.5 },
                   { fecha: '08-10-2020', valor: 3 },
@@ -2785,7 +2808,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                   { fecha: '12-12-2025', valor: 15 }
               ]  },
             // DEFENSAS
-            { id: "p2", nombre: "Dani", apellido: "Carvajal", apodo: "Carvajal", posicion: "defensa", rol: "LD", dorsal: 2, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1992-01-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "7", unidad:"M€", fechaFichaje: "01-07-2013", costeFichaje: "6.5 M€", finContrato: "30-06-2026", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARVAJAL_EQUIPO_CARITA_380x501%20%E2%80%93%206?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p2", nombre: "Dani", apellido: "Carvajal", apodo: "Carvajal", posicion: "defensa", rol: "LD", dorsal: 2, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1992-01-11", categoria: "Primer Equipo", estado: "Activo", valorMercado: "7", unidad:"M€", fechaFichaje: "01-07-2013", costeFichaje: "6.5 M€", finContrato: "30-06-2026", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARVAJAL_EQUIPO_CARITA_380x501%20%E2%80%93%206?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                             historialValor: [
                   { fecha: '25-07-2013', valor: 10 },
                   { fecha: '23-01-2014', valor: 12 },
@@ -2811,7 +2834,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                   { fecha: '12-12-2025', valor: 7  }
 
               ]},
-            { id: "p3", nombre: "Éder", apellido: "Militão", apodo: "Militão", posicion: "defensa", rol: "DFC", dorsal: 3, piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "50 M€", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p3", nombre: "Éder", apellido: "Militão", apodo: "Militão", posicion: "defensa", rol: "DFC", dorsal: 3, piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "1998-01-18", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "50 M€", finContrato: "30-06-2028", altura: "1.86 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MILITAO_EQUIPO_CARITA_380x501%20%E2%80%93%2013?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                                       historialValor: [
                                 { fecha: '20-12-2019', valor: 45 },
                                 { fecha: '05-03-2020', valor: 40 },
@@ -2830,7 +2853,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                                 { fecha: '09-06-2025', valor: 30 },
                                 { fecha: '12-12-2025', valor: 30 }          
               ]},
-            { id: "p4", nombre: "David", apellido: "Alaba", apodo: "Alaba", posicion: "defensa", rol: "DFC", dorsal: 4, piePreferido:'Izquierdo', nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "4", unidad:"M€", fechaFichaje: "01-07-2021", costeFichaje: "Libre", finContrato: "30-06-2026", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p4", nombre: "David", apellido: "Alaba", apodo: "Alaba", posicion: "defensa", rol: "DFC", dorsal: 4, piePreferido:'Izquierdo', nacionalidad: "Austria", fechaNacimiento: "1992-06-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "4", unidad:"M€", fechaFichaje: "01-07-2021", costeFichaje: "Libre", finContrato: "30-06-2026", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ALABA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                           historialValor: [
                                 { fecha: '30-12-2021', valor: 55 },
                                 { fecha: '03-06-2022', valor: 55 },
@@ -2845,12 +2868,12 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                                 { fecha: '09-06-2025', valor:  6 },
                                 { fecha: '12-12-2025', valor: 4 }
               ] },
-            { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", apodo: "Alexander-Arnold", posicion: "defensa", rol: "LD", dorsal: 12, piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", fechaFichaje: "01-07-2025", costeFichaje: "10 M€", finContrato: "30-06-2030", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p12", nombre: "Trent", apellido: "Alexander-Arnold", apodo: "Alexander-Arnold", posicion: "defensa", rol: "LD", dorsal: 12, piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "1998-10-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", fechaFichaje: "01-07-2025", costeFichaje: "10 M€", finContrato: "30-06-2030", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TRENT_EQUIPO_CARITA_380x501%20v2?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
                           historialValor: [
                   { fecha: '12-12-2025', valor: 70 }
               ] },
-            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", fechaFichaje: "02-07-2015", costeFichaje: "1M", finContrato: "-", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1" },
-            { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "DFC", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2031", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p17", nombre: "Lucas", apellido: "Vázquez", apodo: "Lucas Vázquez", posicion: "defensa", rol: "LD", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1991-07-01", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", fechaFichaje: "02-07-2015", costeFichaje: "1 M€", finContrato: "30-06-2026", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/LUCAS_VAZQUEZ_EQUIPO_CARITA_550X650+%E2%80%93+1-1", historialTemporadas: [] },
+            { id: "p17b", nombre: "Raúl", apellido: "Asencio", apodo: "Asencio", posicion: "defensa", rol: "DFC", dorsal: 17, piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-03-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "30", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", altura: "1.84 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ASENCIO_EQUIPO_CARITA_380x501%20%E2%80%93%203?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '24-06-2024', valor: 0.3 },
                 { fecha: '27-12-2024', valor: 75 },
@@ -2860,12 +2883,12 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 30 }
 
             ] },
-            { id: "p18", nombre: "Álvaro", apellido: "Carreras", apodo: "Carreras", posicion: "defensa", rol: "LI", dorsal: 18, piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2003-03-23", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", fechaFichaje: "14-07-2025", costeFichaje: "50 M€", finContrato: "30-06-2031", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARRERAS_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p18", nombre: "Álvaro", apellido: "Carreras", apodo: "Carreras", posicion: "defensa", rol: "LI", dorsal: 18, piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2003-03-23", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", fechaFichaje: "01-07-2025", costeFichaje: "20 M€", finContrato: "30-06-2030", altura: "1.86 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CARRERAS_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '02-10-2025', valor: 50 },
                 { fecha: '12-12-2025', valor: 60 }
             ]  },
-            { id: "p20", nombre: "Fran", apellido: "García", apodo: "Fran García", posicion: "defensa", rol: "LI", dorsal: 20, piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1999-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "5 M€", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20FRAN_GARCIA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p20", nombre: "Fran", apellido: "García", apodo: "Fran García", posicion: "defensa", rol: "LI", dorsal: 20, piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1999-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "09-06-2023", costeFichaje: "5 M€", finContrato: "30-06-2027", altura: "1.69 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20FRAN_GARCIA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '13-10-2023', valor: 15 },
                 { fecha: '22-12-2023', valor: 15 },
@@ -2874,7 +2897,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '09-06-2025', valor: 18 },
                 { fecha: '12-12-2025', valor: 15 }
             ]  },
-            { id: "p22", nombre: "Antonio", apellido: "Rüdiger", apodo: "Rüdiger", posicion: "defensa", rol: "DFC", dorsal: 22,piePreferido:'Derecho', nacionalidad: "Alemania", fechaNacimiento: "1993-03-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "12", unidad:"M€", fechaFichaje: "01-07-2022", costeFichaje: "Libre", finContrato: "30-06-2026", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RUDIGUER_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p22", nombre: "Antonio", apellido: "Rüdiger", apodo: "Rüdiger", posicion: "defensa", rol: "DFC", dorsal: 22,piePreferido:'Derecho', nacionalidad: "Alemania", fechaNacimiento: "1993-03-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "12", unidad:"M€", fechaFichaje: "02-06-2022", costeFichaje: "Libre", finContrato: "30-06-2026", altura: "1.90 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RUDIGUER_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '07-11-2022', valor: 40 },
                 { fecha: '13-06-2023', valor: 32 },
@@ -2885,7 +2908,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '02-10-2025', valor: 15 },
                 { fecha: '12-12-2025', valor: 12 }
             ]  },
-            { id: "p23", nombre: "Ferland", apellido: "Mendy", apodo: "Mendy", posicion: "defensa", rol: "LI", dorsal: 23,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "1995-06-08", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "48 M€", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MENDY_EQUIPO_CARITA_380x501%20%E2%80%93%201",
+            { id: "p23", nombre: "Ferland", apellido: "Mendy", apodo: "Mendy", posicion: "defensa", rol: "LI", dorsal: 23,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "1995-06-08", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "48 M€", finContrato: "30-06-2027", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MENDY_EQUIPO_CARITA_380x501%20%E2%80%93%201", historialTemporadas: [],
             historialValor: [
                 { fecha: '10-09-2019', valor: 40 },
                 { fecha: '20-12-2019', valor: 35 },
@@ -2910,17 +2933,21 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 8 }
                 
             ]  },
-            { id: "p24", nombre: "Dean", apellido: "Huijsen", apodo: "Huijsen", posicion: "defensa", rol: "DFC", dorsal: 24,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", fechaFichaje: "01-06-2025", costeFichaje: "62.5 M€", finContrato: "30-06-2030", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201",
+            { id: "p24", nombre: "Dean", apellido: "Huijsen", apodo: "Huijsen", posicion: "defensa", rol: "DFC", dorsal: 24,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2005-04-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"M€", fechaFichaje: "01-07-2025", costeFichaje: "15 M€", finContrato: "30-06-2030", altura: "1.96 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20HUIJSEN_EQUIPO_CARITA_380x501%20%E2%80%93%201", historialTemporadas: [],
             historialValor: [
                 { fecha: '02-10-2025', valor: 70 },
                 { fecha: '12-12-2025', valor: 70 }
             ]  },
-            { id: "p31", nombre: "Jacobo", apellido: "Ramón", apodo: "Jacobo Ramón", posicion: "defensa", rol: "DFC", dorsal: 31,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489" },
-            { id: "p35", nombre: "David", apellido: "Jiménez", apodo: "David Jiménez", posicion: "defensa", rol: "LD", dorsal: 35,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", valorMercado: "4", unidad:"K€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", valorMercado: "5", unidad:"K€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p31", nombre: "Jacobo", apellido: "Ramón", apodo: "Jacobo Ramón", posicion: "defensa", rol: "DFC", dorsal: 31,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2005-01-06", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", altura: "1.96 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/JACOBO-RAMON-MONTAJE_JT18489", historialTemporadas: [] },
+            { id: "p35", nombre: "David", apellido: "Jiménez", apodo: "David Jiménez", posicion: "defensa", rol: "LD", dorsal: 35,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-14", categoria: "Cantera", estado: "Activo", valorMercado: "4", unidad:"K€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/DAVID_JIMENEZ_550x650?$Desktop$&fit=wrap&wid=420", historialTemporadas: [] },
+            { id: "p40", nombre: "Victor", apellido: "Valdepeñas", apodo: "Valdepeñas", posicion: "defensa", rol: "LI", dorsal: 40,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-10-20", categoria: "Cantera", estado: "Activo", valorMercado: "5", unidad:"K€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", altura: "1.88 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_VALDEPE%C3%91AS_550x650?$Desktop$&fit=wrap&wid=420", historialTemporadas: [] },
 
             // CENTROCAMPISTAS
-            { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MCO", dorsal: 5,piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "103 M€", finContrato: "30-06-2029", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p5", nombre: "Jude", apellido: "Bellingham", apodo: "Bellingham", posicion: "centrocampista", rol: "MCO", dorsal: 5,piePreferido:'Derecho', nacionalidad: "Inglaterra", fechaNacimiento: "2003-06-29", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"M€", fechaFichaje: "14-06-2023", costeFichaje: "103 M€", finContrato: "30-06-2029", altura: "1.86 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BELLINGHAM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+              historialTemporadas: [
+                { temporada: "2024/25", partidos: 44, goles: 14, asistencias: 13, amarillas: 11, rojas: 2 },
+                { temporada: "2023/24", partidos: 42, goles: 23, asistencias: 13, amarillas: 9, rojas: 1 }
+              ],
               historialValor: [
                 { fecha: '13-10-2023', valor: 150 },
                 { fecha: '22-12-2023', valor: 180 },
@@ -2932,23 +2959,17 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
 
               ]
             },
-            { id: "p6", nombre: "Eduardo", apellido: "Camavinga", apodo: "Camavinga", posicion: "centrocampista", rol: "MC", dorsal: 6,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2002-11-10", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", fechaFichaje: "31-08-2021", costeFichaje: "31 M€", finContrato: "30-06-2029", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CAMAVINGA_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
-            historialValor: [
-                { fecha: '30-12-2021', valor: 55 },
-                { fecha: '03-06-2022', valor: 55 },
-                { fecha: '07-11-2022', valor: 50 },
-                { fecha: '23-03-2023', valor: 60 },
-                { fecha: '13-06-2023', valor: 85 },
-                { fecha: '13-10-2023', valor: 90 },
-                { fecha: '22-12-2023', valor: 90 },
-                { fecha: '07-06-2024', valor: 100 },
-                { fecha: '27-12-2024', valor: 80 },
-                { fecha: '09-06-2025', valor: 60 },
-                { fecha: '02-10-2025', valor: 50 },
-                { fecha: '12-12-2025', valor: 50 }
-                
-            ]  },
-            { id: "p8", nombre: "Federico", apellido: "Valverde", apodo: "Valverde", posicion: "centrocampista", rol: "MC", dorsal: 8,piePreferido:'Derecho', nacionalidad: "Uruguay", fechaNacimiento: "1998-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "120", unidad:"M€", fechaFichaje: "01-07-2018", costeFichaje: "5 M€", finContrato: "30-06-2029", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VALVERDE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+
+            { id: "p8", nombre: "Federico", apellido: "Valverde", apodo: "Valverde", posicion: "centrocampista", rol: "MC", dorsal: 8,piePreferido:'Derecho', nacionalidad: "Uruguay", fechaNacimiento: "1998-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "120", unidad:"M€", fechaFichaje: "22-07-2016", costeFichaje: "5 M€", finContrato: "30-06-2029", altura: "1.82 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VALVERDE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            historialTemporadas: [
+                { temporada: "2024/25", partidos: 59, goles: 9, asistencias: 8, amarillas: 5, rojas: 0 },
+                { temporada: "2023/24", partidos: 54, goles: 3, asistencias: 8, amarillas: 2, rojas: 0 },
+                { temporada: "2022/23", partidos: 56, goles: 12, asistencias: 7, amarillas: 6, rojas: 0 },
+                { temporada: "2021/22", partidos: 46, goles: 1, asistencias: 2, amarillas: 5, rojas: 0 },
+                { temporada: "2020/21", partidos: 33, goles: 3, asistencias: 1, amarillas: 3, rojas: 0 },
+                { temporada: "2019/20", partidos: 44, goles: 2, asistencias: 5, amarillas: 4, rojas: 1 },
+                { temporada: "2018/19", partidos: 25, goles: 0, asistencias: 0, amarillas: 6, rojas: 0 }
+            ],
             historialValor: [
                 { fecha: '21-12-2018', valor: 6 },
                 { fecha: '11-06-2019', valor: 20 },
@@ -2971,8 +2992,8 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 120 }
                 
             ]  },
-            { id: "p10b", nombre: "Luka", apellido: "Modrić", apodo: "Modrić", posicion: "centrocampista", rol: "MC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", fechaFichaje: "27-08-2012", costeFichaje: "35 M€", finContrato: "-", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1" },
-            { id: "p14", nombre: "Aurélien", apellido: "Tchouaméni", apodo: "Tchouaméni", posicion: "centrocampista", rol: "MCD", dorsal: 14,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "2000-01-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "75", unidad:"M€", fechaFichaje: "01-07-2022", costeFichaje: "80 M€", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TCHOUAMENI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p10b", nombre: "Luka", apellido: "Modrić", apodo: "Modrić", posicion: "centrocampista", rol: "MC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Croacia", fechaNacimiento: "1985-09-09", categoria: "Primer Equipo", estado: "Leyenda", valorMercado: "-", unidad:"M€", fechaFichaje: "27-08-2012", costeFichaje: "35 M€", finContrato: "30-06-2026", altura: "1.72 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/MODRIC_EQUIPO_CARITA_550X650+%E2%80%93+1", historialTemporadas: [] },
+            { id: "p14", nombre: "Aurélien", apellido: "Tchouaméni", apodo: "Tchouaméni", posicion: "centrocampista", rol: "MCD", dorsal: 14,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "2000-01-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "75", unidad:"M€", fechaFichaje: "01-07-2022", costeFichaje: "80 M€", finContrato: "30-06-2028", altura: "1.88 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20TCHOUAMENI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '23-09-2022', valor: 80 },
                 { fecha: '07-11-2022', valor: 80 },
@@ -2986,7 +3007,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 75 }
                 
             ]  },
-            { id: "p15", nombre: "Arda", apellido: "Güler", apodo: "Arda Güler", posicion: "centrocampista", rol: "MCO", dorsal: 15,piePreferido:'Izquierdo', nacionalidad: "Turquía", fechaNacimiento: "2005-02-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "90", unidad:"M€", fechaFichaje: "06-07-2023", costeFichaje: "26 M€", finContrato: "30-06-2029", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ARDA_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p15", nombre: "Arda", apellido: "Güler", apodo: "Arda Güler", posicion: "centrocampista", rol: "MCO", dorsal: 15,piePreferido:'Izquierdo', nacionalidad: "Turquía", fechaNacimiento: "2005-02-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "90", unidad:"M€", fechaFichaje: "06-07-2023", costeFichaje: "20 M€", finContrato: "30-06-2029", altura: "1.75 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ARDA_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '22-12-2023', valor: 15 },
                 { fecha: '07-06-2024', valor: 30 },
@@ -2997,7 +3018,7 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '12-12-2025', valor: 90 }
                 
             ]  },
-            { id: "p19", nombre: "Dani", apellido: "Ceballos", apodo: "Ceballos", posicion: "centrocampista", rol: "MC", dorsal: 19,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", fechaFichaje: "14-07-2017", costeFichaje: "16.5 M€", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p19", nombre: "Dani", apellido: "Ceballos", apodo: "Ceballos", posicion: "centrocampista", rol: "MC", dorsal: 19,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "1996-08-07", categoria: "Primer Equipo", estado: "Activo", valorMercado: "8", unidad:"M€", fechaFichaje: "14-07-2017", costeFichaje: "16.5 M€", finContrato: "30-06-2027", altura: "1.79 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20CEBALLOS_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '13-10-2021', valor: 20 },
                 { fecha: '30-12-2021', valor: 18 },
@@ -3016,12 +3037,21 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '02-10-2025', valor: 8 },
                 { fecha: '12-12-2025', valor: 8 }
             ]  },
-            { id: "p28", nombre: "Jorge", apellido: "Cestero", apodo: "Cestero", posicion: "centrocampista", rol: "MC", dorsal: 28,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2006-03-24", categoria: "Cantera", estado: "Activo", valorMercado: "3", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/JORGE_CESTERO_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "p37", nombre: "Manuel Ángel", apellido: "Morán", apodo: "Manuel Ángel", posicion: "centrocampista", rol: "MC", dorsal: 37,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-15", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/MANUEL_ANGEL_550x650-1?$Desktop$&fit=wrap&wid=420" },
-            { id: "p38", nombre: "César", apellido: "Palacios", apodo: "Palacios", posicion: "centrocampista", rol: "MC", dorsal: 38,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-11-11", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/CESAR_PALACIOS_550x650-1?$Desktop$&fit=wrap&wid=420" },
+            { id: "p28", nombre: "Jorge", apellido: "Cestero", apodo: "Cestero", posicion: "centrocampista", rol: "MC", dorsal: 28,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2006-03-24", categoria: "Cantera", estado: "Activo", valorMercado: "3", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Cantera", finContrato: "30-06-2028", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/JORGE_CESTERO_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "p37", nombre: "Manuel Ángel", apellido: "Morán", apodo: "Manuel Ángel", posicion: "centrocampista", rol: "MC", dorsal: 37,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-15", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/MANUEL_ANGEL_550x650-1?$Desktop$&fit=wrap&wid=420" },
+            { id: "p38", nombre: "César", apellido: "Palacios", apodo: "Palacios", posicion: "centrocampista", rol: "MC", dorsal: 38,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-11-11", categoria: "Cantera", estado: "Activo", valorMercado: "0.5", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2027", altura: "1.82 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/CESAR_PALACIOS_550x650-1?$Desktop$&fit=wrap&wid=420" },
 
             // DELANTEROS Y EXTREMOS
-            { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", fechaFichaje: "12-07-2018", costeFichaje: "45 M€", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p7", nombre: "Vinícius", apellido: "Júnior", apodo: "Vini Jr.", posicion: "extremo", rol: "EI", dorsal: 7,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2000-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", fechaFichaje: "12-07-2018", costeFichaje: "45 M€", finContrato: "30-06-2027", altura: "1.76 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20VINI_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            historialTemporadas: [
+                { temporada: "2024/25", partidos: 52, goles: 21, asistencias: 16, amarillas: 15, rojas: 1 },
+                { temporada: "2023/24", partidos: 39, goles: 24, asistencias: 10, amarillas: 11, rojas: 0 },
+                { temporada: "2022/23", partidos: 55, goles: 23, asistencias: 19, amarillas: 16, rojas: 1 },
+                { temporada: "2021/22", partidos: 52, goles: 22, asistencias: 16, amarillas: 7, rojas: 0 },
+                { temporada: "2020/21", partidos: 49, goles: 6, asistencias: 4, amarillas: 4, rojas: 0 },
+                { temporada: "2019/20", partidos: 38, goles: 5, asistencias: 3, amarillas: 6, rojas: 0 },
+                { temporada: "2018/19", partidos: 31, goles: 4, asistencias: 8, amarillas: 1, rojas: 0 }
+            ],
             historialValor: [
                 { fecha: '21-12-2018', valor: 35 },
                 { fecha: '28-02-2019', valor: 70 },
@@ -3044,18 +3074,18 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '02-10-2025', valor: 150 },
                 { fecha: '12-12-2025', valor: 150 }
             ]  },
-            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", fechaFichaje: "21-07-2024", costeFichaje: "47.5 M€", finContrato: "30-06-2030", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p9", nombre: "Endrick", apellido: "Felipe", apodo: "Endrick", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "2006-07-21", categoria: "Primer Equipo", estado: "Inactivo", valorMercado: "25", unidad:"M€", fechaFichaje: "21-07-2024", costeFichaje: "47.5 M€", finContrato: "30-06-2030", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20ENDRICK_EQUIPO_CARITA_380x501%20%E2%80%93%208?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
                 { fecha: '25-07-2024', valor: 25 }
             ]  },
-            { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Libre", finContrato: "30-06-2029", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p10", nombre: "Kylian", apellido: "Mbappé", apodo: "Mbappé", posicion: "delantero", rol: "DC", dorsal: 10,piePreferido:'Derecho', nacionalidad: "Francia", fechaNacimiento: "1998-12-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"M€", fechaFichaje: "01-07-2024", costeFichaje: "Libre", finContrato: "30-06-2029", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20MBAPPE_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
                 { fecha: '27-12-2024', valor: 160 },
                 { fecha: '21-03-2025', valor: 170 },
                 { fecha: '09-06-2025', valor: 180 },
                 { fecha: '12-12-2025', valor: 200 }
             ]  },
-            { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "45 M€", finContrato: "30-06-2028", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p11", nombre: "Rodrygo", apellido: "Goes", apodo: "Rodrygo", posicion: "extremo", rol: "ED", dorsal: 11,piePreferido:'Derecho', nacionalidad: "Brasil", fechaNacimiento: "2001-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "60", unidad:"M€", fechaFichaje: "01-07-2019", costeFichaje: "45 M€", finContrato: "30-06-2028", altura: "1.74 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20RODRYGO_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
             historialValor: [
                 { fecha: '01-08-2019', valor: 40 },
                 { fecha: '20-12-2019', valor: 50 },
@@ -3075,13 +3105,13 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '02-10-2025', valor: 80 },
                 { fecha: '12-12-2025', valor: 60 }
             ]  },
-            { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "01-06-2025", costeFichaje: "Cantera", finContrato: "30-06-2030", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p16", nombre: "Gonzalo", apellido: "García", apodo: "Gonzalo", posicion: "delantero", rol: "DC", dorsal: 16,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2004-03-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "15", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2028", altura: "1.82 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20GONZALO_EQUIPO_CARITA_380x501%20%E2%80%93%202?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '25-06-2025', valor: 8 },
                 { fecha: '02-10-2025', valor: 15 },
                 { fecha: '12-12-2025', valor: 15 }
             ]  },
-            { id: "p21", nombre: "Brahim", apellido: "Díaz", apodo: "Brahim", posicion: "extremo", rol: "ED", dorsal: 21,piePreferido:'Derecho', nacionalidad: "Marruecos", fechaNacimiento: "1999-08-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "35", unidad:"M€", fechaFichaje: "06-01-2019", costeFichaje: "17 M€", finContrato: "30-06-2027", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BRAHIM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p21", nombre: "Brahim", apellido: "Díaz", apodo: "Brahim", posicion: "extremo", rol: "ED", dorsal: 21,piePreferido:'Derecho', nacionalidad: "Marruecos", fechaNacimiento: "1999-08-03", categoria: "Primer Equipo", estado: "Activo", valorMercado: "35", unidad:"M€", fechaFichaje: "06-01-2019", costeFichaje: "17 M€", finContrato: "30-06-2027", altura: "1.72 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20BRAHIM_EQUIPO_CARITA_380x501%20%E2%80%93%201?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '22-12-2023', valor: 20 },
                 { fecha: '21-03-2024', valor: 35 },
@@ -3091,56 +3121,56 @@ let editingMatchPlayersPool = null; // <--- ESTA ERA LA QUE FALTABA
                 { fecha: '09-06-2025', valor: 40 },
                 { fecha: '12-12-2025', valor: 35 }
             ]  },
-            { id: "p30", nombre: "Franco", apellido: "Mastantuono", apodo: "Mastantuono", posicion: "extremo", rol: "ED", dorsal: 30,piePreferido:'Izquierdo', nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", fechaFichaje: "14-08-2025", costeFichaje: "45 M€", finContrato: "30-06-2031", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384",
+            { id: "p30", nombre: "Franco", apellido: "Mastantuono", apodo: "Mastantuono", posicion: "extremo", rol: "ED", dorsal: 30,piePreferido:'Izquierdo', nacionalidad: "Argentina", fechaNacimiento: "2007-08-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "50", unidad:"M€", fechaFichaje: "01-07-2025", costeFichaje: "25 M€", finContrato: "30-06-2031", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/2025%20Mastantuono_EQUIPO_CARITA_380x501%20%E2%80%93%202%20v2?Desktop&fit=wrap&wid=288&hei=384", historialTemporadas: [],
             historialValor: [
                 { fecha: '02-10-2025', valor: 50 },
                 { fecha: '12-12-2025', valor: 50 }               
             ]  },
-            { id: "p44", nombre: "Víctor", apellido: "Muñoz", apodo: "Víctor Múñoz", posicion: "extremo", rol: "EI", dorsal: 44,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2026", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ" }
+            { id: "p44", nombre: "Víctor", apellido: "Muñoz", apodo: "Víctor Múñoz", posicion: "extremo", rol: "EI", dorsal: 44,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2026", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ", historialTemporadas: [] }
         ];
 
 
         const PLANTILLA_FEMENINO = [
             // CUERPO TÉCNICO
-            { id: "dt_fem", nombre: "Pau", apellido: "Quesada", apodo: "Pau Quesada", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1992-10-31", categoria: "Primer Equipo", estado: "Activo", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_QUESADA_CT_AV39125_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "dt_fem", nombre: "Pau", apellido: "Quesada", apodo: "Pau Quesada", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1992-10-31", categoria: "Primer Equipo", estado: "Activo", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_QUESADA_CT_AV39125_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // PORTERAS
-            { id: "pf1", nombre: "Misa", apellido: "Rodríguez", apodo: "Misa", posicion: "portero", rol: "POR", dorsal: 1,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1999-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MISA_AV38131_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf13", nombre: "Merle", apellido: "Frohms", apodo: "Frohms", posicion: "portero", rol: "POR", dorsal: 13,piePreferido:'Izquierdo', nacionalidad: "Alemania", fechaNacimiento: "1995-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "135", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/FROHMS_SG11686_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf1", nombre: "Misa", apellido: "Rodríguez", apodo: "Misa", posicion: "portero", rol: "POR", dorsal: 1,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1999-07-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "150", unidad:"K€", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/MISA_AV38131_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf13", nombre: "Merle", apellido: "Frohms", apodo: "Frohms", posicion: "portero", rol: "POR", dorsal: 13,piePreferido:'Izquierdo', nacionalidad: "Alemania", fechaNacimiento: "1995-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "135", unidad:"K€", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/FROHMS_SG11686_380x501?Desktop&fit=wrap&wid=288&hei=384" },
 
             // DEFENSAS
-            { id: "pf2", nombre: "Antônia", apellido: "Silva", apodo: "Antônia Silva", posicion: "defensa", rol: "LD", dorsal: 2,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "1994-04-26", categoria: "Primer Equipo", estado: "Activo", valorMercado: "190", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANTONIA_AV38661_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf4", nombre: "Rocío", apellido: "Gálvez", apodo: "Rocío", posicion: "defensa", rol: "DFC", dorsal: 4,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1997-04-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ROCIO_SG11273_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf12", nombre: "Yasmim", apellido: "Ribeiro", apodo: "Yasmim", posicion: "defensa", rol: "LI", dorsal: 12,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "1996-10-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/YASMIM_AV38779_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf14", nombre: "María", apellido: "Méndez", apodo: "María Méndez", posicion: "defensa", rol: "DFC", dorsal: 14,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", valorMercado: "450", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf15", nombre: "Sheila", apellido: "García", apodo: "Sheila", posicion: "defensa", rol: "LD", dorsal: 15,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "280", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf21", nombre: "Sara", apellido: "Holmgaard", apodo: "Holmgaard", posicion: "defensa", rol: "LI", dorsal: 21,piePreferido:'Izquierdo', nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "110", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Bella Andersson", posicion: "defensa", rol: "DFC", dorsal: 22,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "125", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", apodo: "Lakrar", posicion: "defensa", rol: "DFC", dorsal: 23,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "380", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf27", nombre: "Noemí", apellido: "Bejarano", apodo: "Noe", posicion: "defensa", rol: "LD", dorsal: 27,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "pf29", nombre: "Silvia", apellido: "Cristobal", apodo: "Silvi", posicion: "defensa", rol: "DFC", dorsal: 29,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", valorMercado: "80", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf2", nombre: "Antônia", apellido: "Silva", apodo: "Antônia Silva", posicion: "defensa", rol: "LD", dorsal: 2,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "1994-04-26", categoria: "Primer Equipo", estado: "Activo", valorMercado: "190", unidad:"K€", altura: "1.74 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANTONIA_AV38661_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf4", nombre: "Rocío", apellido: "Gálvez", apodo: "Rocío", posicion: "defensa", rol: "DFC", dorsal: 4,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1997-04-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", altura: "1.79 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ROCIO_SG11273_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf12", nombre: "Yasmim", apellido: "Ribeiro", apodo: "Yasmim", posicion: "defensa", rol: "LI", dorsal: 12,piePreferido:'Izquierdo', nacionalidad: "Brasil", fechaNacimiento: "1996-10-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "160", unidad:"K€", altura: "1.65 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/YASMIM_AV38779_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf14", nombre: "María", apellido: "Méndez", apodo: "María Méndez", posicion: "defensa", rol: "DFC", dorsal: 14,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2001-04-10", categoria: "Primer Equipo", estado: "Activo", valorMercado: "450", unidad:"K€", altura: "1.74 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/MENDEZ_AV39701_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf15", nombre: "Sheila", apellido: "García", apodo: "Sheila", posicion: "defensa", rol: "LD", dorsal: 15,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1997-03-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "280", unidad:"K€", altura: "1.62 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/SHEI_AV38558_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf21", nombre: "Sara", apellido: "Holmgaard", apodo: "Holmgaard", posicion: "defensa", rol: "LI", dorsal: 21,piePreferido:'Izquierdo', nacionalidad: "Dinamarca", fechaNacimiento: "1999-01-28", categoria: "Primer Equipo", estado: "Activo", valorMercado: "110", unidad:"K€", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/HOLMGAARD_SG11429_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf22", nombre: "Bella", apellido: "Andersson", apodo: "Bella Andersson", posicion: "defensa", rol: "DFC", dorsal: 22,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "2006-07-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "125", unidad:"K€", altura: "1.75 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANDERSSON_SG11562_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf23", nombre: "Maëlle", apellido: "Lakrar", apodo: "Lakrar", posicion: "defensa", rol: "DFC", dorsal: 23,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2000-05-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "380", unidad:"K€", altura: "1.72 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/LAKRAR_SG12372_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf27", nombre: "Noemí", apellido: "Bejarano", apodo: "Noe", posicion: "defensa", rol: "LD", dorsal: 27,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-06-27", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", altura: "1.65 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/NOE_BEJARANO_JT11209_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "pf29", nombre: "Silvia", apellido: "Cristobal", apodo: "Silvi", posicion: "defensa", rol: "DFC", dorsal: 29,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2008-05-01", categoria: "Cantera", estado: "Activo", valorMercado: "80", unidad:"K€", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/SILVIA_CRISTOBAL_JT11245_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // CENTROCAMPISTAS
-            { id: "pf3", nombre: "Teresa", apellido: "Abelleira", apodo: "Tere", posicion: "centrocampista", rol: "MCD", dorsal: 3,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2000-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "390", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/TERESA_AV38432_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf6", nombre: "Sandie", apellido: "Toletti", apodo: "Toletti", posicion: "centrocampista", rol: "MCD", dorsal: 6,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "1995-07-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "365", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/TOLETTI__AV39153_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf8", nombre: "Sara", apellido: "Däbritz", apodo: "Däbritz", posicion: "centrocampista", rol: "MCO", dorsal: 8,piePreferido:'Izquierdo', nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "400", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf10", nombre: "Caroline", apellido: "Weir", apodo: "Weir", posicion: "centrocampista", rol: "MCO", dorsal: 10,piePreferido:'Izquierdo', nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "800", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", apodo: "Angeldahl", posicion: "centrocampista", rol: "MC", dorsal: 16,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "575", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Hanna Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", valorMercado: "260", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf28", nombre: "Irune", apellido: "Dorado", apodo: "Irune", posicion: "centrocampista", rol: "MCD", dorsal: 28,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf3", nombre: "Teresa", apellido: "Abelleira", apodo: "Tere", posicion: "centrocampista", rol: "MCD", dorsal: 3,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2000-01-09", categoria: "Primer Equipo", estado: "Activo", valorMercado: "390", unidad:"K€", altura: "1.60 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/TERESA_AV38432_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf6", nombre: "Sandie", apellido: "Toletti", apodo: "Toletti", posicion: "centrocampista", rol: "MCD", dorsal: 6,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "1995-07-13", categoria: "Primer Equipo", estado: "Activo", valorMercado: "365", unidad:"K€", altura: "1.68 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/TOLETTI__AV39153_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf8", nombre: "Sara", apellido: "Däbritz", apodo: "Däbritz", posicion: "centrocampista", rol: "MCO", dorsal: 8,piePreferido:'Izquierdo', nacionalidad: "Alemania", fechaNacimiento: "1995-02-15", categoria: "Primer Equipo", estado: "Activo", valorMercado: "400", unidad:"K€", altura: "1.71 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/DABRITZ_AV38874_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf10", nombre: "Caroline", apellido: "Weir", apodo: "Weir", posicion: "centrocampista", rol: "MCO", dorsal: 10,piePreferido:'Izquierdo', nacionalidad: "Escocia", fechaNacimiento: "1995-06-20", categoria: "Primer Equipo", estado: "Activo", valorMercado: "800", unidad:"K€", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/WEIR_AV39819_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf16", nombre: "Filippa", apellido: "Angeldahl", apodo: "Angeldahl", posicion: "centrocampista", rol: "MC", dorsal: 16,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "1997-07-14", categoria: "Primer Equipo", estado: "Activo", valorMercado: "575", unidad:"K€", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ANGELDAHL_SG11965_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf17", nombre: "Hanna", apellido: "Bennison", apodo: "Hanna Bennison", posicion: "centrocampista", rol: "MC", dorsal: 17,piePreferido:'Izquierdo', nacionalidad: "Suecia", fechaNacimiento: "2002-10-16", categoria: "Primer Equipo", estado: "Activo", valorMercado: "260", unidad:"K€", altura: "1.63 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/BENNISON_AV39265_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf28", nombre: "Irune", apellido: "Dorado", apodo: "Irune", posicion: "centrocampista", rol: "MCD", dorsal: 28,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2008-03-22", categoria: "Cantera", estado: "Activo", valorMercado: "70", unidad:"K€", altura: "1.65 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRUNE_DORADO_JT11218_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf33", nombre: "Adriana", apellido: "Folgado", apodo: "Adri Folgado", posicion: "centrocampista", rol: "MCD", dorsal: 33,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-04-10", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", altura: "1.68 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ADRIANA_FOLGADO_JT11189_550x650?$Desktop$&fit=wrap&wid=288&hei=384" },
 
             // DELANTERAS Y EXTREMOS
-            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-01-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "650", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", valorMercado: "325", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "480", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf18", nombre: "Linda", apellido: "Caicedo", apodo: "Linda Caicedo", posicion: "extremo", rol: "EI", dorsal: 18,piePreferido:'Izquierdo', nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "1", unidad:"M€", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf19", nombre: "Eva", apellido: "Navarro", apodo: "Eva Navarro", posicion: "extremo", rol: "ED", dorsal: 19,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf20", nombre: "Naomie", apellido: "Feller", apodo: "Feller", posicion: "extremo", rol: "ED", dorsal: 20,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", valorMercado: "275", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
-            { id: "pf24", nombre: "Lotte", apellido: "Keukelaar", apodo: "Keukelaar", posicion: "extremo", rol: "ED", dorsal: 24,piePreferido:'Izquierdo', nacionalidad: "Países Bajos", fechaNacimiento: "2005-09-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/KEUKELAAR_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
-            { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "extremo", rol: "EI", dorsal: 38,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" },
-            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=420" }
+            { id: "pf5", nombre: "Paula", apellido: "Comendador", apodo: "Pau Comendador", posicion: "delantero", rol: "ED", dorsal: 5,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-01-12", categoria: "Primer Equipo", estado: "Activo", valorMercado: "70", unidad:"K€", altura: "1.65 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_AV38975_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf7", nombre: "Athenea", apellido: "del Castillo", apodo: "Athenea", posicion: "extremo", rol: "ED", dorsal: 7,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2000-10-24", categoria: "Primer Equipo", estado: "Activo", valorMercado: "650", unidad:"K€", altura: "1.60 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/ATHENEA_AV38283_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf9", nombre: "Signe", apellido: "Bruun", apodo: "Bruun", posicion: "delantero", rol: "DC", dorsal: 9,piePreferido:'Izquierdo', nacionalidad: "Dinamarca", fechaNacimiento: "1998-04-02", categoria: "Primer Equipo", estado: "Activo", valorMercado: "325", unidad:"K€", altura: "1.78 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/BRUUN_SG12081_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf11", nombre: "Alba", apellido: "Redondo", apodo: "Alba Redondo", posicion: "delantero", rol: "DC", dorsal: 11,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "1996-08-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "480", unidad:"K€", altura: "1.69 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/REDONDO_SG11818_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf18", nombre: "Linda", apellido: "Caicedo", apodo: "Linda Caicedo", posicion: "extremo", rol: "EI", dorsal: 18,piePreferido:'Izquierdo', nacionalidad: "Colombia", fechaNacimiento: "2005-02-22", categoria: "Primer Equipo", estado: "Activo", valorMercado: "1", unidad:"M€", altura: "1.61 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/LINDA_AV39478_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf19", nombre: "Eva", apellido: "Navarro", apodo: "Eva Navarro", posicion: "extremo", rol: "ED", dorsal: 19,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2001-01-27", categoria: "Primer Equipo", estado: "Activo", valorMercado: "200", unidad:"K€", altura: "1.62 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/EVA_NAVARRO_AV39366_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf20", nombre: "Naomie", apellido: "Feller", apodo: "Feller", posicion: "extremo", rol: "ED", dorsal: 20,piePreferido:'Izquierdo', nacionalidad: "Francia", fechaNacimiento: "2001-11-06", categoria: "Primer Equipo", estado: "Activo", valorMercado: "275", unidad:"K€", altura: "1.70 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/FELLER_AV39583_380x501?Desktop&fit=wrap&wid=288&hei=384" },
+            { id: "pf24", nombre: "Lotte", apellido: "Keukelaar", apodo: "Keukelaar", posicion: "extremo", rol: "ED", dorsal: 24,piePreferido:'Izquierdo', nacionalidad: "Países Bajos", fechaNacimiento: "2005-09-25", categoria: "Primer Equipo", estado: "Activo", valorMercado: "175", unidad:"K€", altura: "1.75 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/KEUKELAAR_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
+            { id: "pf38", nombre: "Naiara", apellido: "Sanmartín", apodo: "Naiara", posicion: "extremo", rol: "EI", dorsal: 38,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2006-01-23", categoria: "Cantera", estado: "Activo", valorMercado: "40", unidad:"K€", altura: "1.65 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/NAIARA_SAN_MARTIN_JT11237_550x650?$Desktop$&fit=wrap&wid=420" },
+            { id: "pf43", nombre: "Iris", apellido: "Ashley", apodo: "Iris Ashley", posicion: "delantero", rol: "DC", dorsal: 43,piePreferido:'Izquierdo', nacionalidad: "España", fechaNacimiento: "2007-11-09", categoria: "Cantera", estado: "Activo", valorMercado: "30", unidad:"K€", altura: "1.68 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/IRIS_JT11144_550x650?$Desktop$&fit=wrap&wid=420" }
             ];
         // Coordenadas para la Pizarra Táctica (top%, left%)
         // El portero siempre es el índice 0.
@@ -6064,63 +6094,41 @@ function viewPlayerDetails(playerId) {
 
     // --- RENDER HEADER ---
     headerContainer.innerHTML = `
-        <div class="px-6 pt-6 pb-2">
-            <div class="flex justify-between items-start">
-                <div class="flex items-center gap-5">
-                    <div class="relative">
-                        <img src="${player.foto}" class="w-20 h-20 rounded-full border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-200'} object-cover shadow-md" onerror="this.src='https://via.placeholder.com/150'">
-                        <div class="absolute -bottom-2 -right-2 bg-slate-800 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white">
-                            ${player.dorsal === 'DT' ? 'DT' : '#' + player.dorsal}
-                        </div>
-                    </div>
-                    <div>
-                        <h2 class="text-2xl font-bold text-slate-800 leading-tight">${player.nombre} ${player.apellido}</h2>
-                        <div class="flex items-center flex-wrap gap-2 mt-1 text-sm text-gray-500">
-                            <span class="bg-gray-100 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider text-gray-600">${player.posicion}</span>
-                            <span>•</span>
-                            <span>${player.nacionalidad || '-'}</span>
-                            <span>•</span>
-                            <span>${formatDate(player.fechaNacimiento)} (${safeAge(player.fechaNacimiento)} años)</span>
-                            
-                            ${player.piePreferido ? `
-                                <span>•</span>
-                                <span class="text-gray-600 font-medium">Pie: ${player.piePreferido}</span>
-                            ` : ''}
+        <div class="px-6 pt-6 pb-2 relative">
+            <button onclick="closePlayerDetailsModal()" class="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors z-10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
 
-                             <button onclick="openPlayerStatusModal('${player.id}')" class="ml-2 text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border transition-colors">
-                                ${player.estado === 'Activo' ? '✅' : '❌'}
-                            </button>
-                        </div>
-                        
-                        <div class="mt-3 flex flex-wrap gap-4 bg-slate-50 border border-slate-200 rounded-lg p-2 w-fit">
-                            <div class="flex flex-col">
-                                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Fichado</span>
-                                <span class="text-xs font-bold text-slate-700">${player.fechaFichaje ? formatDate(player.fechaFichaje) : '-'}</span>
-                            </div>
-                            <div class="w-px bg-slate-200"></div>
-                            <div class="flex flex-col">
-                                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Coste</span>
-                                <span class="text-xs font-bold text-emerald-600">${player.costeFichaje || '-'}</span>
-                            </div>
-                            <div class="w-px bg-slate-200"></div>
-                            <div class="flex flex-col">
-                                <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Contrato</span>
-                                <span class="text-xs font-bold text-blue-600">${player.finContrato ? formatDate(player.finContrato) : '-'}</span>
-                            </div>
-                        </div>
+            <div class="flex flex-col items-center justify-center text-center">
+                <div class="relative mb-3">
+                    <img src="${player.foto}" class="w-24 h-24 rounded-full border-4 ${player.estado === 'Activo' ? 'border-amber-400' : 'border-gray-200'} object-cover shadow-md" onerror="this.src='https://via.placeholder.com/150'">
+                    <div class="absolute -bottom-2 -right-2 bg-slate-800 text-white text-xs font-bold px-2 py-0.5 rounded-full border-2 border-white">
+                        ${player.dorsal === 'DT' ? 'DT' : '#' + player.dorsal}
                     </div>
                 </div>
-                <button onclick="closePlayerDetailsModal()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+                
+                <h2 class="text-3xl font-bold text-slate-800 leading-tight mb-1">${player.nombre} ${player.apellido}</h2>
+                
+                <div class="flex items-center gap-2">
+                    <span class="bg-slate-800 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">${player.posicion}</span>
+                    <button onclick="openPlayerStatusModal('${player.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded border transition-colors">
+                        ${player.estado === 'Activo' ? '✅' : '❌'}
+                    </button>
+                </div>
             </div>
 
-            <div class="flex gap-6 mt-6 border-b border-gray-200">
-                <button onclick="switchPlayerTab('visual')" id="tab-btn-visual" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2">
-                    <span>🔥</span> Resumen
+            <div class="flex gap-6 mt-6 border-b border-gray-200 overflow-x-auto">
+                <button onclick="switchPlayerTab('profile')" id="tab-btn-profile" class="pb-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition-colors flex items-center gap-2 whitespace-nowrap">
+                    <span>👤</span> Perfil
+                </button>
+                <button onclick="switchPlayerTab('season')" id="tab-btn-season" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2 whitespace-nowrap">
+                    <span>📊</span> Temporada
                 </button>
                 <button onclick="switchPlayerTab('history')" id="tab-btn-history" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
                     <span>📋</span> Historial
+                </button>
+                <button onclick="switchPlayerTab('career')" id="tab-btn-career" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
+                    <span>📅</span> Trayectoria
                 </button>
                 <button onclick="switchPlayerTab('fut')" id="tab-btn-fut" class="pb-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-2">
                     <span>🎴</span> Carta FUT
@@ -6129,31 +6137,26 @@ function viewPlayerDetails(playerId) {
         </div>
     `;
 
-    // --- NUEVO: PREPARAR SECCIÓN DE TROFEOS ---
+    // --- PREPARAR CONTENIDO ---
     const trophiesHtml = getPlayerBadgesHTML(player.id);
-    const badgesSection = trophiesHtml ? `
-        <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm mb-6">
-             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span>🏆 Logros y Trofeos</span>
-                <div class="h-px bg-gray-100 flex-1"></div>
-            </h3>
-            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
-                ${trophiesHtml}
-            </div>
-        </div>
-    ` : '';
+    
+    // 1. Pestaña Perfil
+    const profileHTML = renderProfileTabContent(player, trophiesHtml);
 
-    // Renderizar contenidos de pestañas
-    const visualHTML = renderVisualTab(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
+    // 2. Pestaña Temporada
+    const seasonHTML = renderSeasonTabContent(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
+    
+    // 3. Pestaña Historial
     const historyHTML = typeof renderHistoryTab === 'function' ? renderHistoryTab(player, playerMatches) : '';
+    // 4. Pestaña Trayectoria
+    const careerHTML = typeof renderCareerTab === 'function' ? renderCareerTab(player) : '';
 
     // INYECTAR CONTENIDO (badgesSection añadida al principio de visual)
     contentContainer.innerHTML = `
-        <div id="tab-content-visual" class="animate-fade-in block space-y-6">
-            ${badgesSection} 
-            ${visualHTML}
-        </div>
+        <div id="tab-content-profile" class="animate-fade-in block space-y-6">${profileHTML}</div>
+        <div id="tab-content-season" class="animate-fade-in hidden space-y-6">${seasonHTML}</div>
         <div id="tab-content-history" class="animate-fade-in hidden">${historyHTML}</div>
+        <div id="tab-content-career" class="animate-fade-in hidden">${careerHTML}</div>
         <div id="tab-content-fut" class="animate-fade-in hidden flex justify-center py-10"></div>
     `;
 
@@ -6162,6 +6165,7 @@ function viewPlayerDetails(playerId) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.classList.add('active');
+    lockScroll();
     
     setTimeout(() => { 
         modal.classList.remove('opacity-0'); 
@@ -6172,9 +6176,99 @@ function viewPlayerDetails(playerId) {
 }
 
 // =========================================================
-// 2. FUNCIÓN VISUAL (LA QUE PINTA LA TABLA)
+// 2. RENDERIZADORES DE PESTAÑAS
 // =========================================================
-function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, statsByComp) {
+
+function renderProfileTabContent(player, trophiesHtml) {
+    // 1. Tarjeta de Datos Personales (NUEVA)
+    const personalCard = `
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm mb-6">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span>👤 Datos Personales</span>
+                <div class="h-px bg-gray-100 flex-1"></div>
+            </h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Nacionalidad</p>
+                    <p class="text-sm font-bold text-slate-700 truncate">${player.nacionalidad}</p>
+                </div>
+                <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Edad</p>
+                    <p class="text-sm font-bold text-slate-700">${calculateAge(player.fechaNacimiento)} años</p>
+                </div>
+                <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Altura</p>
+                    <p class="text-sm font-bold text-slate-700">${player.altura || '-'}</p>
+                </div>
+                <div class="text-center p-2 bg-slate-50 rounded-lg border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Pie</p>
+                    <p class="text-sm font-bold text-slate-700">${player.piePreferido || '-'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 2. Tarjeta de Datos Contractuales
+    const infoCard = `
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span>📋 Información Contractual</span>
+                <div class="h-px bg-gray-100 flex-1"></div>
+            </h3>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Fecha Fichaje</p>
+                    <p class="text-sm font-bold text-slate-700">${player.fechaFichaje ? formatDate(player.fechaFichaje) : '-'}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Coste</p>
+                    <p class="text-sm font-bold text-emerald-600">${player.costeFichaje || '-'}</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-1">Fin Contrato</p>
+                    <p class="text-sm font-bold text-blue-600">${player.finContrato ? formatDate(player.finContrato) : '-'}</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 3. Sección de Logros
+    const badgesSection = trophiesHtml ? `
+        <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+             <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span>🏆 Logros y Trofeos</span>
+                <div class="h-px bg-gray-100 flex-1"></div>
+            </h3>
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                ${trophiesHtml}
+            </div>
+        </div>
+    ` : '';
+
+    // 4. Gráfica de Valor de Mercado
+    let marketChartHTML = '';
+    if (player.historialValor && player.historialValor.length > 0) {
+        marketChartHTML = `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Evolución Valor de Mercado</h4>
+                <div class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">Actual: ${player.valorMercado} ${player.unidad || 'M€'}</div>
+            </div>
+            <div class="relative h-64 w-full">
+                <canvas id="chart-player-market-value"></canvas>
+            </div>
+        </div>`;
+    } else {
+        marketChartHTML = `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center">
+            <p class="text-gray-400 text-sm italic">Sin historial de valor de mercado disponible.</p>
+        </div>`;
+    }
+
+    return `${personalCard}${infoCard}${badgesSection}${marketChartHTML}`;
+}
+
+function renderSeasonTabContent(player, stats, avgRating, matches, ratingsHistory, statsByComp) {
     const isCoach = player.posicion === 'entrenador';
     
     // --- 1. TARJETAS DE RESUMEN ---
@@ -6285,21 +6379,6 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
         </div>`;
     }
 
-    // --- 3.5 GRÁFICO VALOR DE MERCADO (NUEVO) ---
-    let marketChartHTML = '';
-    if (player.historialValor && player.historialValor.length > 0) {
-        marketChartHTML = `
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-6">
-            <div class="flex justify-between items-center mb-4">
-                <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Evolución Valor de Mercado</h4>
-                <div class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Actual: ${player.valorMercado} ${player.unidad || 'M€'}</div>
-            </div>
-            <div class="relative h-48 w-full">
-                <canvas id="chart-player-market-value"></canvas>
-            </div>
-        </div>`;
-    }
-
     // --- 4. TOP ACTUACIONES (MANTENIDO) ---
     let topPerfHTML = '';
     if (!isCoach) {
@@ -6320,7 +6399,7 @@ function renderVisualTab(player, stats, avgRating, matches, ratingsHistory, stat
     
     setTimeout(runCounters, 50);
 
-    return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${marketChartHTML}${topPerfHTML}`;
+    return `${summaryCardsHTML}${tableDarkHTML}${chartHTML}${topPerfHTML}`;
 }
 
 let playerDetailChart = null;
@@ -8121,7 +8200,7 @@ function viewMatchDetails(matchId) {
                     📷
                 </button>
                 
-                <button onclick="document.getElementById('match-details-modal').classList.add('hidden'); document.getElementById('match-details-modal').classList.remove('flex');" 
+                <button onclick="closeViewMatchModal()" 
                         class="text-white/50 hover:text-white hover:bg-white/10 rounded-full w-8 h-8 flex items-center justify-center transition cursor-pointer">
                     ✕
                 </button>
@@ -8208,6 +8287,7 @@ function viewMatchDetails(matchId) {
     // 6. MOSTRAR
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    lockScroll();
 }
 /* ========================================================= */
 /* 🔄 CAMBIAR PESTAÑAS EN "VER DETALLES"                     */
@@ -8384,6 +8464,7 @@ function editMatch(matchId) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.style.display = 'flex';
+    lockScroll();
 }
 
 function renderEditStatsList(match, allPlayers) {
@@ -8730,6 +8811,7 @@ function closeEditMatchModal() {
         // 2. IMPORTANTE: Sobrescribir el estilo en línea
         // Esto anula el 'display: flex' que pusimos al abrir
         modal.style.display = 'none'; 
+        unlockScroll();
         
         console.log("🔒 Modal cerrado correctamente.");
     }
@@ -8737,10 +8819,12 @@ function closeEditMatchModal() {
         
         function closePlayerStatusModal() {
              document.getElementById('player-status-modal').classList.remove('active');
+             unlockScroll();
         }
                
         function closeMatchDetailModal() {
              document.getElementById('match-detail-modal').classList.remove('active');
+             unlockScroll();
         }
         
         function openPlayerStatusModal(playerId) {
@@ -8765,6 +8849,7 @@ function closeEditMatchModal() {
                 </div>
             `;
             modal.classList.add('active');
+            lockScroll();
         }
         
         function changePlayerStatus(playerId, newStatus) {
@@ -8788,6 +8873,7 @@ function closeEditMatchModal() {
                 
                 // Mostrar Modal
                 document.getElementById('extra-round-modal').classList.add('active');
+                lockScroll();
                 return true; // Indica que se ha disparado el trigger (pausando el cierre)
             }
             return false;
@@ -8806,6 +8892,7 @@ function closeEditMatchModal() {
             }
             
             document.getElementById('extra-round-modal').classList.remove('active');
+            unlockScroll();
             
             // Refrescar y salir como si hubiera terminado el registro normal
             resetNewMatchForm();
@@ -9311,6 +9398,7 @@ function renderAll(prefixInput) {
             }).join('');
 
             modal.classList.add('active');
+            lockScroll();
             setTimeout(() => searchInput.focus(), 100);
         }
 
@@ -9334,6 +9422,7 @@ function renderAll(prefixInput) {
         function closePlayerSelector() {
             document.getElementById('player-selector-modal').classList.remove('active');
             currentSelectorSlot = null;
+            unlockScroll();
         }
 
         function selectPlayerForSlot(playerId) {
@@ -11694,10 +11783,12 @@ function openTrophyRoom() {
     document.getElementById('trophy-count').textContent = `${totalUnlocked}/${ACHIEVEMENTS_CONFIG.length}`;
 
     modal.classList.add('active');
+    lockScroll();
 }
 
 function closeTrophyRoom() {
     document.getElementById('trophy-modal').classList.remove('active');
+    unlockScroll();
 }
 // ==========================================
 // FUNCIONES AUXILIARES PARA LA FICHA DE JUGADOR
@@ -11707,7 +11798,7 @@ function closeTrophyRoom() {
 // 1. FUNCIÓN PARA CAMBIAR DE PESTAÑA
 function switchPlayerTab(tabName) {
     // 1. Ocultar todos los contenidos y desactivar botones
-    ['visual', 'history', 'fut'].forEach(t => {
+    ['profile', 'season', 'history', 'career', 'fut'].forEach(t => {
         const content = document.getElementById(`tab-content-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         
@@ -11791,6 +11882,47 @@ function renderHistoryTab(player, matches) {
         </div>
     `;
 }
+
+function renderCareerTab(player) {
+    if (!player.historialTemporadas || player.historialTemporadas.length === 0) {
+        return `<div class="text-center py-10 text-gray-400 italic">No hay historial de temporadas anteriores.</div>`;
+    }
+
+    // Ordenar por temporada descendente
+    const history = [...player.historialTemporadas].sort((a, b) => b.temporada.localeCompare(a.temporada));
+
+    return `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-xs">
+                        <tr>
+                            <th class="px-4 py-3">Temporada</th>
+                            <th class="px-4 py-3 text-center">PJ</th>
+                            <th class="px-4 py-3 text-center text-emerald-600">Goles</th>
+                            <th class="px-4 py-3 text-center text-blue-600">Asist</th>
+                            <th class="px-4 py-3 text-center text-yellow-600">🟨</th>
+                            <th class="px-4 py-3 text-center text-red-600">🟥</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        ${history.map(h => `
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-4 py-3 font-bold text-slate-700">${h.temporada}</td>
+                                <td class="px-4 py-3 text-center font-medium">${h.partidos}</td>
+                                <td class="px-4 py-3 text-center font-bold text-emerald-600">${h.goles}</td>
+                                <td class="px-4 py-3 text-center font-bold text-blue-600">${h.asistencias}</td>
+                                <td class="px-4 py-3 text-center">${h.amarillas}</td>
+                                <td class="px-4 py-3 text-center">${h.rojas}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
 // =========================================================
 // FUNCIÓN PARA CERRAR EL MODAL
 // =========================================================
@@ -11817,6 +11949,7 @@ function closePlayerDetailsModal() {
         if(header) header.innerHTML = '';
         if(content) content.innerHTML = '';
 
+        unlockScroll();
         currentPlayerDetailsId = null;
     }, 300);
 }
@@ -12930,6 +13063,7 @@ function openMinuteModal(targetId, title) {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.style.display = 'flex';
+    lockScroll();
     
     setTimeout(() => modalInput.focus(), 100);
 }
@@ -12940,6 +13074,7 @@ function closeMinuteModal() {
     if(modal) {
         modal.classList.add('hidden');
         modal.style.display = 'none';
+        unlockScroll();
     }
 }
 
@@ -13199,6 +13334,7 @@ function openGoalTagging(goalInputId, minutesStr) {
     const modal = document.getElementById('goal-tag-modal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    lockScroll();
 }
 
 // C. CERRAR
@@ -13207,6 +13343,7 @@ function closeGoalTagModal() {
     if(modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        unlockScroll();
     }
 }
 
@@ -13762,6 +13899,7 @@ function openAdvancedSearch() {
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modal.classList.add('active');
+    lockScroll();
 }
 
 function closeAdvancedSearch() {
@@ -13769,6 +13907,7 @@ function closeAdvancedSearch() {
     modal.classList.remove('active');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+    unlockScroll();
 }
 
 function executeAdvancedSearch() {
@@ -13901,13 +14040,14 @@ function showCrystalBall() {
                     "Al ritmo actual (${ppg.toFixed(2)} pts/partido), acabarás la temporada con <strong class="text-white">${projectedPoints} puntos</strong>."
                 </div>
                 
-                <button onclick="this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-white text-purple-900 font-bold rounded-full hover:bg-purple-100 transition shadow-lg">
+                <button onclick="unlockScroll(); this.closest('.fixed').remove()" class="mt-6 px-6 py-2 bg-white text-purple-900 font-bold rounded-full hover:bg-purple-100 transition shadow-lg">
                     Cerrar Predicción
                 </button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+    lockScroll();
 }
 
 // ==========================================
@@ -13934,11 +14074,21 @@ document.addEventListener('click', function(e) {
         }, { once: true });
     }
 });
+
+// --- BOTÓN VOLVER ARRIBA ---
+window.addEventListener('scroll', () => {
+    const btn = document.getElementById('back-to-top');
+    if (btn) {
+        if (window.scrollY > 300) btn.classList.remove('hidden');
+        else btn.classList.add('hidden');
+    }
+});
         // Global Modal Close Handler
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.classList.remove('active');
+                    unlockScroll();
                 }
             });
         });
@@ -13949,6 +14099,108 @@ document.addEventListener('click', function(e) {
             initDarkMode();
             preloadCalendars();
         });
+        
+        // ==========================================
+        // SCROLL LOCK UTILS
+        // ==========================================
+        function lockScroll() { document.body.style.overflow = 'hidden'; }
+        function unlockScroll() { document.body.style.overflow = ''; }
+        
+        function closeViewMatchModal() {
+            const modal = document.getElementById('match-details-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                unlockScroll();
+            }
+        }
+        
+        // ==========================================
+        // 1. LÓGICA TILT 3D (CARTAS)
+        // ==========================================
+        document.addEventListener('mousemove', (e) => {
+            const card = e.target.closest('.tilt-card');
+            if (!card) return;
+            
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Invertir ejes para efecto tilt correcto
+            const rotateX = ((y - centerY) / centerY) * -8; 
+            const rotateY = ((x - centerX) / centerX) * 8;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+        });
+
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest('.tilt-card')) {
+                const card = e.target.closest('.tilt-card');
+                card.style.transform = ''; 
+            }
+        }, true);
+
+        // ==========================================
+        // 3. LÓGICA LIGHTBOX (MODO CINE)
+        // ==========================================
+        function openLightbox(src, caption) {
+            const modal = document.getElementById('lightbox-modal');
+            const img = document.getElementById('lightbox-img');
+            const cap = document.getElementById('lightbox-caption');
+            
+            img.src = src;
+            cap.textContent = caption || '';
+            
+            modal.classList.remove('hidden');
+            // Pequeño delay para permitir la transición CSS
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('active');
+            }, 10);
+            lockScroll();
+        }
+
+        function closeLightbox() {
+            const modal = document.getElementById('lightbox-modal');
+            modal.classList.remove('active');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                unlockScroll();
+            }, 300);
+        }
+
+        // ==========================================
+        // 4. BARRA DE PROGRESO DE TEMPORADA
+        // ==========================================
+        function renderSeasonProgressBar() {
+            const container = document.getElementById('season-progress-widget');
+            if (!container) return;
+
+            const matches = getData('matches');
+            // Estimación: Liga (38/30) + Champions (min 8) + Copa (min 1) + Supercopa (min 1)
+            // Usamos 55 como un estándar de temporada completa para el Madrid
+            const totalEstimated = currentTeam === 'masculino' ? 60 : 45; 
+            const played = matches.length;
+            const percentage = Math.min(100, Math.round((played / totalEstimated) * 100));
+
+            container.classList.remove('hidden');
+            container.innerHTML = `
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide">Progreso de Temporada</h3>
+                        <p class="text-xs text-gray-500">Partidos jugados: <span class="font-bold text-slate-800">${played}</span> / ~${totalEstimated}</p>
+                    </div>
+                    <div class="text-2xl font-black text-indigo-600">${percentage}%</div>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-1000 ease-out" style="width: ${percentage}%"></div>
+                </div>
+            `;
+        }
 
     </script>
 </body>
