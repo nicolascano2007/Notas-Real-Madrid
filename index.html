@@ -1318,7 +1318,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
-                    
                     <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
                         🔒
                     </button>
@@ -2664,7 +2663,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         </div>
     </div>
 </div>
-
     <!-- LOGIN MODAL -->
     <div id="login-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-[10000] hidden backdrop-blur-sm">
         <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl m-4">
@@ -3510,7 +3508,7 @@ function getPositionName(formation, index) {
         // ==========================================
 
         // ⚠️ CONFIGURACIÓN FIREBASE: Reemplaza esto con tus datos de la consola de Firebase
-            const FIREBASE_CONFIG = {
+        const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAPk1iayY5xiDMXpQ5_H0eRKB8ZZ22TEQs",
             authDomain: "real-madrid-web.firebaseapp.com",
             databaseURL: "https://real-madrid-web-default-rtdb.europe-west1.firebasedatabase.app",
@@ -3518,7 +3516,7 @@ function getPositionName(formation, index) {
             storageBucket: "real-madrid-web.firebasestorage.app",
             messagingSenderId: "956440950120",
             appId: "1:956440950120:web:06250e00147814c61352dd"
-            };
+        };
 
         let appMode = 'local'; // 'local' | 'global'
         let cloudCache = {};
@@ -3527,23 +3525,36 @@ function getPositionName(formation, index) {
 
         function initFirebase() {
             if (!isFirebaseInitialized && typeof firebase !== 'undefined') {
-                if (FIREBASE_CONFIG.apiKey === "API_KEY_AQUI") {
-                    alert("⚠️ ATENCIÓN: Para usar el modo Global, debes editar el código HTML y poner tu configuración de Firebase (busca 'FIREBASE_CONFIG' en el código).");
-                    return false;
-                }
                 try {
-                    firebase.initializeApp(FIREBASE_CONFIG);
+                    // Detectar configuración (soporta ambos nombres: FIREBASE_CONFIG o firebaseConfig)
+                    let config = null;
+                    if (typeof FIREBASE_CONFIG !== 'undefined') config = FIREBASE_CONFIG;
+                    else if (typeof firebaseConfig !== 'undefined') config = firebaseConfig;
+
+                    if (!config) {
+                        alert("⚠️ Error: No se encuentra la configuración. Asegúrate de pegar el código de Firebase Console.");
+                        return false;
+                    }
+
+                    if (config.apiKey === "API_KEY_AQUI" || config.apiKey.includes("API_KEY")) {
+                        alert("⚠️ ATENCIÓN: Para usar el modo Global, debes editar el código HTML y poner tu configuración de Firebase real.");
+                        return false;
+                    }
+
+                    firebase.initializeApp(config);
                     isFirebaseInitialized = true;
-                    // Escuchar cambios de autenticación
-                    firebase.auth().onAuthStateChanged((user) => {
-                        currentUser = user;
-                        updateAuthUI();
-                        // Si estamos en modo global, recargar para mostrar/ocultar botones de edición
-                        if (appMode === 'global') {
-                            if (document.getElementById('section-partidos').classList.contains('hidden') === false) renderMatches();
-                            if (document.getElementById('section-plantilla').classList.contains('hidden') === false) renderPlayers();
-                        }
-                    });
+                    
+                    if (firebase.auth) {
+                        firebase.auth().onAuthStateChanged((user) => {
+                            currentUser = user;
+                            updateAuthUI();
+                            // Recargar vistas si estamos en modo global para actualizar botones
+                            if (appMode === 'global') {
+                                if (!document.getElementById('section-partidos').classList.contains('hidden')) renderMatches();
+                                if (!document.getElementById('section-plantilla').classList.contains('hidden')) renderPlayers();
+                            }
+                        });
+                    }
                     return true;
                 } catch (e) {
                     console.error("Firebase init error:", e);
@@ -3555,8 +3566,6 @@ function getPositionName(formation, index) {
         }
 
         function toggleLoginModal() {
-            if (!isFirebaseInitialized) initFirebase();
-
             const modal = document.getElementById('login-modal');
             const form = document.getElementById('login-form');
             const info = document.getElementById('login-user-info');
@@ -3570,15 +3579,8 @@ function getPositionName(formation, index) {
                 info.classList.add('hidden');
             }
             
-            if (modal.classList.contains('active')) {
-                modal.classList.remove('active');
-                modal.classList.add('hidden');
-                unlockScroll();
-            } else {
-                modal.classList.add('active');
-                modal.classList.remove('hidden');
-                lockScroll();
-            }
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
 
         function handleLogin(e) {
@@ -3629,30 +3631,45 @@ function getPositionName(formation, index) {
                 if (initFirebase()) {
                     btnGlobal.className = "px-4 py-2 rounded-md font-bold bg-blue-600 text-white shadow-sm transition-all text-sm";
                     btnLocal.className = "px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm";
-                    await syncFromCloud();
+                    setupRealtimeListener();
                 } else {
                     appMode = 'local';
                 }
             }
         }
 
-        async function syncFromCloud() {
+        function setupRealtimeListener() {
             const loader = document.createElement('div');
+            loader.id = "cloud-loader";
             loader.className = "fixed inset-0 bg-black/80 z-[99999] flex flex-col items-center justify-center text-white";
-            loader.innerHTML = `<div class="text-4xl mb-4 animate-bounce">☁️</div><p>Sincronizando datos...</p>`;
+            loader.innerHTML = `<div class="text-4xl mb-4 animate-bounce">☁️</div><p>Conectando tiempo real...</p>`;
             document.body.appendChild(loader);
 
-            try {
-                const dbRef = firebase.database().ref('/');
-                const snapshot = await dbRef.once('value');
-                cloudCache = snapshot.val() || {};
-                console.log("Datos descargados:", cloudCache);
-            } catch (error) {
-                console.error("Error sync:", error);
-                alert("Error al descargar datos de la nube.");
-            } finally {
-                loader.remove();
-            }
+            const dbRef = firebase.database().ref('/');
+            dbRef.off(); // Limpiar listeners anteriores
+
+            dbRef.on('value', (snapshot) => {
+                const val = snapshot.val();
+                cloudCache = val || {};
+                console.log("🔄 Datos actualizados (Realtime)");
+                
+                const existingLoader = document.getElementById("cloud-loader");
+                if (existingLoader) existingLoader.remove();
+
+                // Refrescar la vista activa
+                const activeTabBtn = document.querySelector('.tab-btn.tab-active');
+                if (activeTabBtn) {
+                    const tabId = activeTabBtn.id;
+                    if (tabId === 'tab-principal') renderPrincipal();
+                    else if (tabId === 'tab-plantilla') renderPlayers();
+                    else if (tabId === 'tab-calendario') renderCalendar();
+                    else if (tabId === 'tab-partidos') renderMatches();
+                    else if (tabId === 'tab-stats') {
+                        if (!document.getElementById('stats-h2h').classList.contains('hidden')) renderH2H();
+                        else if (!document.getElementById('stats-general').classList.contains('hidden')) renderStats();
+                    }
+                }
+            });
         }
 
         function getData(key) {
@@ -5573,15 +5590,28 @@ function renderPerformanceMatrix(matches) {
                 container.classList.add('hidden');
                 return;
             }
-
-            const matches = getData('matches').filter(m => m.opponent === opponent);
+            let matches = getData('matches').filter(m => m.opponent === opponent);
+            // Ordenar por fecha descendente (más reciente primero)
+            matches.sort((a, b) => new Date(b.date) - new Date(a.date));
             const players = getPlayers();
 
             let wins = 0, draws = 0, losses = 0, gf = 0, ga = 0;
             const playerPerfs = {};
 
             matches.forEach(m => {
-                if (m.outcome === 'victoria') wins++;
+                if (m.outcome === 'victoria') {
+                    wins++;
+                    // Calcular diferencia de goles para mayor goleada
+                    const parts = m.result.replace('*','').split('-').map(Number);
+                    let diff = 0;
+                    if (m.venue === 'local') diff = parts[0] - parts[1];
+                    else diff = parts[1] - parts[0];
+                    
+                    if (diff > maxDiff) {
+                        maxDiff = diff;
+                        biggestWin = m;
+                    }
+                }
                 else if (m.outcome === 'empate') draws++;
                 else losses++;
 
@@ -5610,6 +5640,7 @@ function renderPerformanceMatrix(matches) {
 
             const scorerP = topScorer.id ? players.find(p => p.id === topScorer.id) : null;
             const ratedP = bestRated.id ? players.find(p => p.id === bestRated.id) : null;
+            const lastMatch = matches.length > 0 ? matches[0] : null;
 
             container.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -5634,6 +5665,25 @@ function renderPerformanceMatrix(matches) {
                             <p class="text-xs text-gray-500 uppercase font-bold">Mejor Valoración</p>
                             <p class="font-bold text-gray-800">${ratedP.nombre}</p>
                             <p class="text-sm text-blue-600 font-bold">${bestRated.val.toFixed(2)} Nota Media</p>
+                        </div>
+                    </div>` : ''}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    ${lastMatch ? `
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Último Enfrentamiento</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-800">${formatDate(lastMatch.date)}</span>
+                            <span class="font-black text-lg ${getResultClass(lastMatch.outcome).replace('bg-', 'text-')}">${lastMatch.result}</span>
+                        </div>
+                    </div>` : ''}
+                    ${biggestWin ? `
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <p class="text-xs text-gray-500 uppercase font-bold mb-1">Mayor Goleada</p>
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-gray-800">${formatDate(biggestWin.date)}</span>
+                            <span class="font-black text-lg text-green-600">${biggestWin.result}</span>
                         </div>
                     </div>` : ''}
                 </div>
@@ -5938,8 +5988,6 @@ function renderPerformanceMatrix(matches) {
             renderAIPrediction();
             renderClubTrophies();
             renderTrafficLight();
-            renderTopPerformances();
-
         }
 
         // ==========================================
@@ -6099,9 +6147,6 @@ function renderPlayers() {
     
     // --- Ordenación ---
     players.sort((a, b) => {
-        // Entrenador siempre primero
-        if (a.posicion === 'entrenador') return -1;
-        if (b.posicion === 'entrenador') return 1;
         const inactA = a.estado === 'Inactivo' || a.estado === 'Leyenda' || a.estado === 'Retirado';
         const inactB = b.estado === 'Inactivo' || b.estado === 'Leyenda' || b.estado === 'Retirado';
 
@@ -6116,9 +6161,9 @@ function renderPlayers() {
     const container = document.getElementById('players-list');
     
     container.innerHTML = players.map((player, index) => {
-        // Determinar si es editable (Local siempre sí, Global solo si hay usuario)
+        // Determinar si es editable
         const isEditable = appMode === 'local' || (appMode === 'global' && currentUser);
-        
+
         const delay = index < 20 ? index * 50 : 0; 
         const styleDelay = `style="animation-delay: ${delay}ms"`;
 
