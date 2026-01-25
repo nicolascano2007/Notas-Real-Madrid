@@ -1229,6 +1229,52 @@ button:active, .btn:active {
     z-index: 60;
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
+/* --- Estilos para el Tour Guiado (Shepherd.js) --- */
+.shepherd-element {
+    background: #1e293b;
+    border-radius: 1rem;
+    border: 1px solid #334155;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+.shepherd-header {
+    background: #334155;
+    padding: 1rem 1.5rem;
+}
+.shepherd-title {
+    color: #fbbf24;
+    font-weight: 800;
+}
+.shepherd-text {
+    padding: 1.5rem;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+.shepherd-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+.shepherd-button-secondary {
+    background: #475569;
+    color: #cbd5e1;
+}
+.shepherd-button-secondary:hover {
+    background: #64748b;
+}
+.shepherd-button-primary {
+    background: #fbbf24;
+    color: #1e293b;
+}
+.shepherd-button-primary:hover {
+    background: #f59e0b;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+.shepherd-arrow::before {
+    background-color: #1e293b;
+}
+
 
 /* --- MEJORAS DE INTERFAZ (SCROLLBARS & TRANSICIONES) --- */
 /* Scrollbar personalizado y elegante */
@@ -1255,6 +1301,10 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Shepherd.js Tour Library -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/css/shepherd.css"/>
+<script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
+
 
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -3492,6 +3542,7 @@ function getPositionName(formation, index) {
 
             // Force load calendar immediately after setup
             loadCalendar();
+            checkAndStartTour();
         }
 
         function returnToWelcome() {
@@ -3518,7 +3569,7 @@ function getPositionName(formation, index) {
             appId: "1:956440950120:web:06250e00147814c61352dd"
         };
 
-        let appMode = 'local'; // 'local' | 'global'
+        let appMode = 'global'; // 'local' | 'global'
         let cloudCache = {};
         let isFirebaseInitialized = false;
         let currentUser = null;
@@ -14334,6 +14385,78 @@ function showCrystalBall() {
     document.body.appendChild(modal);
     lockScroll();
 }
+// =========================================
+// TOUR GUIADO (SHEPHERD.JS)
+// =========================================
+
+function startTour() {
+    const tour = new Shepherd.Tour({
+        useModalOverlay: true,
+        defaultStepOptions: {
+            classes: 'shadow-2xl',
+            scrollTo: { behavior: 'smooth', block: 'center' }
+        }
+    });
+
+    // Pasos del tour
+    tour.addStep({
+        title: '¡Bienvenido a tu App de Notas!',
+        text: 'Este rápido tour te mostrará las funciones principales. Puedes saltarlo en cualquier momento.',
+        attachTo: { element: '#header-subtitle', on: 'bottom' },
+        buttons: [
+            { text: 'Saltar', action: tour.cancel, classes: 'shepherd-button-secondary' },
+            { text: 'Siguiente', action: tour.next }
+        ]
+    });
+    tour.addStep({
+        title: 'Tu Plantilla',
+        text: 'Aquí gestionas el estado de tus jugadores: si están activos, inactivos o cedidos.',
+        attachTo: { element: '#tab-plantilla', on: 'bottom' },
+        buttons: [{ text: 'Siguiente', action: tour.next }]
+    });
+    tour.addStep({
+        title: 'Calendario y Partidos',
+        text: 'Desde "Calendario" podrás ver los próximos partidos. Haz clic en un partido pasado para registrarlo.',
+        attachTo: { element: '#tab-calendario', on: 'bottom' },
+        buttons: [{ text: 'Siguiente', action: tour.next }]
+    });
+     tour.addStep({
+        title: 'Registrar un Partido',
+        text: 'Una vez seleccionado un partido del calendario, aquí es donde introduces las estadísticas y notas de cada jugador.',
+        attachTo: { element: '#tab-nuevo', on: 'bottom' },
+        buttons: [{ text: 'Siguiente', action: tour.next }]
+    });
+    tour.addStep({
+        title: 'Modo Oscuro',
+        text: '¿Prefieres un tema oscuro? Puedes cambiarlo en cualquier momento con este botón.',
+        attachTo: { element: '#btn-dark-mode', on: 'bottom' },
+        buttons: [{ text: 'Siguiente', action: tour.next }]
+    });
+    tour.addStep({
+        title: 'Modo Global (Nube)',
+        text: 'Para guardar tus datos en la nube y acceder desde cualquier dispositivo, activa el modo global e inicia sesión.',
+        attachTo: { element: '#btn-auth', on: 'left' },
+        buttons: [
+            { text: 'Finalizar', action: tour.complete }
+        ]
+    });
+
+    // Marcar el tour como completado al finalizar
+    tour.on('complete', () => {
+        localStorage.setItem('realMadridNotesTourCompleted', 'true');
+    });
+
+    tour.start();
+}
+
+function checkAndStartTour() {
+    // Solo empieza el tour si no se ha completado antes
+    if (!localStorage.getItem('realMadridNotesTourCompleted')) {
+        // Esperamos un poco para que la UI se pinte antes de empezar
+        setTimeout(startTour, 1000); 
+    }
+}
+
 
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
@@ -14379,11 +14502,26 @@ window.addEventListener('scroll', () => {
         });
 
         // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('App ready');
-            initDarkMode();
-            preloadCalendars();
-        });
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('App ready');
+    initDarkMode();
+    preloadCalendars();
+
+    // Inicia en modo Global por defecto
+    if (appMode === 'global') {
+        if (initFirebase()) {
+            // Actualiza la UI de los botones para que 'Global' aparezca seleccionado
+            document.getElementById('btn-mode-global').className = "px-4 py-2 rounded-md font-bold bg-blue-600 text-white shadow-sm transition-all text-sm";
+            document.getElementById('btn-mode-local').className = "px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm";
+            // Empieza a escuchar por cambios en tiempo real
+            setupRealtimeListener(); 
+        } else {
+            // Si Firebase falla, vuelve a modo local como medida de seguridad
+            setStorageMode('local');
+        }
+    }
+});
+
         
         // ==========================================
         // SCROLL LOCK UTILS
