@@ -1253,6 +1253,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 </head>
@@ -1265,6 +1266,12 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                  alt="Real Madrid" class="w-24 h-24 object-contain mx-auto mb-4 drop-shadow-2xl">
             <h1 class="text-3xl md:text-5xl font-bold mb-2 drop-shadow-md">Notas Real Madrid</h1>
             <p class="text-blue-100 font-medium text-lg drop-shadow-md">Temporada 2025/2026</p>
+            
+            <!-- STORAGE MODE TOGGLE -->
+            <div class="mt-6 bg-white/10 backdrop-blur-md p-1 rounded-lg inline-flex">
+                <button onclick="setStorageMode('local')" id="btn-mode-local" class="px-4 py-2 rounded-md font-bold bg-white text-slate-900 shadow-sm transition-all text-sm">📱 Local</button>
+                <button onclick="setStorageMode('global')" id="btn-mode-global" class="px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm">☁️ Global (Nube)</button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
@@ -1310,6 +1317,9 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
 
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
+                    </button>
+                    <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
+                        🔒
                     </button>
                 </div>
 
@@ -2287,7 +2297,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')" title="Asistencias Totales">Asis</th>
         <th id="th-aPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-blue-500" onclick="handleSort('aPer90')" title="Asistencias cada 90 min">A/90'</th>
         <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('ga')" title="Goles + Asistencias">G+A</th>
-        <th id="th-gaPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-purple-600" onclick="handleSort('gaPer90')" title="Producción (G+A) cada 90 min">P/90'</th>
+        <th id="th-gaPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-purple-600" onclick="handleSort('gaPer90')" title="Producción (G+A) cada 90 min">G+A/90'</th>
         <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-gray-600" onclick="handleSort('minutes')" title="Minutos Totales">Min</th>
         <th id="th-minPerMatch" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-gray-500" onclick="handleSort('minPerMatch')" title="Promedio Minutos por Partido">Min/P</th>
         <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')" title="MVPs Ganados">MVP</th>
@@ -2653,6 +2663,30 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         </div>
     </div>
 </div>
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-[10000] hidden backdrop-blur-sm">
+        <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl m-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Acceso Administrador</h3>
+                <button onclick="toggleLoginModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="login-email" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="login-password" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition">Entrar</button>
+            </form>
+            <div id="login-user-info" class="hidden mt-4 pt-4 border-t text-center">
+                <p class="text-sm text-gray-600 mb-2">Sesión iniciada como: <span id="user-email-display" class="font-bold"></span></p>
+                <button onclick="handleLogout()" class="text-sm text-red-600 hover:underline font-medium">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ADVANCED SEARCH MODAL -->
     <div id="advanced-search-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-50 p-4 hidden" style="z-index: 10000;">
@@ -3435,7 +3469,7 @@ function getPositionName(formation, index) {
             PLANTILLA_ACTUAL = config.plantilla;
             COMPETICIONES_ACTUALES = config.competiciones;
 
-            document.getElementById('header-subtitle').textContent = config.title;
+            document.getElementById('header-subtitle').textContent = config.title + (appMode === 'global' ? ' (☁️ Nube)' : ' (📱 Local)');
             document.getElementById('section-welcome').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
 
@@ -3472,29 +3506,170 @@ function getPositionName(formation, index) {
         // ==========================================
         // DATA MANAGEMENT (TEAM SCOPED)
         // ==========================================
-        
-             function getData(key) {
 
-            if (!currentTeam) return [];
+        // ⚠️ CONFIGURACIÓN FIREBASE: Reemplaza esto con tus datos de la consola de Firebase
+            const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAPk1iayY5xiDMXpQ5_H0eRKB8ZZ22TEQs",
+            authDomain: "real-madrid-web.firebaseapp.com",
+            databaseURL: "https://real-madrid-web-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "real-madrid-web",
+            storageBucket: "real-madrid-web.firebasestorage.app",
+            messagingSenderId: "956440950120",
+            appId: "1:956440950120:web:06250e00147814c61352dd"
+            };
 
-            const scopedKey = `${currentTeam}_${key}`;
+        let appMode = 'local'; // 'local' | 'global'
+        let cloudCache = {};
+        let isFirebaseInitialized = false;
+        let currentUser = null;
 
-            const data = localStorage.getItem(scopedKey);
-
-            return data ? JSON.parse(data) : [];
-
+        function initFirebase() {
+            if (!isFirebaseInitialized && typeof firebase !== 'undefined') {
+                if (FIREBASE_CONFIG.apiKey === "API_KEY_AQUI") {
+                    alert("⚠️ ATENCIÓN: Para usar el modo Global, debes editar el código HTML y poner tu configuración de Firebase (busca 'FIREBASE_CONFIG' en el código).");
+                    return false;
+                }
+                try {
+                    firebase.initializeApp(FIREBASE_CONFIG);
+                    isFirebaseInitialized = true;
+                    firebase.auth().onAuthStateChanged((user) => {
+                        currentUser = user;
+                        updateAuthUI();
+                        // Recargar vistas si estamos en modo global para actualizar botones
+                        if (appMode === 'global') {
+                            if (!document.getElementById('section-partidos').classList.contains('hidden')) renderMatches();
+                            if (!document.getElementById('section-plantilla').classList.contains('hidden')) renderPlayers();
+                        }
+                    });
+                    return true;
+                } catch (e) {
+                    console.error("Firebase init error:", e);
+                    alert("Error conectando con Firebase: " + e.message);
+                    return false;
+                }
+            }
+            return isFirebaseInitialized;
         }
 
+        function toggleLoginModal() {
+            const modal = document.getElementById('login-modal');
+            const form = document.getElementById('login-form');
+            const info = document.getElementById('login-user-info');
+            
+            if (currentUser) {
+                form.classList.add('hidden');
+                info.classList.remove('hidden');
+                document.getElementById('user-email-display').textContent = currentUser.email;
+            } else {
+                form.classList.remove('hidden');
+                info.classList.add('hidden');
+            }
+            
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
+        }
 
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    toggleLoginModal();
+                    showToast('Sesión iniciada correctamente', 'success');
+                })
+                .catch((error) => {
+                    alert("Error de inicio de sesión: " + error.message);
+                });
+        }
 
-        function saveData(key, data) {
+        function handleLogout() {
+            firebase.auth().signOut().then(() => {
+                toggleLoginModal();
+                showToast('Sesión cerrada', 'info');
+            });
+        }
 
-            if (!currentTeam) return;
+        function updateAuthUI() {
+            const btn = document.getElementById('btn-auth');
+            if (currentUser) {
+                btn.textContent = '🔓';
+                btn.classList.add('bg-green-500', 'text-white');
+                btn.classList.remove('bg-white/10');
+            } else {
+                btn.textContent = '🔒';
+                btn.classList.remove('bg-green-500', 'text-white');
+                btn.classList.add('bg-white/10');
+            }
+        }
 
+        async function setStorageMode(mode) {
+            appMode = mode;
+            const btnLocal = document.getElementById('btn-mode-local');
+            const btnGlobal = document.getElementById('btn-mode-global');
+            
+            if (mode === 'local') {
+                btnLocal.className = "px-4 py-2 rounded-md font-bold bg-white text-slate-900 shadow-sm transition-all text-sm";
+                btnGlobal.className = "px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm";
+                cloudCache = {};
+            } else {
+                if (initFirebase()) {
+                    btnGlobal.className = "px-4 py-2 rounded-md font-bold bg-blue-600 text-white shadow-sm transition-all text-sm";
+                    btnLocal.className = "px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm";
+                    await syncFromCloud();
+                } else {
+                    appMode = 'local';
+                }
+            }
+        }
+
+        async function syncFromCloud() {
+            const loader = document.createElement('div');
+            loader.className = "fixed inset-0 bg-black/80 z-[99999] flex flex-col items-center justify-center text-white";
+            loader.innerHTML = `<div class="text-4xl mb-4 animate-bounce">☁️</div><p>Sincronizando datos...</p>`;
+            document.body.appendChild(loader);
+
+            try {
+                const dbRef = firebase.database().ref('/');
+                const snapshot = await dbRef.once('value');
+                cloudCache = snapshot.val() || {};
+                console.log("Datos descargados:", cloudCache);
+            } catch (error) {
+                console.error("Error sync:", error);
+                alert("Error al descargar datos de la nube.");
+            } finally {
+                loader.remove();
+            }
+        }
+
+        function getData(key) {
+            if (!currentTeam) return [];
             const scopedKey = `${currentTeam}_${key}`;
 
-            localStorage.setItem(scopedKey, JSON.stringify(data));
+            if (appMode === 'global' && isFirebaseInitialized) {
+                const data = cloudCache[scopedKey];
+                return data ? data : [];
+            } else {
+                const data = localStorage.getItem(scopedKey);
+                return data ? JSON.parse(data) : [];
+            }
+        }
 
+        function saveData(key, data) {
+            if (!currentTeam) return;
+            const scopedKey = `${currentTeam}_${key}`;
+
+            if (appMode === 'global' && isFirebaseInitialized) {
+                if (!currentUser) {
+                    alert("⚠️ Modo Lectura: Debes iniciar sesión para guardar cambios en la nube.");
+                    return;
+                }
+                cloudCache[scopedKey] = data;
+                firebase.database().ref(scopedKey).set(data).catch(e => console.error("Error guardando en nube:", e));
+            } else {
+                localStorage.setItem(scopedKey, JSON.stringify(data));
+            }
         }
 
         function generateId() {
@@ -5924,6 +6099,9 @@ function renderPlayers() {
     const container = document.getElementById('players-list');
     
     container.innerHTML = players.map((player, index) => {
+        // Determinar si es editable
+        const isEditable = appMode === 'local' || (appMode === 'global' && currentUser);
+
         const delay = index < 20 ? index * 50 : 0; 
         const styleDelay = `style="animation-delay: ${delay}ms"`;
 
@@ -5983,6 +6161,12 @@ function renderPlayers() {
             }
         }
 
+        const statusButton = isEditable ? `
+            <button onclick="event.stopPropagation(); openPlayerStatusModal('${player.id}')" 
+                    class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${badgeClass} hover:opacity-80 transition">
+                ${player.estado} ✏️
+            </button>` : `<span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${badgeClass}">${player.estado}</span>`;
+
         return `
             <div class="card player-card bg-white rounded-xl shadow-sm p-4 ${statusClass} ${holoClass} card-animate-enter cursor-pointer relative transition-transform hover:-translate-y-1" 
                  ${styleDelay} 
@@ -6006,11 +6190,7 @@ function renderPlayers() {
                         
                         <div class="flex flex-wrap gap-1 mt-2">
                             <span class="position-badge pos-${player.posicion}">${capitalizeFirst(player.posicion)}</span>
-                            
-                            <button onclick="event.stopPropagation(); openPlayerStatusModal('${player.id}')" 
-                                    class="text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${badgeClass} hover:opacity-80 transition">
-                                ${player.estado} ✏️
-                            </button>
+                            ${statusButton}
                         </div>
                         
                         <div class="mt-2 text-sm text-gray-500 flex flex-col gap-0.5">
@@ -8055,6 +8235,9 @@ function renderMatches(matchesData = null) {
     matches.sort((a, b) => new Date(b.date) - new Date(a.date));
     
     container.innerHTML = matches.map(match => {
+        // Determinar si es editable
+        const isEditable = appMode === 'local' || (appMode === 'global' && currentUser);
+
         const mvpPlayer = players.find(p => p.id === match.mvp);
         const totalGoals = match.playerStats ? match.playerStats.reduce((sum, ps) => sum + (ps.goals || 0), 0) : 0;
         const outcomeClass = getResultClass(match.outcome);
@@ -8077,6 +8260,15 @@ function renderMatches(matchesData = null) {
         // --- VALORES NUEVOS (Con protección para partidos antiguos) ---
         const squadValue = match.valorPlantilla || 0;
         const squadAge = match.edadMedia || '-';
+
+        const actionButtons = isEditable ? `
+            <button onclick="editMatch('${match.id}')" class="flex-1 px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-center">
+                ✏️ EDIT
+            </button>
+            <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-center" title="Eliminar">
+                🗑️
+            </button>
+        ` : '';
 
         return `
             <div class="card bg-white rounded-xl shadow-sm p-4 mb-3 border border-gray-100">
@@ -8125,12 +8317,7 @@ function renderMatches(matchesData = null) {
                         <button onclick="viewMatchDetails('${match.id}')" class="flex-1 px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 rounded hover:bg-slate-200 transition text-center">
                             👁️ VER
                         </button>
-                        <button onclick="editMatch('${match.id}')" class="flex-1 px-3 py-1.5 text-xs font-bold bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition text-center">
-                            ✏️ EDIT
-                        </button>
-                        <button onclick="deleteMatch('${match.id}')" class="px-3 py-1.5 text-xs font-bold bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-center" title="Eliminar">
-                            🗑️
-                        </button>
+                        ${actionButtons}
                     </div>
                 </div>
             </div>
