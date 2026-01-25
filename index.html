@@ -1318,6 +1318,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
+                    
                     <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
                         🔒
                     </button>
@@ -2663,6 +2664,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         </div>
     </div>
 </div>
+
     <!-- LOGIN MODAL -->
     <div id="login-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-[10000] hidden backdrop-blur-sm">
         <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl m-4">
@@ -3532,13 +3534,14 @@ function getPositionName(formation, index) {
                 try {
                     firebase.initializeApp(FIREBASE_CONFIG);
                     isFirebaseInitialized = true;
+                    // Escuchar cambios de autenticación
                     firebase.auth().onAuthStateChanged((user) => {
                         currentUser = user;
                         updateAuthUI();
-                        // Recargar vistas si estamos en modo global para actualizar botones
+                        // Si estamos en modo global, recargar para mostrar/ocultar botones de edición
                         if (appMode === 'global') {
-                            if (!document.getElementById('section-partidos').classList.contains('hidden')) renderMatches();
-                            if (!document.getElementById('section-plantilla').classList.contains('hidden')) renderPlayers();
+                            if (document.getElementById('section-partidos').classList.contains('hidden') === false) renderMatches();
+                            if (document.getElementById('section-plantilla').classList.contains('hidden') === false) renderPlayers();
                         }
                     });
                     return true;
@@ -3552,6 +3555,8 @@ function getPositionName(formation, index) {
         }
 
         function toggleLoginModal() {
+            if (!isFirebaseInitialized) initFirebase();
+
             const modal = document.getElementById('login-modal');
             const form = document.getElementById('login-form');
             const info = document.getElementById('login-user-info');
@@ -3565,8 +3570,15 @@ function getPositionName(formation, index) {
                 info.classList.add('hidden');
             }
             
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                modal.classList.add('hidden');
+                unlockScroll();
+            } else {
+                modal.classList.add('active');
+                modal.classList.remove('hidden');
+                lockScroll();
+            }
         }
 
         function handleLogin(e) {
@@ -6085,6 +6097,9 @@ function renderPlayers() {
     
     // --- Ordenación ---
     players.sort((a, b) => {
+        // Entrenador siempre primero
+        if (a.posicion === 'entrenador') return -1;
+        if (b.posicion === 'entrenador') return 1;
         const inactA = a.estado === 'Inactivo' || a.estado === 'Leyenda' || a.estado === 'Retirado';
         const inactB = b.estado === 'Inactivo' || b.estado === 'Leyenda' || b.estado === 'Retirado';
 
@@ -6099,9 +6114,9 @@ function renderPlayers() {
     const container = document.getElementById('players-list');
     
     container.innerHTML = players.map((player, index) => {
-        // Determinar si es editable
+        // Determinar si es editable (Local siempre sí, Global solo si hay usuario)
         const isEditable = appMode === 'local' || (appMode === 'global' && currentUser);
-
+        
         const delay = index < 20 ? index * 50 : 0; 
         const styleDelay = `style="animation-delay: ${delay}ms"`;
 
