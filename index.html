@@ -1318,7 +1318,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
-                    
                     <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
                         🔒
                     </button>
@@ -2664,7 +2663,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         </div>
     </div>
 </div>
-
     <!-- LOGIN MODAL -->
     <div id="login-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-[10000] hidden backdrop-blur-sm">
         <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl m-4">
@@ -3510,15 +3508,15 @@ function getPositionName(formation, index) {
         // ==========================================
 
         // ⚠️ CONFIGURACIÓN FIREBASE: Reemplaza esto con tus datos de la consola de Firebase
-            const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyAPk1iayY5xiDMXpQ5_H0eRKB8ZZ22TEQs",
-            authDomain: "real-madrid-web.firebaseapp.com",
-            databaseURL: "https://real-madrid-web-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "real-madrid-web",
-            storageBucket: "real-madrid-web.firebasestorage.app",
-            messagingSenderId: "956440950120",
-            appId: "1:956440950120:web:06250e00147814c61352dd"
-            };
+        const FIREBASE_CONFIG = {
+            apiKey: "API_KEY_AQUI",
+            authDomain: "PROYECTO.firebaseapp.com",
+            databaseURL: "https://PROYECTO-default-rtdb.firebaseio.com",
+            projectId: "PROYECTO",
+            storageBucket: "PROYECTO.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
 
         let appMode = 'local'; // 'local' | 'global'
         let cloudCache = {};
@@ -3527,23 +3525,36 @@ function getPositionName(formation, index) {
 
         function initFirebase() {
             if (!isFirebaseInitialized && typeof firebase !== 'undefined') {
-                if (FIREBASE_CONFIG.apiKey === "API_KEY_AQUI") {
-                    alert("⚠️ ATENCIÓN: Para usar el modo Global, debes editar el código HTML y poner tu configuración de Firebase (busca 'FIREBASE_CONFIG' en el código).");
-                    return false;
-                }
                 try {
-                    firebase.initializeApp(FIREBASE_CONFIG);
+                    // Detectar configuración (soporta ambos nombres: FIREBASE_CONFIG o firebaseConfig)
+                    let config = null;
+                    if (typeof FIREBASE_CONFIG !== 'undefined') config = FIREBASE_CONFIG;
+                    else if (typeof firebaseConfig !== 'undefined') config = firebaseConfig;
+
+                    if (!config) {
+                        alert("⚠️ Error: No se encuentra la configuración. Asegúrate de pegar el código de Firebase Console.");
+                        return false;
+                    }
+
+                    if (config.apiKey === "API_KEY_AQUI" || config.apiKey.includes("API_KEY")) {
+                        alert("⚠️ ATENCIÓN: Para usar el modo Global, debes editar el código HTML y poner tu configuración de Firebase real.");
+                        return false;
+                    }
+
+                    firebase.initializeApp(config);
                     isFirebaseInitialized = true;
-                    // Escuchar cambios de autenticación
-                    firebase.auth().onAuthStateChanged((user) => {
-                        currentUser = user;
-                        updateAuthUI();
-                        // Si estamos en modo global, recargar para mostrar/ocultar botones de edición
-                        if (appMode === 'global') {
-                            if (document.getElementById('section-partidos').classList.contains('hidden') === false) renderMatches();
-                            if (document.getElementById('section-plantilla').classList.contains('hidden') === false) renderPlayers();
-                        }
-                    });
+                    
+                    if (firebase.auth) {
+                        firebase.auth().onAuthStateChanged((user) => {
+                            currentUser = user;
+                            updateAuthUI();
+                            // Recargar vistas si estamos en modo global para actualizar botones
+                            if (appMode === 'global') {
+                                if (!document.getElementById('section-partidos').classList.contains('hidden')) renderMatches();
+                                if (!document.getElementById('section-plantilla').classList.contains('hidden')) renderPlayers();
+                            }
+                        });
+                    }
                     return true;
                 } catch (e) {
                     console.error("Firebase init error:", e);
@@ -3555,8 +3566,6 @@ function getPositionName(formation, index) {
         }
 
         function toggleLoginModal() {
-            if (!isFirebaseInitialized) initFirebase();
-
             const modal = document.getElementById('login-modal');
             const form = document.getElementById('login-form');
             const info = document.getElementById('login-user-info');
@@ -3570,15 +3579,8 @@ function getPositionName(formation, index) {
                 info.classList.add('hidden');
             }
             
-            if (modal.classList.contains('active')) {
-                modal.classList.remove('active');
-                modal.classList.add('hidden');
-                unlockScroll();
-            } else {
-                modal.classList.add('active');
-                modal.classList.remove('hidden');
-                lockScroll();
-            }
+            modal.classList.toggle('hidden');
+            modal.classList.toggle('flex');
         }
 
         function handleLogin(e) {
@@ -6097,9 +6099,6 @@ function renderPlayers() {
     
     // --- Ordenación ---
     players.sort((a, b) => {
-        // Entrenador siempre primero
-        if (a.posicion === 'entrenador') return -1;
-        if (b.posicion === 'entrenador') return 1;
         const inactA = a.estado === 'Inactivo' || a.estado === 'Leyenda' || a.estado === 'Retirado';
         const inactB = b.estado === 'Inactivo' || b.estado === 'Leyenda' || b.estado === 'Retirado';
 
@@ -6114,9 +6113,9 @@ function renderPlayers() {
     const container = document.getElementById('players-list');
     
     container.innerHTML = players.map((player, index) => {
-        // Determinar si es editable (Local siempre sí, Global solo si hay usuario)
+        // Determinar si es editable
         const isEditable = appMode === 'local' || (appMode === 'global' && currentUser);
-        
+
         const delay = index < 20 ? index * 50 : 0; 
         const styleDelay = `style="animation-delay: ${delay}ms"`;
 
