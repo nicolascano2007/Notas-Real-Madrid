@@ -1368,9 +1368,10 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
-                    <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
-                        🔒
-                    </button>
+                    <button id="btn-auth" onclick="toggleLoginModal()" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm ml-2" title="Iniciar Sesión">
+    🔒
+</button>
+
                 </div>
 
                 <!-- MATCHDAY BANNER (Mobile) -->
@@ -2439,6 +2440,16 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                                 </div>
                             </div>
                         </div>
+                        <!-- Goal Connections -->
+<div class="mt-8">
+    <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <span>🔗</span> Conexiones (Asistente ➔ Goleador)
+    </h3>
+    <div id="goal-connections-container">
+        <!-- El contenido se generará aquí con JavaScript -->
+    </div>
+</div>
+
                     </div>
                     <!-- Home vs Away Comparison -->
                     <div class="mb-8">
@@ -5497,6 +5508,7 @@ function renderPerformanceMatrix(matches) {
             renderLineWarsChart();
             renderMinutesChart();
             renderTierList();
+            renderGoalConnections();
             const matches = getData('matches');
             const players = getPlayers();
 
@@ -14456,6 +14468,188 @@ function checkAndStartTour() {
         setTimeout(startTour, 1000); 
     }
 }
+// =========================================================
+// 🔗 ANÁLISIS DE CONEXIONES (ASISTENTE -> GOLEADOR)
+// =========================================================
+
+/**
+ * Procesa todos los partidos para encontrar conexiones entre asistentes y goleadores en el mismo minuto.
+ * @returns {object} Un objeto que mapea ID de asistente a un objeto de goleadores y sus conteos.
+ * ej: { "playerA_id": { "playerB_id": 3, "playerC_id": 1 } }
+ */
+function analyzeGoalConnections() {
+    const matches = getData('matches');
+    const connections = {};
+
+    matches.forEach(match => {
+        const goalsByMinute = {};
+        const assistsByMinute = {};
+
+        // 1. Mapear todos los goles y asistencias del partido por minuto
+        match.playerStats.forEach(ps => {
+            if (ps.detailGoals) {
+                ps.detailGoals.split(',').forEach(minuteStr => {
+                    const minute = minuteStr.trim();
+                    if (minute) {
+                        if (!goalsByMinute[minute]) goalsByMinute[minute] = [];
+                        goalsByMinute[minute].push(ps.playerId);
+                    }
+                });
+            }
+            if (ps.detailAssists) {
+                ps.detailAssists.split(',').forEach(minuteStr => {
+                    const minute = minuteStr.trim();
+                    if (minute) {
+                        if (!assistsByMinute[minute]) assistsByMinute[minute] = [];
+                        assistsByMinute[minute].push(ps.playerId);
+                    }
+                });
+            }
+        });
+
+        // 2. Encontrar coincidencias y construir las conexiones
+        for (const minute in assistsByMinute) {
+            if (goalsByMinute[minute]) {
+                const assisters = assistsByMinute[minute];
+                const scorers = goalsByMinute[minute];
+
+                assisters.forEach(assisterId => {
+                    if (!connections[assisterId]) {
+                        connections[assisterId] = {};
+                    }
+                    scorers.forEach(scorerId => {
+                        // Un jugador no puede asistirse a sí mismo
+                        if (assisterId !== scorerId) {
+                            connections[assisterId][scorerId] = (connections[assisterId][scorerId] || 0) + 1;
+                        }
+                    });
+                });
+            }
+        }
+    });
+
+    return connections;
+}
+
+/**
+ * Renderiza la sección de estadísticas de conexiones en la UI.
+ */
+function renderGoalConnections() {
+    const container = document.getElementById('goal-connections-container');
+    if (!container) return;
+
+    const players = getPlayers();
+    const connectionsData = analyzeGoalConnections();
+
+    if (Object.keys(connectionsData).length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-gray-400 italic">
+                No hay datos de asistencias y goles en el mismo minuto para analizar conexiones.
+            </div>`;
+        return;
+    }
+
+    const sortedAssisters = Object.entries(connectionsData)
+        .map(([assisterId, targets]) => {
+            const totalAssists = Object.values(targets).reduce((sum, count) => sum + count, 0);
+            return { assisterId, targets, totalAssists };
+        })
+        .sort((a, b) => b.totalAssists - a.totalAssists);
+
+    const VISIBLE_LIMIT = 3; // Mostrar los 3 máximos asistentes por defecto
+    const visibleItems = sortedAssisters.slice(0, VISIBLE_LIMIT);
+    const hiddenItems = sortedAssisters.slice(VISIBLE_LIMIT);
+
+    // Función auxiliar para crear una tarjeta de conexión individual
+    const createConnectionCard = ({ assisterId, targets }) => {
+        const assister = players.find(p => p.id === assisterId);
+        if (!assister) return '';
+
+        const totalAssists = Object.values(targets).reduce((sum, count) => sum + count, 0);
+        const sortedTargets = Object.entries(targets).sort(([, a], [, b]) => b - a);
+
+        let cardHtml = `
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+                <div class="p-4 bg-slate-50 border-b border-gray-200 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="${assister.foto}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md">
+                        <div>
+                            <h4 class="font-bold text-gray-800">${assister.apodo || assister.apellido}</h4>
+                            <p class="text-xs text-gray-500">Asistente Principal</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-black text-blue-600">${totalAssists}</div>
+                        <div class="text-[10px] text-gray-400 uppercase font-bold">Asistencias</div>
+                    </div>
+                </div>
+                <div class="p-4 space-y-3">
+        `;
+
+        sortedTargets.forEach(([scorerId, count]) => {
+            const scorer = players.find(p => p.id === scorerId);
+            if (scorer) {
+                cardHtml += `
+                    <div class="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <img src="${scorer.foto}" class="w-6 h-6 rounded-full object-cover">
+                            <span class="text-sm font-medium text-gray-700">${scorer.apodo || scorer.apellido}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-sm text-gray-800">${count}</span>
+                            <span class="text-green-500">➔</span>
+                            <span class="font-bold text-xl text-green-600">⚽</span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        cardHtml += `</div></div>`;
+        return cardHtml;
+    };
+
+    // Construir el HTML final
+    let finalHtml = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${visibleItems.map(createConnectionCard).join('')}
+                     </div>`;
+
+    if (hiddenItems.length > 0) {
+        finalHtml += `
+            <div id="more-connections-content" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                ${hiddenItems.map(createConnectionCard).join('')}
+            </div>
+            <div class="text-center mt-6">
+                <button onclick="toggleGoalConnections()" id="btn-toggle-connections" 
+                    class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full text-sm transition-all shadow-sm border border-gray-200">
+                    Mostrar ${hiddenItems.length} más ▼
+                </button>
+            </div>
+        `;
+    }
+
+    container.innerHTML = finalHtml;
+}
+/**
+ * Muestra u oculta las tarjetas de conexiones adicionales.
+ */
+function toggleGoalConnections() {
+    const content = document.getElementById('more-connections-content');
+    const btn = document.getElementById('btn-toggle-connections');
+    if (!content || !btn) return;
+
+    const isHidden = content.classList.contains('hidden');
+
+    if (isHidden) {
+        content.classList.remove('hidden');
+        btn.innerHTML = 'Mostrar menos ▲';
+    } else {
+        content.classList.add('hidden');
+        const count = content.children.length; // Cuenta cuántas tarjetas hay ocultas
+        btn.innerHTML = `Mostrar ${count} más ▼`;
+    }
+}
+
 
 
 // ==========================================
