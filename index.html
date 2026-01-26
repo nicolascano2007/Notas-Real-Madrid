@@ -3627,23 +3627,41 @@ function getPositionName(formation, index) {
             return isFirebaseInitialized;
         }
 
-        function toggleLoginModal() {
-            const modal = document.getElementById('login-modal');
-            const form = document.getElementById('login-form');
-            const info = document.getElementById('login-user-info');
-            
-            if (currentUser) {
-                form.classList.add('hidden');
-                info.classList.remove('hidden');
-                document.getElementById('user-email-display').textContent = currentUser.email;
-            } else {
-                form.classList.remove('hidden');
-                info.classList.add('hidden');
-            }
-            
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
-        }
+function toggleLoginModal() {
+    const modal = document.getElementById('login-modal');
+    const form = document.getElementById('login-form');
+    const info = document.getElementById('login-user-info');
+    
+    if (!modal) return;
+
+    // 1. Lógica de visualización del formulario vs info usuario
+    if (currentUser) {
+        if (form) form.classList.add('hidden');
+        if (info) info.classList.remove('hidden');
+        const emailDisplay = document.getElementById('user-email-display');
+        if (emailDisplay) emailDisplay.textContent = currentUser.email;
+    } else {
+        if (form) form.classList.remove('hidden');
+        if (info) info.classList.add('hidden');
+    }
+    
+    // 2. Lógica de Apertura/Cierre (CORREGIDA)
+    if (modal.classList.contains('hidden')) {
+        // ABRIR
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Pequeño retardo para que la animación CSS funcione
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+    } else {
+        // CERRAR
+        modal.classList.remove('active');
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
 
         function handleLogin(e) {
             e.preventDefault();
