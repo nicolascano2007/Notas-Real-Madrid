@@ -14820,5 +14820,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     </script>
+    <script>
+    console.log("--- INICIANDO DIAGNÓSTICO DE LOGIN ---");
+
+    // 1. Comprobar si existe el botón
+    const debugBtn = document.getElementById('btn-auth');
+    if (!debugBtn) {
+        alert("❌ ERROR GRAVE: No encuentro el botón con id='btn-auth'. \n\nAsegúrate de que al icono del candado le has puesto id=\"btn-auth\".");
+    } else {
+        console.log("✅ Botón 'btn-auth' encontrado.");
+        
+        // Forzamos un borde rojo al botón para que veas cuál cree el sistema que es
+        debugBtn.style.border = "2px solid red"; 
+    }
+
+    // 2. Comprobar si existe el modal
+    const debugModal = document.getElementById('login-modal');
+    if (!debugModal) {
+        alert("❌ ERROR GRAVE: No encuentro el cuadro con id='login-modal'. \n\nRevisa que hayas pegado el HTML del modal dentro del body.");
+    } else {
+        console.log("✅ Modal 'login-modal' encontrado.");
+    }
+
+    // 3. Sobrescribir la función para ver si se ejecuta
+    window.toggleLoginModal = function() {
+        console.log("🖱️ Se ha hecho clic en el candado.");
+        
+        const modal = document.getElementById('login-modal');
+        const form = document.getElementById('login-form');
+        const info = document.getElementById('login-user-info');
+        
+        if (!modal) {
+            alert("❌ La función se ejecuta, pero NO encuentra el modal (id='login-modal').");
+            return;
+        }
+
+        // Lógica de mostrar/ocultar con feedback visual
+        if (modal.classList.contains('hidden')) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex'); // Necesario para centrarlo
+            console.log("🔓 Abriendo modal...");
+        } else {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            console.log("🔒 Cerrando modal...");
+        }
+
+        // Lógica de usuario (si existe firebase configurado)
+        if (typeof currentUser !== 'undefined' && currentUser) {
+            if(form) form.classList.add('hidden');
+            if(info) info.classList.remove('hidden');
+            const emailDisplay = document.getElementById('user-email-display');
+            if(emailDisplay) emailDisplay.textContent = currentUser.email;
+        } else {
+            if(form) form.classList.remove('hidden');
+            if(info) info.classList.add('hidden');
+        }
+    };
+
+    console.log("✅ Función toggleLoginModal redefinida para depuración.");
+</script>
 </body>
 </html>
