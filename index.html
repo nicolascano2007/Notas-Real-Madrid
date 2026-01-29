@@ -1368,6 +1368,9 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
+                    <button id="btn-tour" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Iniciar Tour Guiado">
+                        🎓
+                    </button>
                     <button id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
                         🔒
                     </button>
@@ -3552,7 +3555,6 @@ function getPositionName(formation, index) {
 
             // Force load calendar immediately after setup
             loadCalendar();
-            checkAndStartTour();
         }
 
         function returnToWelcome() {
@@ -7727,101 +7729,137 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
         // Memoria para guardar los calendarios y no tener que recargarlos
         const CALENDAR_CACHE = { masculino: null, femenino: null };
 
-        async function getCalendarEvents(team) {
-            // 1. Si ya lo tenemos en memoria, lo devolvemos al instante (¡Velocidad pura!)
-            if (CALENDAR_CACHE[team]) return CALENDAR_CACHE[team];
+async function getCalendarEvents(team) {
+    // 1. Si ya está en la memoria de esta sesión, devolverlo al instante.
+    if (CALENDAR_CACHE[team]) {
+        console.log(`📅 Calendario [${team}] servido desde CACHÉ DE MEMORIA.`);
+        return CALENDAR_CACHE[team];
+    }
 
-            const config = TEAMS_CONFIG[team];
-            if (!config) return [];
+    // 2. Si estamos en modo Global, intentar obtenerlo de la caché de Firebase
+    if (appMode === 'global' && team === currentTeam && isFirebaseInitialized) {
+        console.log(`☁️ Intentando cargar calendario [${team}] desde Firebase...`);
+        const firebaseCache = getData('calendar_cache'); // Obtiene { events: [], timestamp: '...' }
+        const cacheAgeHours = firebaseCache.timestamp ? (new Date() - new Date(firebaseCache.timestamp)) / 3600000 : 999;
 
-            const icalUrl = config.icalUrl;
-            
-            // Lista de proxies para saltar el bloqueo CORS
-            const proxies = [
-                (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-                (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-            ];
+        // Usar la caché de Firebase si es reciente (menos de 6 horas)
+        if (firebaseCache.events && cacheAgeHours < 6) {
+            console.log(`✅ Calendario [${team}] servido desde CACHÉ DE FIREBASE (fresca).`);
+            // Los datos de Firebase vienen como texto, hay que convertirlos de nuevo a objetos Date
+            const eventsWithDates = firebaseCache.events.map(e => ({ ...e, start: new Date(e.start) }));
+            CALENDAR_CACHE[team] = eventsWithDates; // Guardar en caché de memoria para esta sesión
+            return eventsWithDates;
+        }
+        console.log(`⏳ Caché de Firebase no encontrada o vieja (${cacheAgeHours.toFixed(1)}h). Descargando de la fuente original...`);
+    }
 
-            let icalData = null;
+    // 3. Fallback: Si no hay caché o estamos en modo local, descargar del servidor original
+    const config = TEAMS_CONFIG[team];
+    if (!config) return [];
 
-            // Intentamos descargar con cada proxy
-            for (const proxyFn of proxies) {
-                try {
-                    const proxyUrl = proxyFn(icalUrl);
-                    const response = await fetch(proxyUrl, { method: 'GET' });
-                    if (response.ok) {
-                        const text = await response.text();
-                        if (text.includes('BEGIN:VCALENDAR') || text.includes('BEGIN:VEVENT')) {
-                            icalData = text;
-                            break;
-                        }
-                    }
-                } catch (error) {
-                    console.warn('Proxy failed');
+    const icalUrl = config.icalUrl;
+    const proxies = [
+        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
+    ];
+
+    let icalData = null;
+    for (const proxyFn of proxies) {
+        try {
+            const response = await fetch(proxyFn(icalUrl));
+            if (response.ok) {
+                const text = await response.text();
+                if (text.includes('BEGIN:VCALENDAR')) {
+                    icalData = text;
+                    console.log(`✅ Datos iCal [${team}] descargados de la fuente original.`);
+                    break;
                 }
             }
-
-            let events = [];
-            if (icalData) {
-                // Pasamos 'team' explícitamente para no depender de 'currentTeam'
-                events = parseICalData(icalData, team);
-            }
-
-            // Añadir partidos manuales (Mundial de Clubes) si corresponde
-            if (config.manualJuneMatches) {
-                const manualMatches = [
-                    { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: ' 🏟⚽Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
-                    { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: ' 🏟⚽Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
-                    { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: ' 🏟⚽Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
-                ];
-                events = [...manualMatches, ...events];
-                events.sort((a, b) => a.start - b.start);
-            }
-            
-            // Guardamos en caché para el futuro
-            CALENDAR_CACHE[team] = events;
-            return events;
+        } catch (error) {
+            console.warn(`Proxy para [${team}] falló.`);
         }
+    }
 
-        function preloadCalendars() {
-            console.log("🚀 Iniciando precarga inteligente de calendarios...");
-            getCalendarEvents('masculino');
-            getCalendarEvents('femenino');
-        }
+    if (!icalData) {
+        console.error(`❌ No se pudo descargar el calendario para [${team}].`);
+        return [];
+    }
+
+    // Procesar los datos descargados
+    let events = parseICalData(icalData, team);
+    if (config.manualJuneMatches) {
+        // ... (Tu lógica de partidos manuales se mantiene igual)
+         const manualMatches = [
+            { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: ' 🏟⚽Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
+            { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: ' 🏟⚽Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
+            { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: ' 🏟⚽Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
+        ];
+        events = [...manualMatches, ...events].sort((a, b) => a.start - b.start);
+    }
+
+    // Guardar en la caché de memoria local
+    CALENDAR_CACHE[team] = events;
+
+    // 4. Si estamos en modo Global, guardar en Firebase para la próxima vez
+    if (appMode === 'global' && team === currentTeam && isFirebaseInitialized) {
+        console.log(`💾 Guardando nuevo calendario [${team}] en la caché de Firebase.`);
+        const cacheObject = {
+            timestamp: new Date().toISOString(),
+            events: events // Las fechas se guardarán como texto
+        };
+        saveData('calendar_cache', cacheObject);
+    }
+
+    return events;
+}
 
 
-      async function loadCalendar() {
-            if (!currentTeam) return;
-            
-            // Avisar visualmente en el calendario si está vacío
-            const container = document.getElementById('calendar-container');
-            if (!CALENDAR_CACHE[currentTeam] && container) {
-                container.innerHTML = `
-                    <div class="calendar-loading text-center py-12">
-                        <div class="text-4xl mb-4">⏳</div>
-                        <p class="text-gray-600">Conectando con LaLiga...</p>
-                    </div>
-                `;
-            }
+        async function preloadCalendars() {
+    console.log("🚀 Iniciando precarga de calendarios en segundo plano...");
+    // Dispara las descargas, pero la app no se detiene a esperarlas.
+    // La caché se irá llenando en segundo plano.
+    try {
+        await Promise.all([
+            getCalendarEvents('masculino'),
+            getCalendarEvents('femenino')
+        ]);
+        console.log("✅ Precarga de calendarios completada.");
+    } catch (err) {
+        console.error("Error durante la precarga de calendarios:", err);
+    }
+}
 
-            // Descargar datos (Esperamos aquí)
-            calendarEvents = await getCalendarEvents(currentTeam);
-            
-            // Comprobar si es día de partido
-            checkMatchDay();
-            
-            // 1. Si estamos en la pestaña Calendario -> Pintar calendario
-            if (!document.getElementById('section-calendario').classList.contains('hidden')) {
-                renderCalendar();
-            }
 
-            // 2. Si estamos en la pestaña Principal -> Pintar Principal (Próximo partido + IA)
-            if (!document.getElementById('section-principal').classList.contains('hidden')) {
-                renderPrincipal();
-                restoreDashboardLayout(); // Restaurar orden
-            }
-        }
+
+        async function loadCalendar() {
+    if (!currentTeam) return;
+
+    const container = document.getElementById('calendar-container');
+    // Muestra "Cargando..." solo si no hay nada en la caché de memoria
+    if (!CALENDAR_CACHE[currentTeam] && container) {
+        container.innerHTML = `
+            <div class="calendar-loading text-center py-12">
+                <div class="text-4xl mb-4">⏳</div>
+                <p class="text-gray-600">Sincronizando calendario...</p>
+            </div>
+        `;
+    }
+
+    // Espera a que la función de obtención de datos termine
+    calendarEvents = await getCalendarEvents(currentTeam);
+    console.log(`🗓️ Calendario para [${currentTeam}] listo con ${calendarEvents.length} eventos.`);
+
+    // Una vez tenemos los datos, pintamos todo lo que dependa de ellos
+    checkMatchDay();
+
+    if (!document.getElementById('section-calendario').classList.contains('hidden')) {
+        renderCalendar();
+    }
+    if (!document.getElementById('section-principal').classList.contains('hidden')) {
+        renderPrincipal();
+    }
+}
+
 
         function checkMatchDay() {
             const desktopBanner = document.getElementById('matchday-banner-desktop');
@@ -14755,6 +14793,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('btn-auth');
     const closeButton = document.getElementById('btn-close-login');
     const loginModalBackdrop = document.getElementById('login-modal');
+    // Listener para el nuevo botón del Tour
+    const tourButton = document.getElementById('btn-tour');
+    if (tourButton) {
+    tourButton.addEventListener('click', startTour);
+    console.log("Listener añadido a #btn-tour.");
+    }
 
     if (loginButton) {
         loginButton.addEventListener('click', toggleLoginModal);
