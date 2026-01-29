@@ -7736,26 +7736,34 @@ async function getCalendarEvents(team) {
         return CALENDAR_CACHE[team];
     }
 
+    const originalCurrentTeam = currentTeam;
+    // Workaround: Asignamos temporalmente el equipo que queremos cargar para que getData/saveData funcionen
+    currentTeam = team;
+
     // 2. Si estamos en modo Global, intentar obtenerlo de la caché de Firebase
-    if (appMode === 'global' && team === currentTeam && isFirebaseInitialized) {
+    if (appMode === 'global' && isFirebaseInitialized) {
         console.log(`☁️ Intentando cargar calendario [${team}] desde Firebase...`);
-        const firebaseCache = getData('calendar_cache'); // Obtiene { events: [], timestamp: '...' }
-        const cacheAgeHours = firebaseCache.timestamp ? (new Date() - new Date(firebaseCache.timestamp)) / 3600000 : 999;
+        const firebaseCache = getData('calendar_cache'); // Ahora usa el scope correcto: `${team}_calendar_cache`
+        const cacheAgeHours = firebaseCache && firebaseCache.timestamp ? (new Date() - new Date(firebaseCache.timestamp)) / 3600000 : 999;
 
         // Usar la caché de Firebase si es reciente (menos de 6 horas)
-        if (firebaseCache.events && cacheAgeHours < 6) {
+        if (firebaseCache && firebaseCache.events && cacheAgeHours < 6) {
             console.log(`✅ Calendario [${team}] servido desde CACHÉ DE FIREBASE (fresca).`);
-            // Los datos de Firebase vienen como texto, hay que convertirlos de nuevo a objetos Date
             const eventsWithDates = firebaseCache.events.map(e => ({ ...e, start: new Date(e.start) }));
             CALENDAR_CACHE[team] = eventsWithDates; // Guardar en caché de memoria para esta sesión
+            
+            currentTeam = originalCurrentTeam; // Restaurar equipo original
             return eventsWithDates;
         }
-        console.log(`⏳ Caché de Firebase no encontrada o vieja (${cacheAgeHours.toFixed(1)}h). Descargando de la fuente original...`);
+        console.log(`⏳ Caché de Firebase para [${team}] no encontrada o vieja.`);
     }
 
-    // 3. Fallback: Si no hay caché o estamos en modo local, descargar del servidor original
+    // 3. Fallback: Descargar del servidor original
     const config = TEAMS_CONFIG[team];
-    if (!config) return [];
+    if (!config) {
+        currentTeam = originalCurrentTeam; // Restaurar equipo original
+        return [];
+    }
 
     const icalUrl = config.icalUrl;
     const proxies = [
@@ -7782,14 +7790,14 @@ async function getCalendarEvents(team) {
 
     if (!icalData) {
         console.error(`❌ No se pudo descargar el calendario para [${team}].`);
+        currentTeam = originalCurrentTeam; // Restaurar equipo original
         return [];
     }
 
     // Procesar los datos descargados
     let events = parseICalData(icalData, team);
     if (config.manualJuneMatches) {
-        // ... (Tu lógica de partidos manuales se mantiene igual)
-         const manualMatches = [
+        const manualMatches = [
             { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: ' 🏟⚽Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
             { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: ' 🏟⚽Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
             { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: ' 🏟⚽Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
@@ -7801,17 +7809,19 @@ async function getCalendarEvents(team) {
     CALENDAR_CACHE[team] = events;
 
     // 4. Si estamos en modo Global, guardar en Firebase para la próxima vez
-    if (appMode === 'global' && team === currentTeam && isFirebaseInitialized) {
+    if (appMode === 'global' && isFirebaseInitialized) {
         console.log(`💾 Guardando nuevo calendario [${team}] en la caché de Firebase.`);
         const cacheObject = {
             timestamp: new Date().toISOString(),
-            events: events // Las fechas se guardarán como texto
+            events: events
         };
-        saveData('calendar_cache', cacheObject);
+        saveData('calendar_cache', cacheObject); // saveData usará el `currentTeam` que hemos asignado temporalmente
     }
-
+    
+    currentTeam = originalCurrentTeam; // Restaurar equipo original
     return events;
 }
+
 
 
         async function preloadCalendars() {
