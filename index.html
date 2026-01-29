@@ -1368,7 +1368,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     <button onclick="toggleDarkMode()" id="btn-dark-mode" class="p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm" title="Cambiar Tema">
                         🌙
                     </button>
-                    <button onclick="toggleLoginModal()" id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
+                    <button id="btn-auth" class="ml-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition backdrop-blur-sm text-xs font-bold" title="Iniciar Sesión">
                         🔒
                     </button>
                 </div>
@@ -2806,7 +2806,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         <div class="bg-white rounded-xl w-full max-w-sm p-6 shadow-2xl m-4">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-gray-800">Acceso Administrador</h3>
-                <button onclick="toggleLoginModal()" class="text-gray-400 hover:text-gray-600">✕</button>
+                <button id="btn-close-login" class="text-gray-400 hover:text-gray-600">✕</button>    
             </div>
             <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
@@ -3626,23 +3626,61 @@ function getPositionName(formation, index) {
             return isFirebaseInitialized;
         }
 
-        function toggleLoginModal() {
-            const modal = document.getElementById('login-modal');
-            const form = document.getElementById('login-form');
-            const info = document.getElementById('login-user-info');
-            
-            if (currentUser) {
-                form.classList.add('hidden');
-                info.classList.remove('hidden');
-                document.getElementById('user-email-display').textContent = currentUser.email;
-            } else {
-                form.classList.remove('hidden');
-                info.classList.add('hidden');
-            }
-            
-            modal.classList.toggle('hidden');
-            modal.classList.toggle('flex');
+/**
+ * Muestra/oculta el modal de login. VERSIÓN CORREGIDA Y DEFINITIVA.
+ * Utiliza el sistema de clases .active del CSS de la aplicación.
+ */
+function toggleLoginModal() {
+    const modal = document.getElementById('login-modal');
+    if (!modal) {
+        console.error("ERROR FATAL: No se encuentra el elemento #login-modal en el HTML.");
+        return;
+    }
+
+    if (!isFirebaseInitialized || typeof firebase.auth !== 'function') {
+        console.error(`ERROR DE FIREBASE: isFirebaseInitialized es '${isFirebaseInitialized}' y firebase.auth es de tipo '${typeof firebase.auth}'.`);
+        showToast("El servicio de autenticación no está disponible.", "error");
+        return;
+    }
+
+    // Comprobamos si el modal ya tiene la clase 'active'
+    const isActive = modal.classList.contains('active');
+
+    if (!isActive) {
+        // --- LÓGICA PARA ABRIR EL MODAL ---
+
+        // 1. Mover el modal al final del body para asegurar el z-index
+        document.body.appendChild(modal);
+
+        // 2. Mostrar formulario o info de usuario
+        const form = document.getElementById('login-form');
+        const info = document.getElementById('login-user-info');
+        if (currentUser) {
+            form.classList.add('hidden');
+            info.classList.remove('hidden');
+            document.getElementById('user-email-display').textContent = currentUser.email;
+        } else {
+            form.classList.remove('hidden');
+            info.classList.add('hidden');
         }
+
+        // 3. LA CORRECCIÓN: Añadimos la clase .active para que el CSS lo muestre
+        modal.classList.add('active');
+        
+        // Y por seguridad, nos aseguramos de que no tenga la clase 'hidden' de Tailwind
+        modal.classList.remove('hidden');
+        
+        lockScroll();
+
+    } else {
+        // --- LÓGICA PARA CERRAR EL MODAL ---
+        modal.classList.remove('active');
+        unlockScroll();
+    }
+}
+
+
+
 
         function handleLogin(e) {
             e.preventDefault();
@@ -14713,6 +14751,32 @@ document.addEventListener('DOMContentLoaded', () => {
             setStorageMode('local');
         }
     }
+    console.log("Añadiendo listeners para el modal de login...");
+    const loginButton = document.getElementById('btn-auth');
+    const closeButton = document.getElementById('btn-close-login');
+    const loginModalBackdrop = document.getElementById('login-modal');
+
+    if (loginButton) {
+        loginButton.addEventListener('click', toggleLoginModal);
+        console.log("Listener añadido a #btn-auth.");
+    } else {
+        console.error("No se pudo añadir listener a #btn-auth porque no se encontró.");
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', toggleLoginModal);
+        console.log("Listener añadido a #btn-close-login.");
+    }
+
+    if (loginModalBackdrop) {
+        loginModalBackdrop.addEventListener('click', function(e) {
+            if (e.target === loginModalBackdrop) { // Si se hace clic en el fondo oscuro
+                toggleLoginModal();
+            }
+        });
+        console.log("Listener de cierre añadido al fondo del modal.");
+    }
+
 });
 
         
