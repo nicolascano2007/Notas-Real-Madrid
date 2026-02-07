@@ -1301,6 +1301,8 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <!-- Shepherd.js Tour Library -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/css/shepherd.css"/>
 <script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
@@ -2214,6 +2216,9 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
 
                         <button onclick="showTab('comparador')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow transition transform hover:scale-105">
                               🆚 Comparador VS
+                        </button>
+                        <button onclick="generateSeasonYearbook()" class="w-full py-3 bg-gradient-to-r from-purple-900 to-indigo-900 text-white rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform border border-purple-500/30">
+                         📚 Generar Anuario PDF
                         </button>
                          </div> </div>
 
@@ -14515,6 +14520,201 @@ function toggleGoalConnections() {
         const count = content.children.length; // Cuenta cuántas tarjetas hay ocultas
         btn.innerHTML = `Mostrar ${count} más ▼`;
     }
+}
+
+async function generateSeasonYearbook() {
+    const { jsPDF } = window.jspdf;
+
+    // --- FILTRO DE LIMPIEZA INTELIGENTE ---
+    const cleanForPdf = (text) => {
+        if (!text) return "";
+        return text
+            .replace(/\u0107/g, 'c') // ć -> c
+            .replace(/\u0106/g, 'C') // Ć -> C
+            .replace(/\u010D/g, 'c') // č -> c
+            .replace(/\u010C/g, 'C') // Č -> C
+            // Borrar Emojis
+            .replace(/[\u{1F600}-\u{1F64F}]/gu, '') 
+            .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') 
+            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') 
+            .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '') 
+            .replace(/[\u{2600}-\u{26FF}]/gu, '')   
+            .replace(/[\u{2700}-\u{27BF}]/gu, '')   
+            .trim(); 
+    };
+
+    // 1. Obtener datos
+    const matchesList = getData('matches') || []; 
+    const playersList = getPlayers() || [];
+
+    if (!matchesList || matchesList.length === 0) {
+        showToast("❌ No hay partidos registrados.", "error");
+        return;
+    }
+
+    showToast("⏳ Generando PDF...", "info");
+
+    const doc = new jsPDF();
+    doc.setFont("helvetica"); 
+
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+
+    // --- CÁLCULOS ESTADÍSTICOS ---
+    const playerStatsMap = {};
+    playersList.forEach(p => {
+        playerStatsMap[p.id] = { goals: 0, assists: 0, matches: 0, ratingSum: 0, ratingCount: 0 };
+    });
+
+    matchesList.forEach(m => {
+        if (m.playerStats && Array.isArray(m.playerStats)) {
+            m.playerStats.forEach(stat => {
+                if (playerStatsMap[stat.playerId]) {
+                    playerStatsMap[stat.playerId].goals += (parseInt(stat.goals) || 0);
+                    playerStatsMap[stat.playerId].assists += (parseInt(stat.assists) || 0);
+                    playerStatsMap[stat.playerId].matches += 1;
+                    if (stat.rating) {
+                        playerStatsMap[stat.playerId].ratingSum += parseFloat(stat.rating);
+                        playerStatsMap[stat.playerId].ratingCount += 1;
+                    }
+                }
+            });
+        }
+    });
+
+    // MVP (Excluyendo entrenador)
+    let mvpPlayer = null;
+    let maxGoals = -1;
+    playersList.forEach(p => {
+        if (p.posicion === 'entrenador') return; 
+        const stats = playerStatsMap[p.id];
+        if (stats && stats.goals > maxGoals) {
+            maxGoals = stats.goals;
+            mvpPlayer = p;
+        }
+    });
+    const mvpStats = mvpPlayer ? playerStatsMap[mvpPlayer.id] : { goals:0, assists:0 };
+    const mvpRating = (mvpStats && mvpStats.ratingCount > 0) ? (mvpStats.ratingSum / mvpStats.ratingCount).toFixed(2) : '-';
+
+    // --- PORTADA ---
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, width, height, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(60);
+    doc.setFont("helvetica", "bold");
+    doc.text("ANUARIO", width/2, 100, { align: "center" });
+    
+    doc.setTextColor(250, 204, 21);
+    doc.setFontSize(30);
+    doc.text("TEMPORADA 24/25", width/2, 120, { align: "center" });
+    doc.setTextColor(200, 200, 200);
+    doc.setFontSize(16);
+    doc.text("INFORME TÉCNICO OFICIAL", width/2, height - 30, { align: "center" });
+
+    // --- RESUMEN ---
+    doc.addPage();
+    doc.setTextColor(0,0,0);
+    doc.setFontSize(22);
+    doc.text("Resumen de la Temporada", 14, 20);
+    
+    const totalPartidos = matchesList.length;
+    const ganados = matchesList.filter(m => m.result && parseInt(m.result.split('-')[0]) > parseInt(m.result.split('-')[1])).length;
+    const golesFavor = matchesList.reduce((acc, m) => acc + (m.result ? parseInt(m.result.split('-')[0]) : 0), 0);
+    const golesContra = matchesList.reduce((acc, m) => acc + (m.result ? parseInt(m.result.split('-')[1]) : 0), 0);
+
+    const drawStatBox = (x, y, label, value, color) => {
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.roundedRect(x, y, 40, 30, 3, 3, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text(label, x + 20, y + 10, { align: "center" });
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text(String(value), x + 20, y + 22, { align: "center" });
+    };
+    drawStatBox(14, 30, "PARTIDOS", totalPartidos, [59, 130, 246]);
+    drawStatBox(60, 30, "VICTORIAS", ganados, [34, 197, 94]);
+    drawStatBox(106, 30, "GOLES A FAVOR", golesFavor, [234, 179, 8]);
+    drawStatBox(152, 30, "GOLES CONTRA", golesContra, [239, 68, 68]);
+
+    // MVP Section
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.text("MVP de la Temporada", 14, 80);
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, 85, 190, 85);
+    if (mvpPlayer) {
+        doc.setFontSize(14);
+        doc.text(`Nombre: ${cleanForPdf(mvpPlayer.nombre + ' ' + mvpPlayer.apellido)}`, 14, 95);
+        doc.text(`Posición: ${mvpPlayer.posicion.toUpperCase()}`, 14, 105);
+        doc.text(`Goles: ${mvpStats.goals} | Asistencias: ${mvpStats.assists}`, 14, 115);
+        doc.text(`Nota Media: ${mvpRating}`, 14, 125);
+    }
+
+    // --- TABLA JUGADORES ---
+    doc.addPage();
+    doc.setFontSize(20);
+    doc.text("Estadísticas de Plantilla", 14, 20);
+
+    const playersTableData = playersList.map(p => {
+        const stats = playerStatsMap[p.id];
+        const avgRating = stats.ratingCount > 0 ? (stats.ratingSum / stats.ratingCount).toFixed(2) : '-';
+        const isCoach = p.posicion === 'entrenador';
+
+        return [
+            p.dorsal || (isCoach ? 'DT' : '-'),
+            cleanForPdf(`${p.nombre} ${p.apellido}`),
+            p.posicion.substring(0, 3).toUpperCase(),
+            isCoach ? '-' : stats.goals,   // Goles: Guión si es DT
+            isCoach ? '-' : stats.assists, // Asistencias: Guión si es DT
+            stats.matches,                 // Partidos: Se muestra para TODOS (incluido DT)
+            avgRating                      // Nota: Se muestra para TODOS (incluido DT)
+        ];
+    });
+
+    playersTableData.sort((a, b) => {
+        const dorsalA = parseInt(a[0]);
+        const dorsalB = parseInt(b[0]);
+        if (isNaN(dorsalA)) return 1;
+        if (isNaN(dorsalB)) return -1;
+        return dorsalA - dorsalB;
+    });
+
+    doc.autoTable({
+        startY: 30,
+        head: [['#', 'Nombre', 'Pos.', 'Goles', 'Asist.', 'Part.', 'Nota']],
+        body: playersTableData,
+        theme: 'striped',
+        styles: { fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [30, 58, 138] }
+    });
+
+    // --- TABLA PARTIDOS ---
+    doc.addPage();
+    doc.setFontSize(20);
+    doc.text("Historial de Partidos", 14, 20);
+    
+    matchesList.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    const matchesTableData = matchesList.map(m => [
+        new Date(m.date).toLocaleDateString(),
+        cleanForPdf(m.opponent || 'Desconocido'),
+        m.competition, 
+        m.result || '-', 
+        m.venue || '-'
+    ]);
+    
+    doc.autoTable({
+        startY: 30,
+        head: [['Fecha', 'Rival', 'Comp.', 'Res.', 'Lugar']],
+        body: matchesTableData,
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [15, 23, 42] }
+    });
+
+    doc.save(`Anuario_RealMadrid_${new Date().getFullYear()}.pdf`);
+    showToast("✅ PDF generado correctamente", "success");
 }
 
 
