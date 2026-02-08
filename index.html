@@ -1290,7 +1290,18 @@ button:active, .btn:active {
 body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .card {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
-
+    .category-btn.active-category {
+        background-color: #eff6ff; /* Azul muy claro */
+        color: #2563eb; /* Azul intenso */
+        border-bottom: 2px solid #2563eb;
+        border-radius: 8px 8px 0 0;
+    }
+    /* Estilo para la sub-pestaña activa (sobreescribe o complementa tu clase .active actual) */
+    .stats-subtab.active {
+        background-color: #2563eb !important;
+        color: white !important;
+        border-color: #2563eb !important;
+    }
 /* Patrón de fondo sutil para dar profundidad */
 #app-container { background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 24px 24px; }
 .dark-mode #app-container { background-image: radial-gradient(#1e293b 1px, transparent 1px); }
@@ -1442,9 +1453,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     </button>
                 </div>
                 <div id="club-trophies-container" class="hidden fade-in"></div>
-                <div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                </div>
-                
+<div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
                 <div id="dashboard-widgets-area" class="space-y-6">
                 <div id="widget-top-stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" draggable="false">
                     
@@ -2021,7 +2030,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         </div>
     </div>
 </div>
-
                                 <div class="flex gap-3 pt-4 border-t mt-4">
                                     <button type="button" onclick="goToStep1()" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Atrás</button>
                                     <button type="button" onclick="goToStep3()" class="flex-1 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-bold text-lg shadow-lg flex items-center justify-center gap-2 transform hover:scale-[1.01] transition-all">
@@ -2163,49 +2171,78 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                 </div>
             </section>
 
-            <!-- STATS SECTION -->
+           <!-- STATS SECTION --> 
             <section id="section-stats" class="hidden fade-in">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <h2 class="text-2xl font-bold text-gray-800">Estadísticas</h2>
-                    
-                    <div class="flex p-1.5 bg-white border border-gray-200 rounded-xl shadow-sm">
-                         <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab active">
-                            📊 General
-                         </button>
-                         <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab inactive">
-                              📈 Avanzado
-                         </button>
-                         <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab inactive">
-                             ⚔️ H2H (Rival)
-                         </button>
-                         <button onclick="switchStatsTab('mvp')" id="btn-stats-mvp" class="stats-subtab inactive">
-                             🏆 Muro de la Fama
-                         </button>
-                         <button onclick="switchStatsTab('coaches')" id="btn-stats-coaches" class="stats-subtab inactive">
-                             👔 Entrenadores
-                         </button>
-                         <button onclick="switchStatsTab('goalkeepers')" id="btn-stats-goalkeepers" class="stats-subtab inactive">
-                             🧤 Porteros
-                         </button>
-                         <button onclick="switchStatsTab('cantera')" id="btn-stats-cantera" class="stats-subtab inactive">
-                             🎓 La Fábrica
-                         </button>
-                         <button onclick="switchStatsTab('awards')" id="btn-stats-awards" class="stats-subtab inactive">
-                             🏆 Gala
-                         </button>
-                         <button onclick="switchStatsTab('records')" id="btn-stats-records" class="stats-subtab inactive">
-                             📜 Récords
-                         </button>
-                        <button onclick="openTrophyRoom()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2 transition-all transform hover:scale-105">
-                        <span>🏆</span> Trofeos
-                    </button>
-                    </div>
-                </div>
+            <div class="mb-6">
+    
+    <div class="flex flex-wrap gap-2 mb-4 border-b border-slate-200 pb-2">
+        <button onclick="showStatCategory('team')" id="cat-btn-team" class="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-all text-sm flex items-center gap-2 category-btn active-category">
+            📊 EQUIPO
+        </button>
+        <button onclick="showStatCategory('players')" id="cat-btn-players" class="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-all text-sm flex items-center gap-2 category-btn">
+            👤 PROTAGONISTAS
+        </button>
+        <button onclick="showStatCategory('rivals')" id="cat-btn-rivals" class="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-all text-sm flex items-center gap-2 category-btn">
+            ⚔️ RIVALES
+        </button>
+        <button onclick="showStatCategory('history')" id="cat-btn-history" class="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-all text-sm flex items-center gap-2 category-btn">
+            🏛️ CLUB E HISTORIA
+        </button>
+    </div>
+
+    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+        
+        <div id="cat-content-team" class="category-content flex flex-wrap gap-2">
+            <button onclick="switchStatsTab('general')" id="btn-stats-general" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors active">
+                📈 General
+            </button>
+            <button onclick="switchStatsTab('advanced')" id="btn-stats-advanced" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                🧠 Avanzado / Táctico
+            </button>
+        </div>
+
+        <div id="cat-content-players" class="category-content hidden flex flex-wrap gap-2">
+            <button onclick="switchStatsTab('coaches')" id="btn-stats-coaches" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                👔 Entrenadores
+            </button>
+            <button onclick="switchStatsTab('goalkeepers')" id="btn-stats-goalkeepers" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                🧤 Porteros
+            </button>
+            <button onclick="switchStatsTab('cantera')" id="btn-stats-cantera" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                🎓 La Fábrica
+            </button>
+        </div>
+
+        <div id="cat-content-rivals" class="category-content hidden flex flex-wrap gap-2">
+            <button onclick="switchStatsTab('h2h')" id="btn-stats-h2h" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                🆚 Historial H2H
+            </button>
+        </div>
+
+        <div id="cat-content-history" class="category-content hidden flex flex-wrap gap-2">
+            <button onclick="openTrophyRoom()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-amber-100 text-amber-800 border border-amber-200 shadow-sm hover:bg-amber-200 transition-colors flex items-center gap-1">
+                🏆 Trofeos
+            </button>
+            <button onclick="switchStatsTab('mvp')" id="btn-stats-mvp" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                ⭐ Muro de la Fama
+            </button>
+            <button onclick="switchStatsTab('awards')" id="btn-stats-awards" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                🏅 Gala de Premios
+            </button>
+            <button onclick="switchStatsTab('records')" id="btn-stats-records" class="stats-subtab px-3 py-1.5 rounded-md text-sm font-medium bg-white border border-slate-200 shadow-sm hover:text-blue-600 transition-colors">
+                📜 Libro de Récords
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
                 
                 
                 
                 <!-- SUB-SECTION: GENERAL -->
-                     <div id="stats-general" class="fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
+                        <div id="stats-general" class="stats-content fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
                         <div class="flex justify-between items-center mb-6 pb-4 border-b">
                          <h3 class="text-lg font-bold text-gray-800">Estadísticas Generales</h3>
 
@@ -2370,44 +2407,63 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                 </div>
 
                 <!-- SUB-SECTION: ADVANCED -->
-                <div id="stats-advanced" class="hidden fade-in space-y-6 bg-white rounded-xl shadow-lg border-t-4 border-emerald-500 p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">Estadísticas Avanzadas</h3>
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-                        <div class="flex flex-col md:flex-row justify-between items-center mb-4">
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-lg">⚔️ Guerra de Líneas</h4>
-                                <p class="text-xs text-gray-500">Evolución del rendimiento: Defensa vs Medio vs Delantera</p>
-                            </div>
-                           <div class="flex gap-4 text-xs font-medium text-gray-500">
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-        <span id="legend-def-val">Defensa</span> </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-        <span id="legend-mid-val">Medio</span> </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-        <span id="legend-fwd-val">Delantera</span> </div>
-</div>
-                        </div>
-                        <div class="w-full h-[350px] relative">
-                            <canvas id="chart-line-wars"></canvas>
-                        </div>
-                    </div>
+                <div id="stats-advanced" class="stats-content hidden fade-in space-y-8">
+    
+    
 
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-    <h4 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
-        📊 Histograma de Rigurosidad 
-        <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Distribución de tus notas</span>
-    </h4>
-    <div class="h-[250px] w-full relative">
-        <canvas id="chart-rating-histogram"></canvas>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+            <div>
+                <h4 class="font-bold text-gray-800 text-lg">⚔️ Guerra de Líneas</h4>
+                <p class="text-xs text-gray-500">Rendimiento por líneas (Defensa vs Medio vs Delantera)</p>
+            </div>
+            <div class="flex gap-4 text-xs font-medium text-gray-500">
+                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span id="legend-def-val">Defensa</span></div>
+                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span id="legend-mid-val">Medio</span></div>
+                <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span><span id="legend-fwd-val">Delantera</span></div>
+            </div>
+        </div>
+        <div class="w-full h-[350px] relative">
+            <canvas id="chart-line-wars"></canvas>
+        </div>
     </div>
-    <p class="text-xs text-center text-gray-400 mt-2">Muestra cuántas veces has puesto cada rango de nota.</p>
-</div>
- <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-    <h4 class="font-bold text-gray-800 text-lg mb-4">🏆 Tier List de la Temporada</h4>
-    <div id="tier-list-container" class="space-y-2"></div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h4 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+            📊 Histograma de Rigurosidad 
+            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Distribución de notas</span>
+        </h4>
+        <div class="h-[250px] w-full relative">
+            <canvas id="chart-rating-histogram"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h4 class="font-bold text-gray-800 text-lg mb-4">🏆 Tier List de la Temporada</h4>
+        <div id="tier-list-container" class="space-y-2"></div>
+    </div>
+
+    <div id="container-scheme-perf" class="bg-white rounded-xl shadow-sm p-4 border border-slate-100"></div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    
+    <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 relative">
+        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <span>🍩</span> ADN del Equipo (Goles/Posición)
+        </h3>
+        <div class="relative h-64 w-full">
+            <canvas id="chart-goals-position"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 relative">
+        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <span>⏱️</span> Zona Cesarini (¿Cuándo marcamos?)
+        </h3>
+        <div class="relative h-64 w-full">
+            <canvas id="chart-goals-minutes"></canvas>
+        </div>
+    </div>
 </div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="flex flex-col md:flex-row justify-between items-center mb-4">
@@ -2450,7 +2506,17 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         <!-- El contenido se generará aquí con JavaScript -->
     </div>
 </div>
-
+                    <div id="stats-visual-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 mb-12 hidden">
+    
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-h-[300px]">
+                            <h3 class="font-bold text-gray-700 mb-4 px-2 border-l-4 border-indigo-500">📈 Análisis de Temporada</h3>
+                            <div id="stats-charts-wrapper"></div> 
+                        </div>
+                    
+                        <div class="lg:col-span-1" id="stats-goal-analysis-container">
+                            </div>
+                    
+                    </div>
                     </div>
                     <!-- Home vs Away Comparison -->
                     <div class="mb-8">
@@ -2487,17 +2553,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                             </table>
                         </div>
                     </div>
-                    <div id="stats-visual-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 mb-12 hidden">
-    
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4 min-h-[300px]">
-        <h3 class="font-bold text-gray-700 mb-4 px-2 border-l-4 border-indigo-500">📈 Análisis de Temporada</h3>
-        <div id="stats-charts-wrapper"></div> 
-    </div>
-
-    <div class="lg:col-span-1" id="stats-goal-analysis-container">
-        </div>
-
-</div>
                     <div class="mt-6 mb-8">
     <h3 class="text-lg font-bold text-gray-700 mb-3 border-l-4 border-indigo-500 pl-3">
         🧩 Rendimiento por Esquema
@@ -2527,7 +2582,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                 </div>
 
                 <!-- SUB-SECTION: H2H -->
-                <div id="stats-h2h" class="hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-pink-500 p-6">
+                <div id="stats-h2h" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
                     <h3 class="text-xl font-bold text-gray-800 mb-6 pb-2 border-b">Historial contra Rival (Head to Head)</h3>
                     <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona un rival histórico</label>
@@ -2539,7 +2594,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                         <!-- Populated by JS -->
                     </div>
                 </div>
-                <div id="stats-mvp" class="hidden fade-in space-y-6">
+                <div id="stats-mvp" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6">
                     <div class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl shadow-lg p-8 text-white text-center mb-8 relative overflow-hidden">
                         <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                         <h3 class="text-3xl font-black mb-2 relative z-10">🏆 EL MURO DE LA FAMA</h3>
@@ -2560,12 +2615,11 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                         <p>Aún no hay MVPs registrados. Juega partidos y elige al mejor jugador.</p>
                     </div>
                 </div>
-                <div id="stats-coaches" class="hidden fade-in space-y-6"></div>
-                <div id="stats-goalkeepers" class="hidden fade-in space-y-6"></div>
-                <div id="stats-cantera" class="hidden fade-in space-y-6"></div>
-                <div id="stats-awards" class="hidden fade-in space-y-6"></div>
-                <div id="stats-records" class="hidden fade-in space-y-6"></div>
-
+                <div id="stats-coaches" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6"></div>
+                <div id="stats-goalkeepers" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6"></div>
+                <div id="stats-cantera" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6"></div>
+                <div id="stats-awards" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6"></div>
+                <div id="stats-records" class="stats-content hidden fade-in bg-white rounded-xl shadow-lg border-t-4 border-indigo-500 p-6"></div>
             </section>
         </main>
     </div>
@@ -4025,51 +4079,94 @@ function toggleLoginModal() {
             console.log("Estado final:", newState[compName]);
        }
 
-        // ==========================================
-        // STATISTICS
-        // ==========================================
-
-              function switchStatsTab(tab) {
-            document.querySelectorAll('.stats-subtab').forEach(el => {
-                el.classList.remove('active');
-                el.classList.add('inactive');
-            });
-            document.getElementById(`btn-stats-${tab}`).classList.add('active');
-            document.getElementById(`btn-stats-${tab}`).classList.remove('inactive');
-
-            // Ocultar todas las secciones
-            document.getElementById('stats-general').classList.add('hidden');
-            document.getElementById('stats-advanced').classList.add('hidden');
-            document.getElementById('stats-h2h').classList.add('hidden');
-            document.getElementById('stats-mvp').classList.add('hidden');
-            document.getElementById('stats-coaches').classList.add('hidden');
-            document.getElementById('stats-goalkeepers').classList.add('hidden');
-            document.getElementById('stats-cantera').classList.add('hidden');
-            document.getElementById('stats-awards').classList.add('hidden');
-            document.getElementById('stats-records').classList.add('hidden');
-
-            // Mostrar la seleccionada
-            document.getElementById(`stats-${tab}`).classList.remove('hidden');
-
-            // Ejecutar la función de renderizado correspondiente
-            if (tab === 'advanced') {
-                renderAdvancedStats();
-            } else if (tab === 'h2h') {
-                populateH2HOpponents();
-            } else if (tab === 'mvp') {
-                renderMVPGallery();
-            } else if (tab === 'coaches') {
-                renderCoachStats();
-            } else if (tab === 'goalkeepers') {
-                renderGoalkeeperStats();
-            } else if (tab === 'cantera') {
-                renderCanteraStats();
-            } else if (tab === 'awards') {
-                renderSeasonAwards();
-            } else if (tab === 'records') {
-                renderRecords();
-            }
+// ==========================================
+// 🔄 GESTIÓN DE PESTAÑAS (VERSIÓN SEGURA)
+// ==========================================
+function switchStatsTab(tabName) {
+    // 1. GESTIÓN VISUAL (BOTONES)
+    // Quitamos activo a todos
+    document.querySelectorAll('.stats-subtab').forEach(btn => {
+        if(btn) {
+            btn.classList.remove('active', 'bg-blue-600', 'text-white');
+            btn.classList.add('inactive'); // O tu estilo por defecto
         }
+    });
+
+    // Activamos el pulsado
+    const targetBtn = document.getElementById(`btn-stats-${tabName}`);
+    if (targetBtn) {
+        targetBtn.classList.remove('inactive');
+        targetBtn.classList.add('active', 'bg-blue-600', 'text-white');
+    }
+
+    // 2. GESTIÓN DE CONTENIDO (DIVS)
+    // Ocultamos TODOS los divs de contenido
+    document.querySelectorAll('.stats-content').forEach(div => div.classList.add('hidden'));
+
+    // Buscamos el div destino
+    let targetDiv = document.getElementById(`stats-${tabName}`);
+    // Compatibilidad con nombres antiguos
+    if (!targetDiv) targetDiv = document.getElementById(`section-${tabName}`);
+
+    if (targetDiv) {
+        targetDiv.classList.remove('hidden');
+    } else {
+        // Si no existe el div (ej: para 'bench' si aun no lo has creado), salimos sin error
+        console.warn(`⚠️ AVISO: No existe el contenedor <div id="stats-${tabName}"> todavía.`);
+        return;
+    }
+
+    // 3. RENDERIZADO (Lógica)
+    const matches = (typeof getData === 'function') ? getData('matches') || [] : [];
+
+    try {
+        if (tabName === 'general') {
+            if (typeof renderGeneralStats === 'function') renderGeneralStats();
+            // Gráficos que van en General
+            setTimeout(() => {
+                if (typeof renderGalaXI === 'function') renderGalaXI();
+                if (typeof renderPerformanceQuadrant === 'function') renderPerformanceQuadrant();
+            }, 50);
+        } 
+        else if (tabName === 'advanced') {
+            if (typeof renderAdvancedStats === 'function') renderAdvancedStats();
+            // Gráficos Avanzados
+            setTimeout(() => {
+                // El error venía de aquí: renderCharts busca 'stats-charts-wrapper'
+                if (typeof renderCharts === 'function') renderCharts(matches);
+                if (typeof renderLineWarsChart === 'function') renderLineWarsChart();
+                if (typeof renderRigurosityHistogram === 'function') renderRigurosityHistogram();
+                if (typeof renderTierList === 'function') renderTierList();
+                if (typeof renderSchemePerformance === 'function') renderSchemePerformance();
+            }, 50);
+        }
+        else if (tabName === 'h2h') {
+            if (typeof populateH2HOpponents === 'function') populateH2HOpponents();
+        }
+        else if (tabName === 'mvp') {
+            if (typeof renderMVPGallery === 'function') renderMVPGallery();
+            else if (typeof renderHallOfFame === 'function') renderHallOfFame();
+        }
+        else if (tabName === 'coaches') {
+            if (typeof renderCoachStats === 'function') renderCoachStats();
+        }
+        else if (tabName === 'goalkeepers') {
+            if (typeof renderGoalkeeperStats === 'function') renderGoalkeeperStats();
+        }
+        else if (tabName === 'cantera') {
+            if (typeof renderCanteraStats === 'function') renderCanteraStats();
+        }
+        else if (tabName === 'awards') {
+            if (typeof renderSeasonAwards === 'function') renderSeasonAwards();
+        }
+        else if (tabName === 'records') {
+            if (typeof renderRecords === 'function') renderRecords();
+        }
+
+    } catch (e) {
+        console.error("Error controlado al renderizar:", e);
+    }
+}
 
   
 
@@ -4943,221 +5040,200 @@ function renderRecords() {
     container.innerHTML = html;
 }
 
+        // ===============================================
+        // FUNCIÓN PARA LIMPIAR EMOJIS DE TEXTO
+        // ===============================================
+        function cleanText(text) {
+    if (!text) return "";
+    // \p{Extended_Pictographic} busca cualquier símbolo gráfico/emoji
+    // La bandera 'u' (unicode) es OBLIGATORIA para que esto funcione
+    return text.replace(/\p{Extended_Pictographic}/gu, '').trim();
+}
+
+                /* ========================================================= */
+        /* 📈 RENDERIZAR GRÁFICOS (TODOS EN UNO) - VERSIÓN FINAL       */
         /* ========================================================= */
-/* 📈 RENDERIZAR GRÁFICOS (EVOLUCIÓN Y GOLES)                */
-/* ========================================================= */
-let evolutionChart = null;
-let goalsChart = null;
-let timingChart = null;
+        let evolutionChart = null;
+        let goalsPositionChart = null;
+        let goalsTimingChart = null;
 
-function renderCharts(filteredMatches) {
-    // 1. PREPARAR EL TERRENO (HTML)
-    const wrapper = document.getElementById('stats-charts-wrapper');
-    if (!wrapper) return;
+        function renderCharts(filteredMatches) {
+            const players = getPlayers();
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#e2e8f0' : '#4b5563';
+            const gridColor = isDark ? '#334155' : '#e5e7eb';
+            
+            // --- GRÁFICO 1: ANÁLISIS DE TEMPORADA (LÍNEA) ---
+            const wrapper = document.getElementById('stats-charts-wrapper');
+            if (wrapper) {
+                wrapper.innerHTML = `<div class="relative h-60 w-full"><canvas id="chart-season-evolution"></canvas></div>`;
+                const evoCtx = document.getElementById('chart-season-evolution');
 
-    // Inyectamos los canvas si no existen
-    // Creamos dos huecos: Arriba la evolución (ancho), Abajo el donut (centrado)
-    wrapper.innerHTML = `
-        <div class="relative h-60 w-full mb-6">
-            <canvas id="chart-season-evolution"></canvas>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-4">
-            <div>
-                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Distribución de Goles</h4>
-                <div class="relative h-48 w-full flex justify-center">
-                    <canvas id="chart-goals-distribution"></canvas>
-                </div>
-            </div>
-            <div>
-                <h4 class="text-xs font-bold text-gray-400 uppercase mb-2 text-center">Cronología (Minutos)</h4>
-                <div class="relative h-48 w-full">
-                    <canvas id="chart-goals-timing"></canvas>
-                </div>
-            </div>
-        </div>
-    `;
-
-    const players = getPlayers();
-
-    // --- 2. GRÁFICO DE GOLES (DONUT) ---
-    const goalsByPos = { 'delantero': 0, 'centrocampista': 0, 'defensa': 0 };
-    
-    filteredMatches.forEach(m => {
-        if(m.playerStats) {
-            m.playerStats.forEach(ps => {
-                const p = players.find(pl => pl.id === ps.playerId);
-                if (p && ps.goals > 0) {
-                    let pos = p.posicion;
-                    if (pos === 'extremo') pos = 'delantero';
-                    if (pos === 'carrilero') pos = 'defensa'; // Normalizamos
+                if (evoCtx) {
+                    const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    const labels = sortedMatches.map(m => cleanText(m.opponent).substring(0, 3).toUpperCase());
                     
-                    if (goalsByPos[pos] !== undefined) {
-                        goalsByPos[pos] += ps.goals;
-                    }
-                }
-            });
-        }
-    });
-
-    const ctxGoals = document.getElementById('chart-goals-distribution');
-    if (ctxGoals) {
-        if (goalsChart) goalsChart.destroy();
-
-        goalsChart = new Chart(ctxGoals.getContext('2d'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Delanteros', 'Medios', 'Defensas'],
-                datasets: [{
-                    data: [goalsByPos['delantero'], goalsByPos['centrocampista'], goalsByPos['defensa']],
-                    backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
-                    hoverOffset: 4,
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // Importante para que no crezca infinito
-                plugins: {
-                    legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 10 } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const value = context.raw;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
-                                return ` ${value} Goles (${percentage})`;
-                            }
+                    const ratings = sortedMatches.map(m => {
+                        let total = 0, count = 0;
+                        if(m.playerStats) {
+                            m.playerStats.forEach(ps => {
+                                if (ps.rating) { total += parseFloat(ps.rating); count++; }
+                            });
                         }
-                    }
-                }
-            }
-        });
-    }
-    
-    // --- 2.5 GRÁFICO DE CRONOLOGÍA (NUEVO) ---
-    const timingBuckets = { '0-15': 0, '16-30': 0, '31-45+': 0, '46-60': 0, '61-75': 0, '76-90+': 0 };
-    
-    filteredMatches.forEach(m => {
-        if(m.playerStats) {
-            m.playerStats.forEach(ps => {
-                if (ps.detailGoals) {
-                    const goals = ps.detailGoals.split(',').map(s => s.trim()).filter(s => s);
-                    goals.forEach(g => {
-                        let min = parseInt(g);
-                        if (!isNaN(min)) {
-                            if (min <= 15) timingBuckets['0-15']++;
-                            else if (min <= 30) timingBuckets['16-30']++;
-                            else if (min <= 45) timingBuckets['31-45+']++;
-                            else if (min <= 60) timingBuckets['46-60']++;
-                            else if (min <= 75) timingBuckets['61-75']++;
-                            else timingBuckets['76-90+']++;
+                        return count > 0 ? (total / count).toFixed(2) : null;
+                    });
+
+                    if (evolutionChart) evolutionChart.destroy();
+                    evolutionChart = new Chart(evoCtx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Nota Media Equipo',
+                                data: ratings,
+                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                pointBackgroundColor: '#fff',
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                // ✅ MEJORA: AÑADIMOS EL CALLBACK DEL TOOLTIP
+                                tooltip: {
+                                    callbacks: {
+                                        title: function(context) {
+                                            const index = context[0].dataIndex;
+                                            const fullOpponentName = sortedMatches[index].opponent;
+                                            return cleanText(fullOpponentName); // Devuelve el nombre completo limpio
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: { min: 4, max: 10, grid: { color: gridColor }, ticks: { color: textColor } },
+                                x: { grid: { display: false }, ticks: { color: textColor, font: { size: 9 } } }
+                            }
                         }
                     });
                 }
-            });
-        }
-    });
+            }
 
-    const ctxTiming = document.getElementById('chart-goals-timing');
-    if (ctxTiming) {
-        if (timingChart) timingChart.destroy();
-        timingChart = new Chart(ctxTiming.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: Object.keys(timingBuckets),
-                datasets: [{ label: 'Goles', data: Object.values(timingBuckets), backgroundColor: '#6366f1', borderRadius: 4 }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } } }
-        });
-    }
+            // --- GRÁFICO 2: ADN DEL EQUIPO (DONUT) ---
+            const posCtx = document.getElementById('chart-goals-position');
+            if (posCtx) {
+                const goalsByPos = { 'Delantera': 0, 'Centrocampista': 0, 'Defensa': 0 };
+                let totalGoals = 0;
 
-    // --- 3. GRÁFICO DE EVOLUCIÓN (LÍNEA) ---
-    const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    const labels = sortedMatches.map(m => {
-        // Mostrar solo el nombre del rival
-        return m.opponent;
-    });
-
-    const ratings = sortedMatches.map(m => {
-        let total = 0, count = 0;
-        if(m.playerStats) {
-            m.playerStats.forEach(ps => {
-                if (ps.rating) {
-                    total += parseFloat(ps.rating);
-                    count++;
-                }
-            });
-        }
-        return count > 0 ? (total / count).toFixed(2) : null;
-    });
-
-    const ctxEvo = document.getElementById('chart-season-evolution');
-    if (ctxEvo) {
-        if (evolutionChart) evolutionChart.destroy();
-
-        evolutionChart = new Chart(ctxEvo.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Nota Media Equipo',
-                    data: ratings,
-                    borderColor: '#6366f1', // Indigo más bonito
-                    backgroundColor: (context) => {
-                        const ctx = context.chart.ctx;
-                        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                        gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
-                        gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
-                        return gradient;
-                    },
-                    tension: 0.4, // Más curvo y suave
-                    fill: true,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#6366f1',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // CLAVE: Se adapta al div contenedor (h-60)
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                    y: { 
-                        min: 0, max: 10, 
-                        grid: { color: '#f3f4f6' }, 
-                        border: { display: false },
-                        ticks: { stepSize: 1 } 
-                    },
-                    x: { 
-                        display: true, // Mostramos eje X
-                        grid: { display: false },
-                        ticks: { 
-                            maxTicksLimit: 5, // Evita que se amontonen las etiquetas
-                            font: { size: 9 }
-                        }
+                filteredMatches.forEach(m => {
+                    if(m.playerStats) {
+                        m.playerStats.forEach(ps => {
+                            const p = players.find(pl => pl.id === ps.playerId);
+                            if (p && ps.goals > 0) {
+                                totalGoals += ps.goals;
+                                if (p.posicion === 'delantero' || p.posicion === 'extremo') goalsByPos['Delantera'] += ps.goals;
+                                else if (p.posicion === 'centrocampista') goalsByPos['Centrocampista'] += ps.goals;
+                                else if (p.posicion === 'defensa') goalsByPos['Defensa'] += ps.goals;
+                            }
+                        });
                     }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        titleColor: '#1f2937',
-                        bodyColor: '#1f2937',
-                        borderColor: '#e5e7eb',
-                        borderWidth: 1,
-                        displayColors: false,
-                        callbacks: { 
-                            label: (context) => `Nota Media: ${context.raw}` 
+                });
+
+                if (goalsPositionChart) goalsPositionChart.destroy();
+                
+                if (totalGoals === 0) {
+                    const ctx = posCtx.getContext('2d');
+                    ctx.clearRect(0, 0, posCtx.width, posCtx.height);
+                    ctx.font = "14px Inter"; ctx.textAlign = 'center'; ctx.fillStyle = textColor;
+                    ctx.fillText("Sin goles registrados.", posCtx.width / 2, posCtx.height / 2);
+                } else {
+                    goalsPositionChart = new Chart(posCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: Object.keys(goalsByPos),
+                            datasets: [{
+                                data: Object.values(goalsByPos),
+                                backgroundColor: ['#ef4444', '#10b981', '#3b82f6'],
+                                borderColor: isDark ? '#1e293b' : '#fff',
+                                borderWidth: 4, hoverOffset: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom', labels: { color: textColor } },
+                                tooltip: { callbacks: { label: (c) => ` ${c.raw} Goles` } }
+                            }
                         }
-                    }
+                    });
                 }
             }
-        });
-    }
-}
+
+            // --- GRÁFICO 3: ZONA CESARINI (BARRAS) ---
+            const timeCtx = document.getElementById('chart-goals-minutes');
+            if(timeCtx) {
+                const timingBuckets = { '0-15': 0, '16-30': 0, '31-45+': 0, '46-60': 0, '61-75': 0, '76-90+': 0 };
+                let totalTimedGoals = 0;
+                
+                filteredMatches.forEach(m => {
+                    if(m.playerStats) {
+                        m.playerStats.forEach(ps => {
+                            if (ps.detailGoals) {
+                                ps.detailGoals.split(',').map(s => s.trim()).filter(Boolean).forEach(g => {
+                                    totalTimedGoals++;
+                                    let min = parseInt(g);
+                                    if (!isNaN(min)) {
+                                        if (min <= 15) timingBuckets['0-15']++;
+                                        else if (min <= 30) timingBuckets['16-30']++;
+                                        else if (min <= 45 || g.includes('+')) timingBuckets['31-45+']++;
+                                        else if (min <= 60) timingBuckets['46-60']++;
+                                        else if (min <= 75) timingBuckets['61-75']++;
+                                        else timingBuckets['76-90+']++;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+
+                if (goalsTimingChart) goalsTimingChart.destroy();
+                
+                if (totalTimedGoals === 0) {
+                     const ctx = timeCtx.getContext('2d');
+                     ctx.clearRect(0, 0, timeCtx.width, timeCtx.height);
+                     ctx.font = "14px Inter"; ctx.textAlign = 'center'; ctx.fillStyle = textColor;
+                     ctx.fillText("No hay minutos de gol detallados.", timeCtx.width / 2, (timeCtx.height / 2));
+                } else {
+                    goalsTimingChart = new Chart(timeCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: Object.keys(timingBuckets),
+                            datasets: [{
+                                label: 'Goles marcados',
+                                data: Object.values(timingBuckets),
+                                backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { stepSize: 1, color: textColor } },
+                                x: { ticks: { color: textColor } }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+
+
+
 
 // --- FUNCIÓN AUXILIAR PARA DIBUJAR LA MATRIZ ---
         // --- FUNCIÓN AUXILIAR PARA DIBUJAR LA MATRIZ (CON NOTA MEDIA DE TEMPORADA) ---
@@ -5855,6 +5931,7 @@ function renderPerformanceMatrix(matches) {
             renderClubTrophies();
             renderTrafficLight();
             renderTopPerformances(); 
+
         }
 
         // ==========================================
@@ -11177,87 +11254,84 @@ function renderTrafficLight() {
         // ==========================================
         
         let lineWarsChart = null;
-
-       /* ==========================================================================
-   GRÁFICO LINE WARS (CON MEDIAS GLOBALES)
-   ========================================================================== */
 /* ==========================================================================
    GRÁFICO LINE WARS (CON MEDIAS GLOBALES)
-   ========================================================================== */
+   ==========================================================================*/
 function renderLineWarsChart() {
     const ctx = document.getElementById('chart-line-wars');
     if (!ctx) return;
 
-    const matches = getData('matches').sort((a, b) => new Date(a.date) - new Date(b.date));
+    // 1. Filtrar solo partidos con fecha válida y ordenarlos
+    const matches = getData('matches')
+        .filter(m => m.date && !isNaN(new Date(m.date).getTime()))
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+        
     const players = getPlayers();
 
     if (matches.length === 0) return;
 
-    // Arrays de datos para el gráfico
+    // Arrays de datos
     const labels = [];
     const dataDef = [];
     const dataMid = [];
     const dataFwd = [];
 
-    // Acumuladores globales para medias totales
+    // Acumuladores globales
     let totalSumDef = 0, totalCountDef = 0;
     let totalSumMid = 0, totalCountMid = 0;
     let totalSumFwd = 0, totalCountFwd = 0;
 
     matches.forEach(m => {
-        // Etiqueta del eje X (Rival)
-        labels.push(m.opponent.substring(0, 3).toUpperCase());
+        // ✨ AQUÍ LLAMAMOS A cleanText ✨
+        // Limpiamos el nombre del rival, cortamos a 3 letras y mayúsculas
+        const rivalName = cleanText(m.opponent || 'Rival'); 
+        labels.push(rivalName.substring(0, 3).toUpperCase());
 
-        // Acumuladores para este partido
         let sumDef = 0, countDef = 0;
         let sumMid = 0, countMid = 0;
         let sumFwd = 0, countFwd = 0;
 
-        m.playerStats.forEach(ps => {
-            // Solo si jugó y tiene nota válida (> 0)
-            if ((ps.rating || ps.rating === 0) && ps.minutes > 0 && parseFloat(ps.rating) > 0) {
-                const p = players.find(pl => pl.id === ps.playerId);
-                if (p) {
-                    const nota = parseFloat(ps.rating);
-                    
-                    if (p.posicion === 'defensa') {
-                        sumDef += nota; countDef++;
-                        totalSumDef += nota; totalCountDef++;
-                    } else if (p.posicion === 'centrocampista') {
-                        sumMid += nota; countMid++;
-                        totalSumMid += nota; totalCountMid++;
-                    } else if (p.posicion === 'delantero' || p.posicion === 'extremo') {
-                        sumFwd += nota; countFwd++;
-                        totalSumFwd += nota; totalCountFwd++;
+        if (m.playerStats) {
+            m.playerStats.forEach(ps => {
+                const r = parseFloat(ps.rating);
+                // Validamos que tenga nota numérica y minutos
+                if (!isNaN(r) && r > 0 && ps.minutes > 0) {
+                    const p = players.find(pl => pl.id === ps.playerId);
+                    if (p) {
+                        const pos = p.posicion.toLowerCase();
+                        if (pos.includes('defens') || pos.includes('later') || pos.includes('carril')) {
+                            sumDef += r; countDef++; totalSumDef += r; totalCountDef++;
+                        } else if (pos.includes('medi') || pos.includes('centr')) {
+                            sumMid += r; countMid++; totalSumMid += r; totalCountMid++;
+                        } else if (pos.includes('delant') || pos.includes('extrem')) {
+                            sumFwd += r; countFwd++; totalSumFwd += r; totalCountFwd++;
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        // Calcular medias del partido (null si no hay datos para romper la línea)
-        dataDef.push(countDef > 0 ? (sumDef / countDef).toFixed(2) : null);
-        dataMid.push(countMid > 0 ? (sumMid / countMid).toFixed(2) : null);
-        dataFwd.push(countFwd > 0 ? (sumFwd / countFwd).toFixed(2) : null);
+        dataDef.push(countDef > 0 ? parseFloat((sumDef / countDef).toFixed(2)) : null);
+        dataMid.push(countMid > 0 ? parseFloat((sumMid / countMid).toFixed(2)) : null);
+        dataFwd.push(countFwd > 0 ? parseFloat((sumFwd / countFwd).toFixed(2)) : null);
     });
 
-    // --- ACTUALIZAR LEYENDA CON MEDIAS GLOBALES ---
+    // Medias globales
     const avgDef = totalCountDef > 0 ? (totalSumDef / totalCountDef).toFixed(2) : '-';
     const avgMid = totalCountMid > 0 ? (totalSumMid / totalCountMid).toFixed(2) : '-';
     const avgFwd = totalCountFwd > 0 ? (totalSumFwd / totalCountFwd).toFixed(2) : '-';
 
-    // Buscamos los contenedores de la leyenda (Asumiendo que tienes spans o divs con estos IDs o clases)
-    // Si no tienes IDs, añade id="legend-def", "legend-mid", "legend-fwd" a los textos de la leyenda en tu HTML
-    const legendDef = document.getElementById('legend-def-val') || document.querySelector('.legend-def span');
-    const legendMid = document.getElementById('legend-mid-val') || document.querySelector('.legend-mid span');
-    const legendFwd = document.getElementById('legend-fwd-val') || document.querySelector('.legend-fwd span');
+    // Actualizar Leyenda HTML
+    const legendDef = document.getElementById('legend-def-val');
+    const legendMid = document.getElementById('legend-mid-val');
+    const legendFwd = document.getElementById('legend-fwd-val');
 
-    // Si existen, actualizamos el texto
     if (legendDef) legendDef.textContent = `Defensa (${avgDef})`;
     if (legendMid) legendMid.textContent = `Medio (${avgMid})`;
     if (legendFwd) legendFwd.textContent = `Delantera (${avgFwd})`;
 
-    // Destruir gráfico anterior
-    if (typeof lineWarsChart !== 'undefined' && lineWarsChart) {
+    // Destruir anterior si existe
+    if (typeof lineWarsChart !== 'undefined' && lineWarsChart instanceof Chart) {
         lineWarsChart.destroy();
     }
 
@@ -11265,63 +11339,56 @@ function renderLineWarsChart() {
     const gridColor = isDark ? '#334155' : '#f3f4f6';
     const textColor = isDark ? '#94a3b8' : '#6b7280';
 
-    // Crear Gráfico
-    // @ts-ignore (Si usas TS)
+    // @ts-ignore
     lineWarsChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [
                 {
-                    label: `Defensa (Media: ${avgDef})`, // Tooltip mostrará la media
+                    label: `Defensa (Media: ${avgDef})`,
                     data: dataDef,
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.3,
-                    pointRadius: 3,
-                    pointHoverRadius: 6
+                    tension: 0.3, pointRadius: 3, pointHoverRadius: 6, spanGaps: true
                 },
                 {
                     label: `Medio (Media: ${avgMid})`,
                     data: dataMid,
                     borderColor: '#10b981',
                     backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.3,
-                    pointRadius: 3,
-                    pointHoverRadius: 6
+                    tension: 0.3, pointRadius: 3, pointHoverRadius: 6, spanGaps: true
                 },
                 {
                     label: `Delantera (Media: ${avgFwd})`,
                     data: dataFwd,
                     borderColor: '#f43f5e',
                     backgroundColor: 'rgba(244, 63, 94, 0.1)',
-                    tension: 0.3,
-                    pointRadius: 3,
-                    pointHoverRadius: 6
+                    tension: 0.3, pointRadius: 3, pointHoverRadius: 6, spanGaps: true
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { display: false }, // Mantenemos leyenda oculta porque usamos la HTML
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        title: (context) => matches[context[0].dataIndex].opponent
+                        // ✨ AQUÍ TAMBIÉN LLAMAMOS A cleanText ✨
+                        title: (context) => {
+                            const matchIndex = context[0].dataIndex;
+                            return cleanText(matches[matchIndex].opponent);
+                        }
                     }
                 }
             },
             scales: {
                 y: {
-                    min: 4,
-                    max: 10,
+                    min: 0, max: 10, // Escala completa 0-10
                     grid: { color: gridColor },
-                    ticks: { color: textColor }
+                    ticks: { color: textColor, stepSize: 1 }
                 },
                 x: {
                     grid: { display: false },
@@ -14717,6 +14784,40 @@ async function generateSeasonYearbook() {
     showToast("✅ PDF generado correctamente", "success");
 }
 
+// ==========================================
+// 🗂️ GESTIÓN DE CATEGORÍAS DE ESTADÍSTICAS
+// ==========================================
+
+function showStatCategory(catName) {
+    // 1. Ocultar todos los contenidos de submenú
+     document.querySelectorAll('.category-content').forEach(el => {
+        el.classList.add('hidden');
+        el.style.display = 'none'; // Forzar ocultado para evitar conflictos
+    });
+    // 2. Desactivar todos los botones de categoría
+    document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active-category'));
+
+    // 3. Mostrar el contenido seleccionado
+    const content = document.getElementById(`cat-content-${catName}`);
+     if (content) {
+        content.classList.remove('hidden');
+        content.style.display = 'flex'; // Forzar mostrado
+    }
+
+    // 4. Activar el botón seleccionado
+    const btn = document.getElementById(`cat-btn-${catName}`);
+    if (btn) btn.classList.add('active-category');
+
+    // 5. (Opcional) Activar automáticamente la primera pestaña de esa categoría
+    // Esto evita que te quedes viendo un contenido vacío al cambiar de categoría
+    if (catName === 'team') switchStatsTab('general');
+    if (catName === 'players') switchStatsTab('coaches'); // O la que prefieras por defecto
+    if (catName === 'rivals') switchStatsTab('h2h');
+    if (catName === 'history') switchStatsTab('mvp');
+}
+
+
+
 
 
 // ==========================================
@@ -14815,7 +14916,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-        
         // ==========================================
         // SCROLL LOCK UTILS
         // ==========================================
@@ -14917,6 +15017,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         }
+        
 
     </script>
 </body>
