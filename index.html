@@ -1453,7 +1453,7 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     </button>
                 </div>
                 <div id="club-trophies-container" class="hidden fade-in"></div>
-<div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
+                <div id="competition-status" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
                 <div id="dashboard-widgets-area" class="space-y-6">
                 <div id="widget-top-stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" draggable="false">
                     
@@ -2332,18 +2332,72 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                             <div class="p-2 bg-red-50 text-red-600 rounded border border-red-100">⚠️ Fatiga (Juegan mucho / Rinden bajo)</div>
                         </div>
                     </div>
-                    <div class="flex gap-4 text-xs font-medium text-gray-500">
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-        <span id="legend-def-val">Defensa</span> </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-        <span id="legend-mid-val">Medio</span> </div>
-    <div class="flex items-center gap-1">
-        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-        <span id="legend-fwd-val">Delantera</span> </div>
-</div>
+                    <div class="bg-white rounded-xl shadow-lg border-t-4 border-blue-500 p-6 mb-8 fade-in">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+            🏰 La Fortaleza vs ✈️ El Viajero
+        </h3>
+        <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+            Rendimiento Local vs Visitante
+        </span>
+    </div>
 
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="col-span-1 flex flex-col justify-center space-y-4">
+            
+            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-slate-700 flex items-center gap-2">🏠 EN CASA</span>
+                    <span id="home-points-display" class="text-sm font-bold text-blue-600">0 Puntos</span>
+                </div>
+                <div class="grid grid-cols-3 text-center gap-2 text-sm">
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-gray-500">Partidos</div>
+                        <div id="home-matches" class="font-bold text-lg">0</div>
+                    </div>
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-green-600">Victorias</div>
+                        <div id="home-wins" class="font-bold text-lg text-green-700">0</div>
+                    </div>
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-blue-500">Goles</div>
+                        <div id="home-goals" class="font-bold text-lg text-blue-700">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center -my-2 relative z-10">
+                <span class="bg-white text-gray-400 font-bold text-xs border rounded-full px-2 py-1 shadow-sm">VS</span>
+            </div>
+
+            <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold text-slate-700 flex items-center gap-2">✈️ FUERA</span>
+                    <span id="away-points-display" class="text-sm font-bold text-indigo-600">0 Puntos</span>
+                </div>
+                <div class="grid grid-cols-3 text-center gap-2 text-sm">
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-gray-500">Partidos</div>
+                        <div id="away-matches" class="font-bold text-lg">0</div>
+                    </div>
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-green-600">Victorias</div>
+                        <div id="away-wins" class="font-bold text-lg text-green-700">0</div>
+                    </div>
+                    <div class="bg-white p-2 rounded border shadow-sm">
+                        <div class="text-xs text-indigo-500">Goles</div>
+                        <div id="away-goals" class="font-bold text-lg text-indigo-700">0</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-span-1 lg:col-span-2 relative h-64 md:h-auto min-h-[250px] bg-slate-50 rounded-xl border border-slate-100 p-2">
+            <canvas id="chart-home-away"></canvas>
+        </div>
+    </div>
+</div>
                     <!-- Stats Filters -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2442,9 +2496,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
         <h4 class="font-bold text-gray-800 text-lg mb-4">🏆 Tier List de la Temporada</h4>
         <div id="tier-list-container" class="space-y-2"></div>
     </div>
-
-    <div id="container-scheme-perf" class="bg-white rounded-xl shadow-sm p-4 border border-slate-100"></div>
-
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     
     <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 relative">
@@ -2518,14 +2569,6 @@ body, .bg-white, .bg-gray-50, .bg-gray-100, .text-gray-800, .text-slate-700, .ca
                     
                     </div>
                     </div>
-                    <!-- Home vs Away Comparison -->
-                    <div class="mb-8">
-                        <h4 class="font-bold text-gray-700 mb-4">Rendimiento: Casa vs Fuera</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="home-away-stats-container">
-                            <!-- Populated by JS -->
-                        </div>
-                    </div>
-
                     <!-- Heatmap by Position -->
                     <div class="mb-8">
                         <h4 class="font-bold text-gray-700 mb-4">Mapa de Rendimiento (Nota Media por Posición)</h4>
@@ -4126,6 +4169,8 @@ function switchStatsTab(tabName) {
             setTimeout(() => {
                 if (typeof renderGalaXI === 'function') renderGalaXI();
                 if (typeof renderPerformanceQuadrant === 'function') renderPerformanceQuadrant();
+                if (typeof renderHomeAwayStats === 'function') renderHomeAwayStats();
+                if (typeof renderSeasonEvolutionChart === 'function') renderSeasonEvolutionChart();
             }, 50);
         } 
         else if (tabName === 'advanced') {
@@ -4542,6 +4587,8 @@ function renderStats() {
     if(typeof renderScatterChart === 'function') renderScatterChart();
     if(typeof renderRegularityAnalysis === 'function') renderRegularityAnalysis();
     if(typeof renderFormationStats === 'function') renderFormationStats();
+    if(typeof renderHomeAwayStats === 'function') renderHomeAwayStats(filteredMatches);
+    if (typeof renderSeasonEvolutionChart === 'function')renderSeasonEvolutionChart(filteredMatches);
 }
 
 function renderCoachStats() {
@@ -5371,46 +5418,6 @@ function renderPerformanceMatrix(matches) {
             renderGoalConnections();
             const matches = getData('matches');
             const players = getPlayers();
-
-            // 1. Home vs Away
-            let homeStats = { wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, count: 0 };
-            let awayStats = { wins: 0, draws: 0, losses: 0, gf: 0, ga: 0, count: 0 };
-
-            matches.forEach(m => {
-                const parts = m.result.replace('*','').split('-').map(Number);
-                const isHome = m.venue === 'local';
-                const stats = isHome ? homeStats : awayStats;
-                
-                // Treat neutral as away for simplicity or ignore? Let's treat as away for now or ignore.
-                if (m.venue === 'neutral') return;
-
-                stats.count++;
-                if (m.outcome === 'victoria') stats.wins++;
-                else if (m.outcome === 'empate') stats.draws++;
-                else stats.losses++;
-
-                if (isHome) { stats.gf += parts[0]; stats.ga += parts[1]; }
-                else { stats.gf += parts[1]; stats.ga += parts[0]; }
-            });
-
-            document.getElementById('home-away-stats-container').innerHTML = `
-                <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
-                    <h4 class="font-bold text-blue-800 mb-2">🏠 En Casa</h4>
-                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                        <div><p class="text-gray-500">PJ</p><p class="font-bold">${homeStats.count}</p></div>
-                        <div><p class="text-gray-500">V-E-D</p><p class="font-bold">${homeStats.wins}-${homeStats.draws}-${homeStats.losses}</p></div>
-                        <div><p class="text-gray-500">GF/GC</p><p class="font-bold">${homeStats.gf}/${homeStats.ga}</p></div>
-                    </div>
-                </div>
-                <div class="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
-                    <h4 class="font-bold text-purple-800 mb-2">✈️ Fuera de Casa</h4>
-                    <div class="grid grid-cols-3 gap-2 text-center text-sm">
-                        <div><p class="text-gray-500">PJ</p><p class="font-bold">${awayStats.count}</p></div>
-                        <div><p class="text-gray-500">V-E-D</p><p class="font-bold">${awayStats.wins}-${awayStats.draws}-${awayStats.losses}</p></div>
-                        <div><p class="text-gray-500">GF/GC</p><p class="font-bold">${awayStats.gf}/${awayStats.ga}</p></div>
-                    </div>
-                </div>
-            `;
 
             // 2. Heatmap
             const zones = {
@@ -7554,69 +7561,124 @@ const CALENDAR_URLS = {
 
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hora de memoria
 
+// 🚦 SEMÁFORO: Aquí guardaremos las promesas en curso
+const activeRequests = {}; 
+
 // ==========================================
-// 🧠 LÓGICA DE DATOS (Con Caché LocalStorage)
+// 🧠 LÓGICA DE DATOS (Con Caché + Semáforo + MultiProxy)
+// ==========================================
+
+// ==========================================
+// 🛡️ LÓGICA DE DATOS BLINDADA (Anti-Bloqueo)
 // ==========================================
 
 async function getCalendarEvents(team) {
-    if (!team || !CALENDAR_URLS[team]) {
-        console.warn(`⚠️ No hay URL configurada para el equipo: ${team}`);
-        return [];
-    }
+    if (!team || !CALENDAR_URLS[team]) return [];
 
-    const cacheKey = `calendar_v2_${team}`; // Clave única por equipo
-    const cached = localStorage.getItem(cacheKey);
+    const cacheKey = `calendar_v2_${team}`; 
+    const cachedRaw = localStorage.getItem(cacheKey);
+    let cachedData = null;
 
     // 1. INTENTAR LEER DE CACHÉ
-    if (cached) {
+    if (cachedRaw) {
         try {
-            const { timestamp, data } = JSON.parse(cached);
-            const now = Date.now();
-
-            // Si la caché es válida (menos de 1 hora), la usamos
-            if (now - timestamp < CACHE_DURATION) {
-                console.log(`⚡ Usando caché local para [${team}]`);
-                // Parseamos los datos guardados
+            cachedData = JSON.parse(cachedRaw);
+            const { timestamp, data } = cachedData;
+            
+            // Si la caché es reciente (menos de 1 hora), la usamos y NO molestamos a los proxies
+            if (Date.now() - timestamp < CACHE_DURATION) {
+                // console.log(`⚡ Caché válida para [${team}]`);
                 return parseICalData(data, team); 
             }
-        } catch (e) {
-            console.warn("Caché corrupta, descargando de nuevo...");
-        }
+        } catch (e) { localStorage.removeItem(cacheKey); }
     }
 
-    // 2. DESCARGAR DE INTERNET (Si no hay caché o caducó)
-    try {
-        console.log(`🔄 Descargando calendario actualizado para [${team}]...`);
-        // LO NUEVO (CON PROXY) ✅
-// Usamos un proxy gratuito para saltarnos el bloqueo CORS
-const proxyUrl = 'https://api.allorigins.win/raw?url=';
-const targetUrl = encodeURIComponent(CALENDAR_URLS[team]); // Codificamos la URL para que no se rompa
-
-// Añadimos un timestamp al final para evitar caché del proxy
-const response = await fetch(`${proxyUrl}${targetUrl}&t=${Date.now()}`);
-        
-        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-        
-        const icalText = await response.text();
-
-        // 3. GUARDAR EN CACHÉ (LocalStorage)
-        localStorage.setItem(cacheKey, JSON.stringify({
-            timestamp: Date.now(),
-            data: icalText
-        }));
-
-        return parseICalData(icalText, team);
-
-    } catch (error) {
-        console.error(`❌ Error cargando calendario de [${team}]:`, error);
-        
-        // PLAN B: Si falla internet, intentamos devolver la caché vieja si existe
-        if (cached) {
-            console.warn("⚠️ Sin conexión: Usando calendario antiguo.");
-            return parseICalData(JSON.parse(cached).data, team);
-        }
-        return [];
+    // 2. SEMÁFORO (Evitar peticiones simultáneas)
+    if (activeRequests[team]) {
+        return activeRequests[team];
     }
+
+    // 3. INICIAR DESCARGA INTELIGENTE
+    const requestPromise = (async () => {
+        // Orden optimizado: corsproxy suele ser más permisivo con los límites
+        const proxies = [
+            'https://corsproxy.io/?', 
+            'https://api.allorigins.win/raw?url=',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+
+        let icalText = null;
+        let success = false;
+
+        console.log(`🌐 Actualizando calendario [${team}] (Puede tardar unos segundos)...`);
+
+        for (const proxyBase of proxies) {
+            try {
+                const targetUrl = CALENDAR_URLS[team];
+                
+                // ⚠️ CAMBIO CLAVE: NO enviamos timestamp al proxy.
+                // Dejamos que el proxy nos de su versión cacheada si la tiene.
+                // Esto evita que nos baneen por spam.
+                const finalUrl = `${proxyBase}${encodeURIComponent(targetUrl)}`;
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
+
+                const response = await fetch(finalUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text.includes('BEGIN:VCALENDAR')) {
+                        icalText = text;
+                        success = true;
+                        console.log(`   ✅ Descargado vía: ${proxyBase}`);
+                        break; 
+                    }
+                }
+            } catch (err) {
+                // Silencioso para no ensuciar la consola
+            }
+        }
+
+        try {
+            // SI HA HABIDO ÉXITO: Guardamos y devolvemos
+            if (success && icalText) {
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    data: icalText
+                }));
+                return parseICalData(icalText, team);
+            }
+            
+            throw new Error("Fallo general en red/proxies");
+
+        } catch (error) {
+            // 4. PLAN DE RESCATE (CACHÉ INMORTAL)
+            // Si todo falla (proxies bloqueados), pero tenemos datos antiguos... ¡USALOS!
+            // Mejor mostrar un calendario de hace 2 horas que uno vacío.
+            if (cachedData && cachedData.data) {
+                console.warn(`⚠️ Proxies saturados. Usando copia local de seguridad para [${team}].`);
+                
+                // Renovamos el timestamp de la caché vieja para que no vuelva a intentar descargar
+                // hasta dentro de 1 hora. Así dejamos descansar a los proxies.
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(), // Engañamos al sistema: "Acabo de descargar esto"
+                    data: cachedData.data
+                }));
+                
+                return parseICalData(cachedData.data, team);
+            }
+
+            console.error(`❌ IMPOSIBLE CARGAR [${team}]. Sin conexión y sin caché.`);
+            return [];
+        } finally {
+            delete activeRequests[team];
+        }
+    })();
+
+    activeRequests[team] = requestPromise;
+    return requestPromise;
 }
 
 // ==========================================
@@ -7685,7 +7747,7 @@ async function preloadCalendars() {
        
 
 
-       function checkMatchDay() {
+function checkMatchDay() {
     const desktopBanner = document.getElementById('matchday-banner-desktop');
     const mobileBanner = document.getElementById('matchday-banner-mobile');
     
@@ -7995,239 +8057,241 @@ async function preloadCalendars() {
             }
         }
         
-        function renderCalendarList() {
-            const container = document.getElementById('calendar-container');
-            const now = new Date();
-            now.setHours(23, 59, 59, 999);
-            
-            const matches = getData('matches');
-            const registeredEventIds = matches.map(m => m.calendarEventId);
-            
-            let events = [...calendarEvents];
-            
-            if (hideRegisteredMatches) {
-                events = events.filter(e => !registeredEventIds.includes(e.id));
-            }
+function renderCalendarList() {
+    const container = document.getElementById('calendar-container');
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    
+    // 🔒 LÓGICA DE PERMISOS:
+    // Se permite editar si es LOCAL o si es GLOBAL + LOGUEADO
+    const hasPermission = (typeof appMode !== 'undefined' && appMode === 'local') || 
+                          (typeof appMode !== 'undefined' && appMode === 'global' && typeof currentUser !== 'undefined' && currentUser);
 
-            if (currentCalendarFilter) {
-                 events = events.filter(e => {
-                     const isReg = registeredEventIds.includes(e.id);
-                     if (isReg) {
-                         const m = matches.find(m => m.calendarEventId === e.id);
-                         return m.competition === currentCalendarFilter;
-                     } else {
-                         return false; // Don't show unregistered matches when filtering by specific comp
-                     }
-                 });
-            }
-            
-            if (currentTimeFilter === 'past') events = events.filter(e => e.start <= now);
-            else if (currentTimeFilter === 'future') events = events.filter(e => e.start > now);
-            
-            if (events.length === 0) {
-                container.innerHTML = '<div class="text-center py-12 text-gray-500">No hay partidos.</div>';
-                return;
-            }
-            
-            container.innerHTML = events.map(event => {
-                const isPast = event.start <= now;
-                const isFuture = event.start > now;
-                let isRegistered = registeredEventIds.includes(event.id);
-                let registeredMatch = isRegistered ? matches.find(m => m.calendarEventId === event.id) : null;
-                
-                // Fallback: Verificar por Fecha y Rival si falla el ID (para CSV/JSON antiguos)
-                if (!isRegistered) {
-                    const evtDate = event.start.toISOString().split('T')[0];
-                    registeredMatch = matches.find(m => {
-                        if (m.date !== evtDate) return false;
-                        const mOpp = m.opponent.toLowerCase().trim();
-                        const eOpp = event.opponent.toLowerCase().trim();
-                        return mOpp.includes(eOpp) || eOpp.includes(mOpp);
-                    });
-                    if (registeredMatch) isRegistered = true;
+    const matches = getData('matches');
+    const registeredEventIds = matches.map(m => m.calendarEventId);
+    
+    let events = [...calendarEvents];
+    
+    if (hideRegisteredMatches) {
+        events = events.filter(e => !registeredEventIds.includes(e.id));
+    }
+
+    if (currentCalendarFilter) {
+            events = events.filter(e => {
+                const isReg = registeredEventIds.includes(e.id);
+                if (isReg) {
+                    const m = matches.find(m => m.calendarEventId === e.id);
+                    return m.competition === currentCalendarFilter;
+                } else {
+                    return false; 
                 }
-                
-                const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
-                const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                
-                // Logic: Only show real competition name and color if registered. Otherwise default/grey.
-               // Lógica NUEVA: Mostrar competición si está registrada O si la hemos detectado en el calendario
-                let compName = event.competition || 'Pendiente de registro'; // Aquí está la clave: usa la del evento si existe
-                let compColorClass = 'bg-gray-200 text-gray-600';
-                let borderColorClass = 'border-gray-300';
-
-                // Si ya lo registraste, priorizamos lo que tú guardaste
-                if (isRegistered) {
-                    compName = registeredMatch.competition;
-                }
-
-                // Buscamos los colores para esa competición (sea detectada o registrada)
-                const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
-                if (compObj) {
-                    compColorClass = compObj.color;
-                    borderColorClass = compObj.borderColor;
-                } else if (compName === 'Amistoso') {
-                    // Un colorcito especial para amistosos
-                    compColorClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
-                }
-
-                const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
-                                               : (event.venue === 'local' ? '🏠 Local' : (event.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante'));
-                
-                return `
-                    <div class="bg-white rounded-xl shadow-sm p-4 match-card ${borderColorClass} ${isRegistered ? 'match-registered' : ''}" 
-                         ${isPast && !isRegistered ? `onclick="selectCalendarFixture('${event.id}')"` : ''} 
-                         style="cursor: ${isPast && !isRegistered ? 'pointer' : 'default'}">
-                        <div class="flex flex-col md:flex-row md:items-center gap-3">
-                            <div class="flex-1">
-                                <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <span class="${compColorClass} px-2 py-0.5 rounded text-xs font-medium">${compName}</span>
-                                    <span class="text-xs text-gray-500">${venueText}</span>
-                                    ${isRegistered ? '<span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">✅ Registrado</span>' : 
-                                      (isPast ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">📝 Clic para registrar</span>' : '')}
-                                </div>
-                                <h4 class="font-semibold text-gray-800">${event.opponent}</h4>
-                                <p class="text-sm text-gray-500">🏟️ ${event.location || 'Estadio'}</p>
-                                ${isFuture ? `<button onclick="event.stopPropagation(); generateMatchdayPoster('${event.id}')" class="mt-2 text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 transition flex items-center gap-1 w-fit shadow-sm"><span>🖼️</span> Crear Cartel</button>` : ''}
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium text-gray-800">${dateStr}</p>
-                                <p class="text-amber-600 font-semibold">${timeStr}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            });
+    }
+    
+    if (currentTimeFilter === 'past') events = events.filter(e => e.start <= now);
+    else if (currentTimeFilter === 'future') events = events.filter(e => e.start > now);
+    
+    if (events.length === 0) {
+        container.innerHTML = '<div class="text-center py-12 text-gray-500">No hay partidos.</div>';
+        return;
+    }
+    
+    container.innerHTML = events.map(event => {
+        const isPast = event.start <= now;
+        const isFuture = event.start > now;
+        let isRegistered = registeredEventIds.includes(event.id);
+        let registeredMatch = isRegistered ? matches.find(m => m.calendarEventId === event.id) : null;
+        
+        // Fallback: Verificar por Fecha y Rival
+        if (!isRegistered) {
+            const evtDate = event.start.toISOString().split('T')[0];
+            registeredMatch = matches.find(m => {
+                if (m.date !== evtDate) return false;
+                const mOpp = m.opponent.toLowerCase().trim();
+                const eOpp = event.opponent.toLowerCase().trim();
+                return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+            });
+            if (registeredMatch) isRegistered = true;
         }
         
-        function renderCalendarMonth() {
-            const container = document.getElementById('calendar-container');
-            const matches = getData('matches');
-            const registeredEventIds = matches.map(m => m.calendarEventId);
-            
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            
-            document.getElementById('current-month-display').textContent = new Date(year, month).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
-            
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            
-            // Start on Monday (adjust so Sunday is 6, Monday is 0)
-            let startDayOfWeek = firstDay.getDay() - 1;
-            if (startDayOfWeek < 0) startDayOfWeek = 6;
-            
-            const totalDays = lastDay.getDate();
-            
-            let gridHtml = `
-                <div class="calendar-grid bg-white rounded-xl overflow-hidden shadow-sm">
-                    <div class="calendar-day-header">LUN</div>
-                    <div class="calendar-day-header">MAR</div>
-                    <div class="calendar-day-header">MIE</div>
-                    <div class="calendar-day-header">JUE</div>
-                    <div class="calendar-day-header">VIE</div>
-                    <div class="calendar-day-header">SAB</div>
-                    <div class="calendar-day-header">DOM</div>
-            `;
-            
-            // Empty cells for days before start
-            for (let i = 0; i < startDayOfWeek; i++) {
-                gridHtml += `<div class="calendar-day other-month"></div>`;
-            }
-            
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
+        const dateStr = event.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+        const timeStr = event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        
+        let compName = event.competition || 'Pendiente de registro';
+        let compColorClass = 'bg-gray-200 text-gray-600';
+        let borderColorClass = 'border-gray-300';
 
-            for (let day = 1; day <= totalDays; day++) {
-                const currentDate = new Date(year, month, day);
-                currentDate.setHours(0, 0, 0, 0);
-                
-                const isToday = currentDate.getTime() === now.getTime();
-                
-                // Find events for this day
-                const daysEvents = calendarEvents.filter(e => {
-                    const eDate = new Date(e.start);
-                    return eDate.getDate() === day && eDate.getMonth() === month && eDate.getFullYear() === year;
-                });
-                
-                let eventsHtml = '';
-                daysEvents.forEach(e => {
-                    let isRegistered = registeredEventIds.includes(e.id);
-                    
-                    // Fallback: Verificar por Fecha y Rival
-                    if (!isRegistered) {
-                        const evtDate = e.start.toISOString().split('T')[0];
-                        const matchFound = matches.find(m => {
-                            if (m.date !== evtDate) return false;
-                            const mOpp = m.opponent.toLowerCase().trim();
-                            const eOpp = e.opponent.toLowerCase().trim();
-                            return mOpp.includes(eOpp) || eOpp.includes(mOpp);
-                        });
-                        if (matchFound) isRegistered = true;
-                    }
-
-                    if (hideRegisteredMatches && isRegistered) return;
-
-                    const isPast = e.start <= new Date();
-                    
-                    // 1. Estilo Base (Neutro)
-                    let style = 'background-color: #e5e7eb; color: #374151;'; 
-                    let title = e.opponent;
-
-                    // 2. Determinar Competición (Registrada > Detectada > Nada)
-                    let compName = e.competition; 
-                    if (isRegistered) {
-                        const m = matches.find(m => m.calendarEventId === e.id) || matches.find(m => {
-                            // Búsqueda fallback para obtener el nombre de la compe
-                            if (m.date !== e.start.toISOString().split('T')[0]) return false;
-                            const mOpp = m.opponent.toLowerCase().trim();
-                            const eOpp = e.opponent.toLowerCase().trim();
-                            return mOpp.includes(eOpp) || eOpp.includes(mOpp);
-                        });
-                        if (m) compName = m.competition;
-                    }
-
-                    // 3. Aplicar Colores (Mismos HEX que en CSS)
-                    if (compName) {
-                         const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
-                         
-                         if (compObj) {
-                             // Lógica para asignar colores según el tipo de competición
-                             const id = compObj.id;
-                             if (id.includes('liga') || id === 'liga-f') style = 'background-color: #dbeafe; color: #1e40af;';
-                             else if (id.includes('champions') || id === 'uwcl') style = 'background-color: #ede9fe; color: #5b21b6;';
-                             else if (id.includes('copa')) style = 'background-color: #d1fae5; color: #065f46;';
-                             else if (id.includes('mundial')) style = 'background-color: #fef3c7; color: #92400e;';
-                             else if (id.includes('supercopa')) style = 'background-color: #fee2e2; color: #991b1b;';
-                         } 
-                         else if (compName === 'Amistoso') {
-                             style = 'background-color: #fef9c3; color: #854d0e;'; // Amarillo suave para amistosos
-                         }
-                    }
-
-                    // 4. Si está registrado, añadir tachado y opacidad (pero manteniendo el color de fondo)
-                    if (isRegistered) {
-                         style += ' text-decoration: line-through; opacity: 0.7; border: 1px solid rgba(0,0,0,0.1);';
-                    }
-
-                    const action = (isPast && !isRegistered) ? `onclick="selectCalendarFixture('${e.id}')"` : '';
-                    
-                    eventsHtml += `<div class="cal-event-dot" style="${style}" ${action} title="${title}">
-                        ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
-                    </div>`;
-                });
-                
-                gridHtml += `
-                    <div class="calendar-day ${isToday ? 'today' : ''}">
-                        <span class="day-number">${day}</span>
-                        ${eventsHtml}
-                    </div>
-                `;
-            }
-            
-            gridHtml += '</div>';
-            container.innerHTML = gridHtml;
+        if (isRegistered) {
+            compName = registeredMatch.competition;
         }
+
+        const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
+        if (compObj) {
+            compColorClass = compObj.color;
+            borderColorClass = compObj.borderColor;
+        } else if (compName === 'Amistoso') {
+            compColorClass = 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+        }
+
+        const venueText = isRegistered ? (registeredMatch.venue === 'local' ? '🏠 Local' : (registeredMatch.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante')) 
+                                        : (event.venue === 'local' ? '🏠 Local' : (event.venue === 'neutral' ? '🏟️ Neutral' : '✈️ Visitante'));
+        
+        // 🔒 DETERMINAR SI ES CLICABLE
+        // Solo es clicable si: Es pasado + No registrado + TIENE PERMISO
+        const isClickable = isPast && !isRegistered && hasPermission;
+
+        return `
+            <div class="bg-white rounded-xl shadow-sm p-4 match-card ${borderColorClass} ${isRegistered ? 'match-registered' : ''}" 
+                    ${isClickable ? `onclick="selectCalendarFixture('${event.id}')"` : ''} 
+                    style="cursor: ${isClickable ? 'pointer' : 'default'}">
+                <div class="flex flex-col md:flex-row md:items-center gap-3">
+                    <div class="flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            <span class="${compColorClass} px-2 py-0.5 rounded text-xs font-medium">${compName}</span>
+                            <span class="text-xs text-gray-500">${venueText}</span>
+                            ${isRegistered ? '<span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded">✅ Registrado</span>' : 
+                                (isClickable ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">📝 Clic para registrar</span>' : '')}
+                        </div>
+                        <h4 class="font-semibold text-gray-800">${event.opponent}</h4>
+                        <p class="text-sm text-gray-500">🏟️ ${event.location || 'Estadio'}</p>
+                        ${isFuture ? `<button onclick="event.stopPropagation(); generateMatchdayPoster('${event.id}')" class="mt-2 text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full font-bold hover:bg-indigo-100 transition flex items-center gap-1 w-fit shadow-sm"><span>🖼️</span> Crear Cartel</button>` : ''}
+                    </div>
+                    <div class="text-right">
+                        <p class="font-medium text-gray-800">${dateStr}</p>
+                        <p class="text-amber-600 font-semibold">${timeStr}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderCalendarMonth() {
+    const container = document.getElementById('calendar-container');
+    const matches = getData('matches');
+    const registeredEventIds = matches.map(m => m.calendarEventId);
+    
+    // 🔒 LÓGICA DE PERMISOS:
+    const hasPermission = (typeof appMode !== 'undefined' && appMode === 'local') || 
+                          (typeof appMode !== 'undefined' && appMode === 'global' && typeof currentUser !== 'undefined' && currentUser);
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    
+    document.getElementById('current-month-display').textContent = new Date(year, month).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    
+    let startDayOfWeek = firstDay.getDay() - 1;
+    if (startDayOfWeek < 0) startDayOfWeek = 6;
+    
+    const totalDays = lastDay.getDate();
+    
+    let gridHtml = `
+        <div class="calendar-grid bg-white rounded-xl overflow-hidden shadow-sm">
+            <div class="calendar-day-header">LUN</div>
+            <div class="calendar-day-header">MAR</div>
+            <div class="calendar-day-header">MIE</div>
+            <div class="calendar-day-header">JUE</div>
+            <div class="calendar-day-header">VIE</div>
+            <div class="calendar-day-header">SAB</div>
+            <div class="calendar-day-header">DOM</div>
+    `;
+    
+    for (let i = 0; i < startDayOfWeek; i++) {
+        gridHtml += `<div class="calendar-day other-month"></div>`;
+    }
+    
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    for (let day = 1; day <= totalDays; day++) {
+        const currentDate = new Date(year, month, day);
+        currentDate.setHours(0, 0, 0, 0);
+        
+        const isToday = currentDate.getTime() === now.getTime();
+        
+        const daysEvents = calendarEvents.filter(e => {
+            const eDate = new Date(e.start);
+            return eDate.getDate() === day && eDate.getMonth() === month && eDate.getFullYear() === year;
+        });
+        
+        let eventsHtml = '';
+        daysEvents.forEach(e => {
+            let isRegistered = registeredEventIds.includes(e.id);
+            
+            if (!isRegistered) {
+                const evtDate = e.start.toISOString().split('T')[0];
+                const matchFound = matches.find(m => {
+                    if (m.date !== evtDate) return false;
+                    const mOpp = m.opponent.toLowerCase().trim();
+                    const eOpp = e.opponent.toLowerCase().trim();
+                    return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+                });
+                if (matchFound) isRegistered = true;
+            }
+
+            if (hideRegisteredMatches && isRegistered) return;
+
+            const isPast = e.start <= new Date();
+            
+            let style = 'background-color: #e5e7eb; color: #374151;'; 
+            let title = e.opponent;
+
+            let compName = e.competition; 
+            if (isRegistered) {
+                const m = matches.find(m => m.calendarEventId === e.id) || matches.find(m => {
+                    if (m.date !== e.start.toISOString().split('T')[0]) return false;
+                    const mOpp = m.opponent.toLowerCase().trim();
+                    const eOpp = e.opponent.toLowerCase().trim();
+                    return mOpp.includes(eOpp) || eOpp.includes(mOpp);
+                });
+                if (m) compName = m.competition;
+            }
+
+            if (compName) {
+                    const compObj = Object.values(COMPETICIONES_ACTUALES).find(c => c.nombre === compName);
+                    
+                    if (compObj) {
+                        const id = compObj.id;
+                        if (id.includes('liga') || id === 'liga-f') style = 'background-color: #dbeafe; color: #1e40af;';
+                        else if (id.includes('champions') || id === 'uwcl') style = 'background-color: #ede9fe; color: #5b21b6;';
+                        else if (id.includes('copa')) style = 'background-color: #d1fae5; color: #065f46;';
+                        else if (id.includes('mundial')) style = 'background-color: #fef3c7; color: #92400e;';
+                        else if (id.includes('supercopa')) style = 'background-color: #fee2e2; color: #991b1b;';
+                    } 
+                    else if (compName === 'Amistoso') {
+                        style = 'background-color: #fef9c3; color: #854d0e;'; 
+                    }
+            }
+
+            if (isRegistered) {
+                    style += ' text-decoration: line-through; opacity: 0.7; border: 1px solid rgba(0,0,0,0.1);';
+            }
+
+            // 🔒 APLICAR LÓGICA DE PERMISOS AQUÍ
+            // Si está en pasado, no registrado Y TIENE PERMISO => añade onclick. Si no, nada.
+            const action = (isPast && !isRegistered && hasPermission) ? `onclick="selectCalendarFixture('${e.id}')"` : '';
+            // Opcional: Cambiar cursor si no tiene permiso
+            const cursorStyle = (isPast && !isRegistered && !hasPermission) ? 'cursor: default;' : '';
+            
+            eventsHtml += `<div class="cal-event-dot" style="${style} ${cursorStyle}" ${action} title="${title}">
+                ${e.start.getHours()}:${e.start.getMinutes().toString().padStart(2,'0')} ${e.opponent}
+            </div>`;
+        });
+        
+        gridHtml += `
+            <div class="calendar-day ${isToday ? 'today' : ''}">
+                <span class="day-number">${day}</span>
+                ${eventsHtml}
+            </div>
+        `;
+    }
+    
+    gridHtml += '</div>';
+    container.innerHTML = gridHtml;
+}
 
         // ==========================================
         // MATCH HELPERS
@@ -14806,11 +14870,115 @@ function showStatCategory(catName) {
     if (catName === 'rivals') switchStatsTab('h2h');
     if (catName === 'history') switchStatsTab('mvp');
 }
+// ==========================================
+// 🏠 FUNCIÓN: RENDIMIENTO CASA VS FUERA
+// ==========================================
+function renderHomeAwayStats(matchesData) {
+    console.log("🏁 Intentando pintar Gráfico Casa vs Fuera...");
+    
+    const matches = matchesData || getData('matches');
 
+    
+    if (!matches || matches.length === 0) {
+        console.error("❌ ERROR: getData('matches') está vacío.");
+        return;
+    }
 
+    // === AQUÍ ESTÁ EL CHIVATO ===
+    // Esto me dirá cómo se llaman tus campos realmente
+    console.log("🔎 ESTRUCTURA REAL DE TUS DATOS (Primer partido):", matches[0]);
+    // ============================
 
+    let stats = {
+        home: { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+        away: { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    };
 
+    matches.forEach(m => {
+        // Intento adivinar el nombre del campo, pero si falla, veremos el console.log
+        const venue = String(m.venue || m.location || m.condicion || '').toLowerCase().trim();
+        
+        let type = null;
+        if (venue.includes('local') || venue.includes('casa') || venue === 'h') type = 'home';
+        else if (venue.includes('visit') || venue.includes('fuera') || venue === 'a') type = 'away';
 
+        if (!type) return; 
+
+        // Intento adivinar los goles
+        let gf = m.goalsFor ?? m.gf ?? m.localScore;
+        let ga = m.goalsAgainst ?? m.ga ?? m.visitorScore;
+
+        // Lectura de resultado "2-1"
+        if ((gf == null || ga == null) && m.result && m.result.includes('-')) {
+            const parts = m.result.split('-');
+            if (type === 'home') { gf = parts[0]; ga = parts[1]; }
+            else { gf = parts[1]; ga = parts[0]; }
+        }
+
+        gf = parseInt(gf);
+        ga = parseInt(ga);
+
+        if (isNaN(gf) || isNaN(ga)) return;
+
+        stats[type].p++;
+        stats[type].gf += gf;
+        stats[type].ga += ga;
+        
+        if (gf > ga) { stats[type].w++; stats[type].pts += 3; }
+        else if (gf === ga) { stats[type].d++; stats[type].pts += 1; }
+        else { stats[type].l++; }
+    });
+
+    console.log("📊 DATOS CALCULADOS:", stats);
+
+    // Actualizar HTML
+    try {
+        const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+        
+        setVal('home-matches', stats.home.p);
+        setVal('home-wins', stats.home.w);
+        setVal('home-goals', stats.home.gf);
+        setVal('home-points-display', `${stats.home.pts} Pts`);
+        
+        setVal('away-matches', stats.away.p);
+        setVal('away-wins', stats.away.w);
+        setVal('away-goals', stats.away.gf);
+        setVal('away-points-display', `${stats.away.pts} Pts`);
+    } catch(e){}
+
+    // Gráfico
+    const ctx = document.getElementById('chart-home-away');
+    if (ctx) {
+        if (window.homeAwayChart instanceof Chart) window.homeAwayChart.destroy();
+        window.homeAwayChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Goles Favor', 'Goles Contra', 'Pts/Partido'],
+                datasets: [
+                    {
+                        label: '🏠 Casa',
+                        data: [
+                            stats.home.p ? (stats.home.gf/stats.home.p).toFixed(2) : 0,
+                            stats.home.p ? (stats.home.ga/stats.home.p).toFixed(2) : 0,
+                            stats.home.p ? (stats.home.pts/stats.home.p).toFixed(2) : 0
+                        ],
+                        backgroundColor: '#3b82f6'
+                    },
+                    {
+                        label: '✈️ Fuera',
+                        data: [
+                            stats.away.p ? (stats.away.gf/stats.away.p).toFixed(2) : 0,
+                            stats.away.p ? (stats.away.ga/stats.away.p).toFixed(2) : 0,
+                            stats.away.p ? (stats.away.pts/stats.away.p).toFixed(2) : 0
+                        ],
+                        backgroundColor: '#6366f1'
+                    }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+}
 // ==========================================
 // ACTIVADOR EFECTO JELLY (GLOBAL)
 // ==========================================
