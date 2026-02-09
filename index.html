@@ -7542,156 +7542,147 @@ document.getElementById('new-match-form').addEventListener('submit', function(e)
     }
 });
         
-        // ==========================================
-        // CALENDAR
-        // ==========================================
-        // ==========================================
-        // SISTEMA DE PRECARGA DE CALENDARIO
-        // ==========================================
-        
-        // Memoria para guardar los calendarios y no tener que recargarlos
-        const CALENDAR_CACHE = { masculino: null, femenino: null };
+// ==========================================
+// ⚙️ CONFIGURACIÓN DE CALENDARIOS Y CACHÉ
+// ==========================================
+
+// ⚠️ PON AQUÍ TUS URLS REALES ⚠️
+const CALENDAR_URLS = {
+    'masculino': 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.3kq9cckrnlogidldtdie2fkbl.es-es.ics', 
+    'femenino': 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.vaikl8nl7hdr4y9jj4jyb9ey.es-es.ics'   
+};
+
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hora de memoria
+
+// ==========================================
+// 🧠 LÓGICA DE DATOS (Con Caché LocalStorage)
+// ==========================================
 
 async function getCalendarEvents(team) {
-    // 1. Si ya está en la memoria de esta sesión, devolverlo al instante.
-    if (CALENDAR_CACHE[team]) {
-        console.log(`📅 Calendario [${team}] servido desde CACHÉ DE MEMORIA.`);
-        return CALENDAR_CACHE[team];
-    }
-
-    const originalCurrentTeam = currentTeam;
-    // Workaround: Asignamos temporalmente el equipo que queremos cargar para que getData/saveData funcionen
-    currentTeam = team;
-
-    // 2. Si estamos en modo Global, intentar obtenerlo de la caché de Firebase
-    if (appMode === 'global' && isFirebaseInitialized) {
-        console.log(`☁️ Intentando cargar calendario [${team}] desde Firebase...`);
-        const firebaseCache = getData('calendar_cache'); // Ahora usa el scope correcto: `${team}_calendar_cache`
-        const cacheAgeHours = firebaseCache && firebaseCache.timestamp ? (new Date() - new Date(firebaseCache.timestamp)) / 3600000 : 999;
-
-        // Usar la caché de Firebase si es reciente (menos de 6 horas)
-        if (firebaseCache && firebaseCache.events && cacheAgeHours < 6) {
-            console.log(`✅ Calendario [${team}] servido desde CACHÉ DE FIREBASE (fresca).`);
-            const eventsWithDates = firebaseCache.events.map(e => ({ ...e, start: new Date(e.start) }));
-            CALENDAR_CACHE[team] = eventsWithDates; // Guardar en caché de memoria para esta sesión
-            
-            currentTeam = originalCurrentTeam; // Restaurar equipo original
-            return eventsWithDates;
-        }
-        console.log(`⏳ Caché de Firebase para [${team}] no encontrada o vieja.`);
-    }
-
-    // 3. Fallback: Descargar del servidor original
-    const config = TEAMS_CONFIG[team];
-    if (!config) {
-        currentTeam = originalCurrentTeam; // Restaurar equipo original
+    if (!team || !CALENDAR_URLS[team]) {
+        console.warn(`⚠️ No hay URL configurada para el equipo: ${team}`);
         return [];
     }
 
-    const icalUrl = config.icalUrl;
-    const proxies = [
-        (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
-    ];
+    const cacheKey = `calendar_v2_${team}`; // Clave única por equipo
+    const cached = localStorage.getItem(cacheKey);
 
-    let icalData = null;
-    for (const proxyFn of proxies) {
+    // 1. INTENTAR LEER DE CACHÉ
+    if (cached) {
         try {
-            const response = await fetch(proxyFn(icalUrl));
-            if (response.ok) {
-                const text = await response.text();
-                if (text.includes('BEGIN:VCALENDAR')) {
-                    icalData = text;
-                    console.log(`✅ Datos iCal [${team}] descargados de la fuente original.`);
-                    break;
-                }
+            const { timestamp, data } = JSON.parse(cached);
+            const now = Date.now();
+
+            // Si la caché es válida (menos de 1 hora), la usamos
+            if (now - timestamp < CACHE_DURATION) {
+                console.log(`⚡ Usando caché local para [${team}]`);
+                // Parseamos los datos guardados
+                return parseICalData(data, team); 
             }
-        } catch (error) {
-            console.warn(`Proxy para [${team}] falló.`);
+        } catch (e) {
+            console.warn("Caché corrupta, descargando de nuevo...");
         }
     }
 
-    if (!icalData) {
-        console.error(`❌ No se pudo descargar el calendario para [${team}].`);
-        currentTeam = originalCurrentTeam; // Restaurar equipo original
+    // 2. DESCARGAR DE INTERNET (Si no hay caché o caducó)
+    try {
+        console.log(`🔄 Descargando calendario actualizado para [${team}]...`);
+        // LO NUEVO (CON PROXY) ✅
+// Usamos un proxy gratuito para saltarnos el bloqueo CORS
+const proxyUrl = 'https://api.allorigins.win/raw?url=';
+const targetUrl = encodeURIComponent(CALENDAR_URLS[team]); // Codificamos la URL para que no se rompa
+
+// Añadimos un timestamp al final para evitar caché del proxy
+const response = await fetch(`${proxyUrl}${targetUrl}&t=${Date.now()}`);
+        
+        if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+        
+        const icalText = await response.text();
+
+        // 3. GUARDAR EN CACHÉ (LocalStorage)
+        localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: icalText
+        }));
+
+        return parseICalData(icalText, team);
+
+    } catch (error) {
+        console.error(`❌ Error cargando calendario de [${team}]:`, error);
+        
+        // PLAN B: Si falla internet, intentamos devolver la caché vieja si existe
+        if (cached) {
+            console.warn("⚠️ Sin conexión: Usando calendario antiguo.");
+            return parseICalData(JSON.parse(cached).data, team);
+        }
         return [];
     }
-
-    // Procesar los datos descargados
-    let events = parseICalData(icalData, team);
-    if (config.manualJuneMatches) {
-        const manualMatches = [
-            { id: 'jun-1', start: new Date('2025-06-18T21:00:00'), summary: 'Real Madrid vs Al-Hilal', opponent: ' 🏟⚽Al-Hilal', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Hard Rock Stadium' },
-            { id: 'jun-2', start: new Date('2025-06-22T21:00:00'), summary: 'Real Madrid vs Pachuca', opponent: ' 🏟⚽Pachuca', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Bank of America Stadium' },
-            { id: 'jun-3', start: new Date('2025-06-27T03:00:00'), summary: 'Salzburgo vs Real Madrid', opponent: ' 🏟⚽Salzburgo', competition: 'Mundial de Clubes', venue: 'neutral', location: 'Lincoln Financial Field' }
-        ];
-        events = [...manualMatches, ...events].sort((a, b) => a.start - b.start);
-    }
-
-    // Guardar en la caché de memoria local
-    CALENDAR_CACHE[team] = events;
-
-    // 4. Si estamos en modo Global, guardar en Firebase para la próxima vez
-    if (appMode === 'global' && isFirebaseInitialized) {
-        console.log(`💾 Guardando nuevo calendario [${team}] en la caché de Firebase.`);
-        const cacheObject = {
-            timestamp: new Date().toISOString(),
-            events: events
-        };
-        saveData('calendar_cache', cacheObject); // saveData usará el `currentTeam` que hemos asignado temporalmente
-    }
-    
-    currentTeam = originalCurrentTeam; // Restaurar equipo original
-    return events;
 }
 
+// ==========================================
+// 🎨 LÓGICA DE UI (Tu función mejorada)
+// ==========================================
 
-
-        async function preloadCalendars() {
-    console.log("🚀 Iniciando precarga de calendarios en segundo plano...");
-    // Dispara las descargas, pero la app no se detiene a esperarlas.
-    // La caché se irá llenando en segundo plano.
-    try {
-        await Promise.all([
-            getCalendarEvents('masculino'),
-            getCalendarEvents('femenino')
-        ]);
-        console.log("✅ Precarga de calendarios completada.");
-    } catch (err) {
-        console.error("Error durante la precarga de calendarios:", err);
-    }
-}
-
-
-
-        async function loadCalendar() {
+async function loadCalendar() {
     if (!currentTeam) return;
 
     const container = document.getElementById('calendar-container');
-    // Muestra "Cargando..." solo si no hay nada en la caché de memoria
-    if (!CALENDAR_CACHE[currentTeam] && container) {
+    
+    // Solo mostramos el loading si NO tenemos los datos en memoria rápida ya
+    // (Esto evita el parpadeo si ya visitaste la sección antes)
+    if (container && (!calendarEvents || calendarEvents.length === 0)) {
         container.innerHTML = `
             <div class="calendar-loading text-center py-12">
-                <div class="text-4xl mb-4">⏳</div>
+                <div class="text-4xl mb-4 animate-bounce">⏳</div>
                 <p class="text-gray-600">Sincronizando calendario...</p>
             </div>
         `;
     }
 
-    // Espera a que la función de obtención de datos termine
+    // AQUI ESTÁ LA MAGIA: Llamamos a la nueva función con caché
     calendarEvents = await getCalendarEvents(currentTeam);
+    
     console.log(`🗓️ Calendario para [${currentTeam}] listo con ${calendarEvents.length} eventos.`);
 
-    // Una vez tenemos los datos, pintamos todo lo que dependa de ellos
-    checkMatchDay();
+    // --- LÓGICA DE TU INTERFAZ (Se mantiene igual) ---
+    
+    // Comprobar si hay partido hoy/cerca
+    if (typeof checkMatchDay === 'function') checkMatchDay();
 
-    if (!document.getElementById('section-calendario').classList.contains('hidden')) {
-        renderCalendar();
+    // Renderizar solo si la sección es visible
+    const sectionCalendario = document.getElementById('section-calendario'); // O 'stats-calendario' si lo cambiaste
+    const sectionPrincipal = document.getElementById('section-principal'); // O 'stats-principal'
+
+    if (sectionCalendario && !sectionCalendario.classList.contains('hidden')) {
+        if (typeof renderCalendar === 'function') renderCalendar();
     }
-    if (!document.getElementById('section-principal').classList.contains('hidden')) {
-        renderPrincipal();
+    
+    if (sectionPrincipal && !sectionPrincipal.classList.contains('hidden')) {
+        if (typeof renderPrincipal === 'function') renderPrincipal();
     }
 }
+
+// ==========================================
+// 🚀 PRECARGA (Mantenemos tu función, es buena)
+// ==========================================
+async function preloadCalendars() {
+    console.log("🚀 Iniciando precarga inteligente en segundo plano...");
+    try {
+        // Al llamar a getCalendarEvents, si no están en caché, se bajarán y guardarán.
+        // Si ya están, no harán nada. ¡Eficiencia pura!
+        await Promise.all([
+            getCalendarEvents('masculino'),
+            getCalendarEvents('femenino')
+        ]);
+        console.log("✅ Calendarios sincronizados y listos.");
+    } catch (err) {
+        console.error("Error en precarga (no crítico):", err);
+    }
+}
+
+
+
+       
 
 
        function checkMatchDay() {
