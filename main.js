@@ -9,22 +9,6 @@ let COMPETICIONES_ACTUALES = {};
 let PLANTILLA_MASCULINO = [];
 let PLANTILLA_FEMENINO = [];
 let PLANTILLA_ACTUAL = []; 
-
-// ==========================================
-// 2. CONSTANTES (Tus órdenes personalizados)
-// ==========================================
-const CUSTOM_ORDER_MASCULINO = [
-    'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
-    'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
-    'p10b', 'p17', 'p44', 'p31','p40','p35','p28'
-];
-
-const CUSTOM_ORDER_FEMENINO = [
-    'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf4', 'pf14', 'pf22', 'pf21', 'pf12',
-    'pf17', 'pf16', 'pf6', 'pf3', 'pf8', 'pf28', 'pf33', 'pf29', 'pf27', 'pf10', 'pf20',
-    'pf24', 'pf7', 'pf19', 'pf11', 'pf18', 'pf9', 'pf5', 'pf38', 'pf43'
-];
-
 // ==========================================
 // 3. MOTOR DE ARRANQUE (Carga de JSON)
 // ==========================================
@@ -32,7 +16,7 @@ async function loadPlayerData() {
     console.log("📥 Cargando base de datos de jugadores...");
     try {
         // Asegúrate de que la ruta './data/players.json' es correcta
-        const response = await fetch('./data/players.json');
+        const response = await fetch('./Data/players.json');
         
         if (!response.ok) {
             throw new Error(`Error HTTP: ${response.status}`);
@@ -51,16 +35,6 @@ async function loadPlayerData() {
         alert("Error cargando los jugadores. Revisa que la carpeta 'data' y el archivo 'players.json' existan.");
     }
 }
-
-// Ejecutamos la carga inmediatamente al leer el archivo
-loadPlayerData();
-
-//RESTO DE FUNCIONES (switchAppMode, getData, saveData...) 
-// (Mantenlas igual que en el paso anterior, ya funcionan con este nuevo CLOUD_API)
-        // ==========================================
-        // DATA & CONSTANTS
-        // ==========================================
-        // Custom order for registration as requested
         const CUSTOM_ORDER_MASCULINO = [
             'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
             'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
@@ -11720,73 +11694,73 @@ window.addEventListener('scroll', () => {
             });
         });
 
-        // Init
-document.addEventListener('DOMContentLoaded', () => {
+// ==========================================
+// INICIO DE LA APLICACIÓN
+// ==========================================
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('App ready');
+
+    // 1. ESPERAMOS a que los datos de los jugadores se carguen
+    await loadPlayerData();
+
+    // 2. AHORA, ejecutamos el resto de inicializadores
     initDarkMode();
     preloadCalendars();
 
     // Inicia en modo Global por defecto
     if (appMode === 'global') {
         if (initFirebase()) {
-            // Actualiza la UI de los botones para que 'Global' aparezca seleccionado
             document.getElementById('btn-mode-global').className = "px-4 py-2 rounded-md font-bold bg-blue-600 text-white shadow-sm transition-all text-sm";
             document.getElementById('btn-mode-local').className = "px-4 py-2 rounded-md font-bold text-white hover:bg-white/10 transition-all text-sm";
-            // Empieza a escuchar por cambios en tiempo real
-            setupRealtimeListener(); 
+            setupRealtimeListener();
         } else {
-            // Si Firebase falla, vuelve a modo local como medida de seguridad
             setStorageMode('local');
         }
     }
+
+    // 3. AÑADIMOS los listeners para los botones
     console.log("Añadiendo listeners para el modal de login...");
     const loginButton = document.getElementById('btn-auth');
     const closeButton = document.getElementById('btn-close-login');
     const loginModalBackdrop = document.getElementById('login-modal');
-    // Listener para el nuevo botón del Tour
     const tourButton = document.getElementById('btn-tour');
+
     if (tourButton) {
-    tourButton.addEventListener('click', startTour);
-    console.log("Listener añadido a #btn-tour.");
+        tourButton.addEventListener('click', startTour);
     }
 
     if (loginButton) {
         loginButton.addEventListener('click', toggleLoginModal);
-        console.log("Listener añadido a #btn-auth.");
-    } else {
-        console.error("No se pudo añadir listener a #btn-auth porque no se encontró.");
     }
 
     if (closeButton) {
         closeButton.addEventListener('click', toggleLoginModal);
-        console.log("Listener añadido a #btn-close-login.");
     }
 
     if (loginModalBackdrop) {
         loginModalBackdrop.addEventListener('click', function(e) {
-            if (e.target === loginModalBackdrop) { // Si se hace clic en el fondo oscuro
+            if (e.target === loginModalBackdrop) {
                 toggleLoginModal();
             }
         });
-        console.log("Listener de cierre añadido al fondo del modal.");
     }
-
 });
 
-        // ==========================================
-        // SCROLL LOCK UTILS
-        // ==========================================
-        function lockScroll() { document.body.style.overflow = 'hidden'; }
-        function unlockScroll() { document.body.style.overflow = ''; }
-        
-        function closeViewMatchModal() {
-            const modal = document.getElementById('match-details-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                unlockScroll();
-            }
-        }
+// ==========================================
+// SCROLL LOCK UTILS
+// ==========================================
+function lockScroll() { document.body.style.overflow = 'hidden'; }
+function unlockScroll() { document.body.style.overflow = ''; }
+
+function closeViewMatchModal() {
+    const modal = document.getElementById('match-details-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        unlockScroll();
+    }
+}
+
         
         // ==========================================
         // 1. LÓGICA TILT 3D (CARTAS)
@@ -11874,8 +11848,3 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
         }
-        
-
-    </script>
-</body>
-</html>
