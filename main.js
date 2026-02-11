@@ -5,21 +5,167 @@ let editingMatchPlayersPool = null;
 let currentTeam = null; 
 let COMPETICIONES_ACTUALES = {};
 
-// Variables de Datos (Empiezan vacías y se llenan con el JSON)
+// Variables de Datos (Empiezan vacías)
 let PLANTILLA_MASCULINO = [];
 let PLANTILLA_FEMENINO = [];
 let PLANTILLA_ACTUAL = []; 
+
+// Variables globales de la App
+let calendarEvents = [];
+let currentPlayerFilter = 'all';
+let currentPositionFilter = '';
+let currentCalendarFilter = '';
+let currentTimeFilter = 'all';
+let hideRegisteredMatches = false;
+let selectedCalendarFixture = null;
+let calendarViewMode = 'month'; 
+let currentCalendarDate = new Date(); 
+let currentSortColumn = 'matchesPlayed';
+let currentSortOrder = 'desc'; 
+
+// ==========================================
+// 2. CONSTANTES GLOBALES (Fuera de funciones)
+// ==========================================
+const CUSTOM_ORDER_MASCULINO = [
+    'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
+    'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
+    'p10b', 'p17', 'p44', 'p31','p40','p35','p28'
+];
+
+const CUSTOM_ORDER_FEMENINO = [
+    'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' ,'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
+    'pf17', 'pf10', 'pf8', 'pf18', 'pf7', 'pf19', 'pf5', 'pf20', 'pf9', 'pf11', 'pf24', 'pf28', 'pf29', 
+    'pf33', 'pf43', 'pf27','pf38'
+];
+
+const FORMACIONES = {
+    '4-4-2': [
+        { left: 5, top: 50 }, 
+        { left: 25, top: 15 }, { left: 25, top: 38 }, { left: 25, top: 62 }, { left: 25, top: 85 }, 
+        { left: 50, top: 15 }, { left: 50, top: 38 }, { left: 50, top: 62 }, { left: 50, top: 85 }, 
+        { left: 80, top: 35 }, { left: 80, top: 65 }
+    ],
+    '4-3-3': [
+        { left: 5, top: 50 }, 
+        { left: 25, top: 10 }, { left: 25, top: 35 }, { left: 25, top: 65 }, { left: 25, top: 90 }, 
+        { left: 45, top: 50 }, { left: 60, top: 25 }, { left: 60, top: 75 }, 
+        { left: 85, top: 15 }, { left: 85, top: 50 }, { left: 85, top: 85 } 
+    ],
+    '4-2-3-1': [
+        { left: 5, top: 50 }, 
+        { left: 22, top: 10 }, { left: 22, top: 35 }, { left: 22, top: 65 }, { left: 22, top: 90 }, 
+        { left: 42, top: 35 }, { left: 42, top: 65 }, 
+        { left: 65, top: 15 }, { left: 65, top: 50 }, { left: 65, top: 85 }, 
+        { left: 85, top: 50 } 
+    ],
+    '3-5-2': [
+        { left: 5, top: 50 }, 
+        { left: 22, top: 30 }, { left: 22, top: 50 }, { left: 22, top: 70 }, 
+        { left: 45, top: 10 }, { left: 45, top: 90 }, 
+        { left: 45, top: 50 }, { left: 60, top: 35 }, { left: 60, top: 65 }, 
+        { left: 80, top: 35 }, { left: 80, top: 65 } 
+    ]
+};
+
+const FORMATION_ROLES = {
+    '4-3-3': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Interior', 'Interior', 'Extremo Izq', 'Delantero Centro', 'Extremo Der'],
+    '4-4-2': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Extremo Izq', 'Medio Centro', 'Medio Centro', 'Extremo Der', 'Delantero', 'Delantero'],
+    '4-2-3-1': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Pivote', 'Extremo Izq', 'Mediapunta','Extremo Der','Delantero'],
+    '3-5-2': ['Portero', 'Central', 'Central', 'Central', 'Carrilero Izq', 'Pivote', 'Carrilero Der', 'Interior', 'Interior', 'Delantero', 'Delantero'],
+    'default': ['Portero', 'Defensa', 'Defensa', 'Defensa', 'Defensa', 'Centrocampista', 'Centrocampista', 'Centrocampista', 'Delantero', 'Delantero', 'Delantero']
+};
+
+// --- DEFINICIÓN DE COMPETICIONES ---
+const COMPETICIONES_MASCULINO = {
+    'Liga EA Sports': {
+        id: 'liga', nombre: 'Liga EA Sports', color: 'comp-liga', borderColor: 'border-comp-liga', tipo: 'liga', ordenLibre: true,
+        fases: [{ tipo: 'liga', rondas: Array.from({length: 38}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
+    },
+    'Mundial de Clubes': {
+        id: 'mundial', nombre: 'Mundial de Clubes', color: 'comp-mundial', borderColor: 'border-comp-mundial', tipo: 'copa', campoNeutral: true,
+        fases: [
+            { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: [{ id: 'grupos-1', nombre: 'Fase de Grupos - J1', orden: 1 }, { id: 'grupos-2', nombre: 'Fase de Grupos - J2', orden: 2 }, { id: 'grupos-3', nombre: 'Fase de Grupos - J3', orden: 3 }] },
+            { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'octavos', nombre: 'Octavos', orden: 4, eliminatoria: true, partidoUnico: true }, { id: 'cuartos', nombre: 'Cuartos', orden: 5, eliminatoria: true, partidoUnico: true }, { id: 'semifinal', nombre: 'Semifinal', orden: 6, eliminatoria: true, partidoUnico: true }, { id: 'final', nombre: 'Final', orden: 7, eliminatoria: true, partidoUnico: true }] }
+        ]
+    },
+    'Champions League': {
+        id: 'champions', nombre: 'Champions League', color: 'comp-champions', borderColor: 'border-comp-champions', tipo: 'copa',
+        fases: [
+            { tipo: 'liga', nombre: 'Fase de Liga', ordenLibre: true, rondas: Array.from({length: 8}, (_, i) => ({ id: `fase-liga-${i+1}`, nombre: `Fase de Liga - J${i+1}`, orden: i+1 })) },
+            { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
+                { id: 'dieciseisavos-ida', nombre: 'Play-offs - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'dieciseisavos-vuelta', rondaExtra: true },
+                { id: 'dieciseisavos-vuelta', nombre: 'Play-offs - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'dieciseisavos-ida', rondaExtra: true },
+                { id: 'octavos-ida', nombre: 'Octavos - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta' },
+                { id: 'octavos-vuelta', nombre: 'Octavos - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida' },
+                { id: 'cuartos-ida', nombre: 'Cuartos - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
+                { id: 'cuartos-vuelta', nombre: 'Cuartos - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
+                { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 13, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
+                { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 14, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
+                { id: 'final', nombre: 'Final', orden: 15, eliminatoria: true, partidoUnico: true }
+            ]}
+        ]
+    },
+    'Copa del Rey': {
+        id: 'copa', nombre: 'Copa del Rey', color: 'comp-copa', borderColor: 'border-comp-copa', tipo: 'copa',
+        fases: [{ tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'dieciseisavos', nombre: 'Dieciseisavos', orden: 1, eliminatoria: true, partidoUnico: true }, { id: 'octavos', nombre: 'Octavos', orden: 2, eliminatoria: true, partidoUnico: true }, { id: 'cuartos', nombre: 'Cuartos', orden: 3, eliminatoria: true, partidoUnico: true }, { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 4, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' }, { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 5, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' }, { id: 'final', nombre: 'Final', orden: 6, eliminatoria: true, partidoUnico: true }] }]
+    },
+    'Supercopa de España': {
+        id: 'supercopa', nombre: 'Supercopa de España', color: 'comp-supercopa', borderColor: 'border-comp-supercopa', tipo: 'copa',
+        fases: [{ tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true }, { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }] }]
+    }
+};
+
+const COMPETICIONES_FEMENINO = {
+    'Liga F': {
+        id: 'liga-f', nombre: 'Liga F', color: 'comp-liga', borderColor: 'border-comp-liga', tipo: 'liga', ordenLibre: true,
+        fases: [{ tipo: 'liga', rondas: Array.from({length: 30}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
+    },
+    'UWCL': {
+        id: 'uwcl', nombre: 'UWCL', color: 'comp-champions', borderColor: 'border-comp-champions', tipo: 'copa',
+        fases: [
+            { tipo: 'eliminatoria', nombre: 'Fase Previa', rondas: [{ id: 'fase-previa-ida', nombre: 'Previa - Ida', orden: 1, eliminatoria: true, idaVuelta: 'ida', pareja: 'fase-previa-vuelta' }, { id: 'fase-previa-vuelta', nombre: 'Previa - Vuelta', orden: 2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'fase-previa-ida' }] },
+            { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+3 })) },
+            { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'cuartos-ida', nombre: 'Cuartos - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' }, { id: 'cuartos-vuelta', nombre: 'Cuartos - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' }, { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' }, { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' }, { id: 'final', nombre: 'Final', orden: 13, eliminatoria: true, partidoUnico: true }] }
+        ]
+    },
+    'Copa de la Reina': {
+        id: 'copa-reina', nombre: 'Copa de la Reina', color: 'comp-copa', borderColor: 'border-comp-copa', tipo: 'copa',
+        fases: [{ tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'octavos', nombre: 'Octavos', orden: 1, eliminatoria: true, partidoUnico: true }, { id: 'cuartos', nombre: 'Cuartos', orden: 2, eliminatoria: true, partidoUnico: true }, { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 3, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' }, { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 4, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' }, { id: 'final', nombre: 'Final', orden: 5, eliminatoria: true, partidoUnico: true }] }]
+    },
+    'Supercopa Femenina': {
+        id: 'supercopa-fem', nombre: 'Supercopa Femenina', color: 'comp-supercopa', borderColor: 'border-comp-supercopa', tipo: 'copa',
+        fases: [{ tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [{ id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true }, { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }] }]
+    }
+};
+
+const TEAMS_CONFIG = {
+    masculino: {
+        icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.3kq9cckrnlogidldtdie2fkbl.es-es.ics',
+        plantilla: PLANTILLA_MASCULINO, // Referencia (se llenará dinámicamente)
+        competiciones: COMPETICIONES_MASCULINO,
+        title: 'Real Madrid Masculino',
+        manualJuneMatches: true
+    },
+    femenino: {
+        icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.vaikl8nl7hdr4y9jj4jyb9ey.es-es.ics',
+        plantilla: PLANTILLA_FEMENINO,
+        competiciones: COMPETICIONES_FEMENINO,
+        title: 'Real Madrid Femenino',
+        manualJuneMatches: false
+    }
+};
+
 // ==========================================
 // 3. MOTOR DE ARRANQUE (Carga de JSON)
 // ==========================================
 async function loadPlayerData() {
     console.log("📥 Cargando base de datos de jugadores...");
     try {
-        // Asegúrate de que la ruta './data/players.json' es correcta
-        const response = await fetch('./Data/players.json');
+        // CORREGIDO: ./data/players.json (minúsculas)
+        const response = await fetch('./data/players.json');
         
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            throw new Error(`Error HTTP: ${response.status} - Archivo no encontrado`);
         }
 
         const data = await response.json();
@@ -28,261 +174,29 @@ async function loadPlayerData() {
         PLANTILLA_MASCULINO = data.masculino || [];
         PLANTILLA_FEMENINO = data.femenino || [];
         
-        console.log(`✅ Datos listos: ${PLANTILLA_MASCULINO.length} Jugadores / ${PLANTILLA_FEMENINO.length} Jugadoras`);
+        // Actualizamos también la referencia dentro de TEAMS_CONFIG por si acaso
+        TEAMS_CONFIG.masculino.plantilla = PLANTILLA_MASCULINO;
+        TEAMS_CONFIG.femenino.plantilla = PLANTILLA_FEMENINO;
+
+        console.log(`✅ Datos listos: ${PLANTILLA_MASCULINO.length} M / ${PLANTILLA_FEMENINO.length} F`);
         
     } catch (error) {
         console.error("❌ Error cargando JSON:", error);
-        alert("Error cargando los jugadores. Revisa que la carpeta 'data' y el archivo 'players.json' existan.");
+        // No mostramos alert para no molestar si falla algo menor, pero lo logueamos
     }
 }
-        const CUSTOM_ORDER_MASCULINO = [
-            'dt1', 'p1', 'p13', 'p12', 'p2', 'p24', 'p17b', 'p22', 'p3', 'p4', 'p18', 'p20', 'p23', 
-            'p14', 'p6', 'p8', 'p19', 'p5', 'p15', 'p7', 'p11', 'p21', 'p10', 'p16', 'p9', 'p30', 
-            'p10b', 'p17', 'p44', 'p31','p40','p35','p28'
-        ];
-        const CUSTOM_ORDER_FEMENINO = [
-            'dt_fem', 'pf1', 'pf13', 'pf15', 'pf2', 'pf23', 'pf14', 'pf4','pf22' ,'pf21', 'pf12', 'pf3', 'pf6', 'pf16', 
-            'pf17', 'pf10', 'pf8', 'pf18', 'pf7', 'pf19', 'pf5', 'pf20', 'pf9', 'pf11', 'pf24', 'pf28', 'pf29', 
-            'pf33', 'pf43', 'pf27','pf38'
-        ];
-        
-        // Coordenadas para la Pizarra Táctica (top%, left%)
-        // El portero siempre es el índice 0.
-        // Coordenadas Horizontal: Portero a la Izquierda (Left ~5%)
-        const FORMACIONES = {
-            '4-4-2': [
-                { left: 5, top: 50 }, // PT
-                { left: 25, top: 15 }, { left: 25, top: 38 }, { left: 25, top: 62 }, { left: 25, top: 85 }, // Defensas
-                { left: 50, top: 15 }, { left: 50, top: 38 }, { left: 50, top: 62 }, { left: 50, top: 85 }, // Medios
-                { left: 80, top: 35 }, { left: 80, top: 65 }  // Delanteros
-            ],
-            '4-3-3': [
-                { left: 5, top: 50 }, // PT
-                { left: 25, top: 10 }, { left: 25, top: 35 }, { left: 25, top: 65 }, { left: 25, top: 90 }, // Defensas
-                { left: 45, top: 50 }, { left: 60, top: 25 }, { left: 60, top: 75 }, // Medios (Pivote + 2 Interiores)
-                { left: 85, top: 15 }, { left: 85, top: 50 }, { left: 85, top: 85 }  // Delanteros
-            ],
-            '4-2-3-1': [
-                { left: 5, top: 50 }, // PT
-                { left: 22, top: 10 }, { left: 22, top: 35 }, { left: 22, top: 65 }, { left: 22, top: 90 }, // Defensas
-                { left: 42, top: 35 }, { left: 42, top: 65 }, // Doble Pivote
-                { left: 65, top: 15 }, { left: 65, top: 50 }, { left: 65, top: 85 }, // Mediapuntas
-                { left: 85, top: 50 }  // Punta
-            ],
-            '3-5-2': [
-                { left: 5, top: 50 }, // PT
-                { left: 22, top: 30 }, { left: 22, top: 50 }, { left: 22, top: 70 }, // 3 Centrales
-                { left: 45, top: 10 }, { left: 45, top: 90 }, // Carrileros
-                { left: 45, top: 50 }, { left: 60, top: 35 }, { left: 60, top: 65 }, // Medios
-                { left: 80, top: 35 }, { left: 80, top: 65 }  // Delanteros
-            ]
-        };
-        const COMPETICIONES_MASCULINO = {
-            'Liga EA Sports': {
-                id: 'liga',
-                nombre: 'Liga EA Sports',
-                color: 'comp-liga',
-                borderColor: 'border-comp-liga',
-                tipo: 'liga',
-                ordenLibre: true,
-                fases: [{ tipo: 'liga', rondas: Array.from({length: 38}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
-            },
-            'Mundial de Clubes': {
-                id: 'mundial',
-                nombre: 'Mundial de Clubes',
-                color: 'comp-mundial',
-                borderColor: 'border-comp-mundial',
-                tipo: 'copa',
-                campoNeutral: true,
-                fases: [
-                    { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: [
-                        { id: 'grupos-1', nombre: 'Fase de Grupos - Jornada 1', orden: 1 },
-                        { id: 'grupos-2', nombre: 'Fase de Grupos - Jornada 2', orden: 2 },
-                        { id: 'grupos-3', nombre: 'Fase de Grupos - Jornada 3', orden: 3 }
-                    ]},
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'octavos', nombre: 'Octavos de Final', orden: 4, eliminatoria: true, partidoUnico: true },
-                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 5, eliminatoria: true, partidoUnico: true },
-                        { id: 'semifinal', nombre: 'Semifinal', orden: 6, eliminatoria: true, partidoUnico: true },
-                        { id: 'final', nombre: 'Final', orden: 7, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            },
-            'Champions League': {
-                id: 'champions',
-                nombre: 'Champions League',
-                color: 'comp-champions',
-                borderColor: 'border-comp-champions',
-                tipo: 'copa',
-                fases: [
-                    { tipo: 'liga', nombre: 'Fase de Liga', ordenLibre: true, rondas: Array.from({length: 8}, (_, i) => ({ id: `fase-liga-${i+1}`, nombre: `Fase de Liga - Jornada ${i+1}`, orden: i+1 })) },
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'dieciseisavos-ida', nombre: 'Play-offs - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'dieciseisavos-vuelta', rondaExtra: true },
-                        { id: 'dieciseisavos-vuelta', nombre: 'Play-offs - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'dieciseisavos-ida', rondaExtra: true },
-                        { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta' },
-                        { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida' },
-                        { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
-                        { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
-                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 13, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
-                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 14, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
-                        { id: 'final', nombre: 'Final', orden: 15, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            },
-            'Copa del Rey': {
-                id: 'copa',
-                nombre: 'Copa del Rey',
-                color: 'comp-copa',
-                borderColor: 'border-comp-copa',
-                tipo: 'copa',
-                fases: [
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'dieciseisavos', nombre: 'Dieciseisavos de Final', orden: 1, eliminatoria: true, partidoUnico: true },
-                        { id: 'octavos', nombre: 'Octavos de Final', orden: 2, eliminatoria: true, partidoUnico: true },
-                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 3, eliminatoria: true, partidoUnico: true },
-                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 4, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
-                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 5, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
-                        { id: 'final', nombre: 'Final', orden: 6, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            },
-            'Supercopa de España': {
-                id: 'supercopa',
-                nombre: 'Supercopa de España',
-                color: 'comp-supercopa',
-                borderColor: 'border-comp-supercopa',
-                tipo: 'copa',
-                fases: [
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true },
-                        { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            }
-        };
 
-        const COMPETICIONES_FEMENINO = {
-             'Liga F': {
-                id: 'liga-f',
-                nombre: 'Liga F',
-                color: 'comp-liga',
-                borderColor: 'border-comp-liga',
-                tipo: 'liga',
-                ordenLibre: true,
-                fases: [{ tipo: 'liga', rondas: Array.from({length: 30}, (_, i) => ({ id: `jornada-${i+1}`, nombre: `Jornada ${i+1}`, orden: i+1 })) }]
-            },
-            'UWCL': {
-                id: 'uwcl',
-                nombre: 'UWCL',
-                color: 'comp-champions',
-                borderColor: 'border-comp-champions',
-                tipo: 'copa',
-                fases: [
-                    // 1. Fase Previa (2 partidos) - Orden 1 y 2
-                    { tipo: 'eliminatoria', nombre: 'Fase Previa', rondas: [
-                        { id: 'fase-previa-ida', nombre: 'Fase Previa - Ida', orden: 1, eliminatoria: true, idaVuelta: 'ida', pareja: 'fase-previa-vuelta' },
-                        { id: 'fase-previa-vuelta', nombre: 'Fase Previa - Vuelta', orden: 2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'fase-previa-ida' }
-                    ]},
-                    // 2. Fase de Grupos (6 partidos) - Orden del 3 al 8
-                    // AQUÍ ESTÁ EL CAMBIO CLAVE: length: 6
-                    { tipo: 'grupos', nombre: 'Fase de Grupos', rondas: Array.from({length: 6}, (_, i) => ({ id: `grupos-${i+1}`, nombre: `Fase Grupos - J${i+1}`, orden: i+3 })) },
-                    
-                    // 3. Eliminatorias
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        // Ronda Extra (Play-offs) - Orden 8.1 y 8.2 (Justo después de la jornada 6 que tiene orden 8)
-                        { id: 'octavos-ida', nombre: 'Octavos de Final - Ida', orden: 8.1, eliminatoria: true, idaVuelta: 'ida', pareja: 'octavos-vuelta', rondaExtra: true },
-                        { id: 'octavos-vuelta', nombre: 'Octavos de Final - Vuelta', orden: 8.2, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'octavos-ida', rondaExtra: true },
-                        
-                        // Resto de fases
-                        { id: 'cuartos-ida', nombre: 'Cuartos de Final - Ida', orden: 9, eliminatoria: true, idaVuelta: 'ida', pareja: 'cuartos-vuelta' },
-                        { id: 'cuartos-vuelta', nombre: 'Cuartos de Final - Vuelta', orden: 10, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'cuartos-ida' },
-                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 11, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
-                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 12, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
-                        { id: 'final', nombre: 'Final', orden: 13, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            },
-             'Copa de la Reina': {
-                id: 'copa-reina',
-                nombre: 'Copa de la Reina',
-                color: 'comp-copa',
-                borderColor: 'border-comp-copa',
-                tipo: 'copa',
-                fases: [
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'octavos', nombre: 'Octavos de Final', orden: 1, eliminatoria: true, partidoUnico: true },
-                        { id: 'cuartos', nombre: 'Cuartos de Final', orden: 2, eliminatoria: true, partidoUnico: true },
-                        { id: 'semifinal-ida', nombre: 'Semifinal - Ida', orden: 3, eliminatoria: true, idaVuelta: 'ida', pareja: 'semifinal-vuelta' },
-                        { id: 'semifinal-vuelta', nombre: 'Semifinal - Vuelta', orden: 4, eliminatoria: true, idaVuelta: 'vuelta', pareja: 'semifinal-ida' },
-                        { id: 'final', nombre: 'Final', orden: 5, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            },
-            'Supercopa Femenina': {
-                id: 'supercopa-fem',
-                nombre: 'Supercopa Femenina',
-                color: 'comp-supercopa',
-                borderColor: 'border-comp-supercopa',
-                tipo: 'copa',
-                fases: [
-                    { tipo: 'eliminatoria', nombre: 'Eliminatorias', rondas: [
-                        { id: 'semifinal', nombre: 'Semifinal', orden: 1, eliminatoria: true, partidoUnico: true },
-                        { id: 'final', nombre: 'Final', orden: 2, eliminatoria: true, partidoUnico: true }
-                    ]}
-                ]
-            }
-        };
-
-        const TEAMS_CONFIG = {
-            masculino: {
-                icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.3kq9cckrnlogidldtdie2fkbl.es-es.ics',
-                plantilla: PLANTILLA_MASCULINO,
-                competiciones: COMPETICIONES_MASCULINO,
-                title: 'Real Madrid Masculino',
-                manualJuneMatches: true
-            },
-            femenino: {
-                icalUrl: 'https://publish.realmadrid.com/content/sling/app-servlets/realmadrid/ical.vaikl8nl7hdr4y9jj4jyb9ey.es-es.ics',
-                plantilla: PLANTILLA_FEMENINO,
-                competiciones: COMPETICIONES_FEMENINO,
-                title: 'Real Madrid Femenino',
-                manualJuneMatches: false
-            }
-        };
-        // Nombres de posiciones por índice de hueco (0 es Portero, 1-10 Jugadores de campo)
-const FORMATION_ROLES = {
-    '4-3-3': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Interior', 'Interior', 'Extremo Izq', 'Delantero Centro', 'Extremo Der'],
-    '4-4-2': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Extremo Izq', 'Medio Centro', 'Medio Centro', 'Extremo Der', 'Delantero', 'Delantero'],
-    '4-2-3-1': ['Portero', 'Lateral Izq', 'Central', 'Central', 'Lateral Der', 'Pivote', 'Pivote', 'Extremo Izq', 'Mediapunta','Extremo Der','Delantero'],
-    '3-5-2': ['Portero', 'Central', 'Central', 'Central', 'Carrilero Izq', 'Pivote', 'Carrilero Der', 'Interior', 'Interior', 'Delantero', 'Delantero'],
-    // Fallback genérico
-    'default': ['Portero', 'Defensa', 'Defensa', 'Defensa', 'Defensa', 'Centrocampista', 'Centrocampista', 'Centrocampista', 'Delantero', 'Delantero', 'Delantero']
-};
+// Ejecutamos la carga inmediatamente
+loadPlayerData();
 
 function getPositionName(formation, index) {
     const roles = FORMATION_ROLES[formation] || FORMATION_ROLES['default'];
     return roles[index] || 'Jugador de Campo';
 }
 
-        // Variables globales
-        let calendarEvents = [];
-        let currentPlayerFilter = 'all';
-        let currentPositionFilter = '';
-        let currentCalendarFilter = '';
-        let currentTimeFilter = 'all';
-        let hideRegisteredMatches = false;
-        let selectedCalendarFixture = null;
-        let calendarViewMode = 'month'; // 'list' or 'month' - Default to month
-        let currentCalendarDate = new Date(); // Tracks the month shown in calendar view
-        
-        // Sorting State
-        let currentSortColumn = 'matchesPlayed';
-        let currentSortOrder = 'desc'; // 'asc' or 'desc'
-
-        // ==========================================
-        // TEAM SELECTION & INIT
-        // ==========================================
-
+// ==========================================
+// 4. FUNCIONES PRINCIPALES
+// ==========================================
         function selectTeam(team) {
             currentTeam = team;
             // IMPORTANT: Clear calendar events to avoid mixing teams
