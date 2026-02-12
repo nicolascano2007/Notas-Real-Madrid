@@ -1195,6 +1195,22 @@
         </div>
     </div>
 
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        🏆 Rendimiento por Competición
+    </h3>
+    
+    <div class="relative h-72 w-full">
+        <canvas id="competitionChart"></canvas>
+    </div>
+
+    <div class="flex justify-center gap-6 mt-4 text-xs font-medium text-gray-600">
+        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500"></span> Victorias</div>
+        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-gray-400"></span> Empates</div>
+        <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Derrotas</div>
+    </div>
+</div>
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h4 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
             📊 Histograma de Rigurosidad 
@@ -4016,6 +4032,7 @@ function renderPerformanceMatrix(matches) {
 
         function renderAdvancedStats() {
             renderLineWarsChart();
+            updateCompetitionChart();
             renderMinutesChart();
             renderTierList();
             renderGoalConnections();
@@ -13710,6 +13727,175 @@ function closeViewMatchModal() {
                 </div>
             `;
         }
+// ==========================================
+// GRÁFICO DE RENDIMIENTO (CORREGIDO: Detecta Local/Visitante por 'venue')
+// ==========================================
+
+let competitionChartInstance = null;
+
+function updateCompetitionChart() {
+    console.log("📊 Generando gráfico con corrección de Local/Visitante...");
+
+    // 1. OBTENER DATOS
+    let matches = [];
+    if (typeof getData === 'function') {
+        matches = getData('matches') || [];
+    } else {
+        if (typeof window.matches !== 'undefined') matches = window.matches;
+    }
+
+    // 2. FILTRAR PARTIDOS JUGADOS
+    // Que tengan resultado tipo texto "3-1"
+    const playedMatches = matches.filter(m => m.result && typeof m.result === 'string' && m.result.includes('-'));
+
+    if (playedMatches.length === 0) {
+        console.log("⚠️ No hay partidos jugados para el gráfico.");
+        return;
+    }
+
+    // 3. PROCESAR DATOS
+    const stats = {};
+
+    playedMatches.forEach(match => {
+        // A. Nombre de competición
+        let compName = match.competition || 'Amistoso';
+        if (typeof COMPETICIONES_ACTUALES !== 'undefined' && COMPETICIONES_ACTUALES[compName]) {
+            compName = COMPETICIONES_ACTUALES[compName].nombre;
+        }
+
+        // B. Inicializar contadores
+        if (!stats[compName]) {
+            stats[compName] = { w: 0, d: 0, l: 0, total: 0 };
+        }
+
+        // C. LEER RESULTADO ("3-1")
+        const parts = match.result.split('-'); 
+        const score1 = parseInt(parts[0]); // Goles del equipo que aparece primero (Izquierda)
+        const score2 = parseInt(parts[1]); // Goles del equipo que aparece segundo (Derecha)
+
+        // D. DETECTAR SI SOY LOCAL O VISITANTE (CORRECCIÓN AQUÍ) 🚨
+        // Tu base de datos usa 'venue': 'local' | 'visitante' | 'neutral'
+        const soyLocal = (match.venue === 'local');
+
+        let misGoles, rivalGoles;
+
+        if (soyLocal) {
+            // Si soy local, mis goles son el primero (Izquierda)
+            misGoles = score1;
+            rivalGoles = score2;
+        } else {
+            // Si soy visitante (o neutral actuando como visitante), mis goles son el segundo
+            misGoles = score2;
+            rivalGoles = score1;
+        }
+
+        // E. DETERMINAR GANADOR
+        if (misGoles > rivalGoles) stats[compName].w++;
+        else if (misGoles === rivalGoles) stats[compName].d++;
+        else stats[compName].l++;
+
+        stats[compName].total++;
+    });
+
+    // 4. PREPARAR ARRAYS (Porcentajes)
+    const labels = Object.keys(stats);
+    const dataWins = [];
+    const dataDraws = [];
+    const dataLosses = [];
+    const rawCounts = [];
+
+    labels.forEach(comp => {
+        const s = stats[comp];
+        const total = s.total;
+
+        // Porcentajes
+        dataWins.push(((s.w / total) * 100).toFixed(1));
+        dataDraws.push(((s.d / total) * 100).toFixed(1));
+        dataLosses.push(((s.l / total) * 100).toFixed(1));
+
+        rawCounts.push(s);
+    });
+
+    // 5. PINTAR EL GRÁFICO
+    const canvas = document.getElementById('competitionChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+
+    if (competitionChartInstance) {
+        competitionChartInstance.destroy();
+    }
+
+    competitionChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Victorias',
+                    data: dataWins,
+                    backgroundColor: '#22c55e',
+                    barPercentage: 0.6,
+                },
+                {
+                    label: 'Empates',
+                    data: dataDraws,
+                    backgroundColor: '#9ca3af',
+                    barPercentage: 0.6,
+                },
+                {
+                    label: 'Derrotas',
+                    data: dataLosses,
+                    backgroundColor: '#ef4444',
+                    barPercentage: 0.6,
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontales
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const datasetIndex = context.datasetIndex;
+                            const dataIndex = context.dataIndex;
+                            const pct = context.raw;
+                            
+                            const realStats = rawCounts[dataIndex];
+                            let realNum = 0;
+                            let labelStr = '';
+
+                            if (datasetIndex === 0) { realNum = realStats.w; labelStr = 'Victorias'; }
+                            else if (datasetIndex === 1) { realNum = realStats.d; labelStr = 'Empates'; }
+                            else { realNum = realStats.l; labelStr = 'Derrotas'; }
+
+                            return `${labelStr}: ${pct}% (${realNum} partidos)`;
+                        },
+                        footer: function(tooltipItems) {
+                             const idx = tooltipItems[0].dataIndex;
+                             return 'Total jugados: ' + rawCounts[idx].total;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    max: 100,
+                    grid: { display: false },
+                    ticks: { callback: (v) => v + '%' }
+                },
+                y: {
+                    stacked: true,
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
 </script>
 </body>
 </html>    
