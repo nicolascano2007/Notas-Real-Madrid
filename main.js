@@ -1,3 +1,4 @@
+alert("¡ESTOY CONECTADO! El archivo main.js se ha cargado.");
 // ==========================================
 // 1. VARIABLES GLOBALES Y ESTADO
 // ==========================================
