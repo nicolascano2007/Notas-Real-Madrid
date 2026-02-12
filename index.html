@@ -13728,13 +13728,13 @@ function closeViewMatchModal() {
             `;
         }
 // ==========================================
-// GRÁFICO DE RENDIMIENTO (CORREGIDO: Detecta Local/Visitante por 'venue')
+// GRÁFICO DE RENDIMIENTO (VERSIÓN DEFINITIVA: Usa el 'Outcome' directo)
 // ==========================================
 
 let competitionChartInstance = null;
 
 function updateCompetitionChart() {
-    console.log("📊 Generando gráfico con corrección de Local/Visitante...");
+    console.log("📊 Generando gráfico usando el dato directo (Victoria/Derrota/Empate)...");
 
     // 1. OBTENER DATOS
     let matches = [];
@@ -13744,12 +13744,13 @@ function updateCompetitionChart() {
         if (typeof window.matches !== 'undefined') matches = window.matches;
     }
 
-    // 2. FILTRAR PARTIDOS JUGADOS
-    // Que tengan resultado tipo texto "3-1"
-    const playedMatches = matches.filter(m => m.result && typeof m.result === 'string' && m.result.includes('-'));
+    // 2. FILTRAR PARTIDOS VÁLIDOS
+    // Buscamos partidos que tengan definido el resultado (outcome)
+    // CAMBIA 'outcome' POR EL NOMBRE EXACTO DE TU PROPIEDAD SI ES OTRO (ej: match.resultType)
+    const playedMatches = matches.filter(m => m.outcome && typeof m.outcome === 'string');
 
     if (playedMatches.length === 0) {
-        console.log("⚠️ No hay partidos jugados para el gráfico.");
+        console.log("⚠️ No hay partidos con 'outcome' registrado.");
         return;
     }
 
@@ -13768,36 +13769,26 @@ function updateCompetitionChart() {
             stats[compName] = { w: 0, d: 0, l: 0, total: 0 };
         }
 
-        // C. LEER RESULTADO ("3-1")
-        const parts = match.result.split('-'); 
-        const score1 = parseInt(parts[0]); // Goles del equipo que aparece primero (Izquierda)
-        const score2 = parseInt(parts[1]); // Goles del equipo que aparece segundo (Derecha)
+        // C. LEER EL RESULTADO DIRECTO (LA LÓGICA NUEVA) 💎
+        // Convertimos a minúsculas y quitamos espacios por seguridad
+        const resultado = match.outcome.toLowerCase().trim();
 
-        // D. DETECTAR SI SOY LOCAL O VISITANTE (CORRECCIÓN AQUÍ) 🚨
-        // Tu base de datos usa 'venue': 'local' | 'visitante' | 'neutral'
-        const soyLocal = (match.venue === 'local');
-
-        let misGoles, rivalGoles;
-
-        if (soyLocal) {
-            // Si soy local, mis goles son el primero (Izquierda)
-            misGoles = score1;
-            rivalGoles = score2;
+        if (resultado === 'victoria') {
+            stats[compName].w++;
+        } else if (resultado === 'derrota') {
+            stats[compName].l++;
+        } else if (resultado === 'empate') {
+            stats[compName].d++;
         } else {
-            // Si soy visitante (o neutral actuando como visitante), mis goles son el segundo
-            misGoles = score2;
-            rivalGoles = score1;
+            // Si llega algo raro (ej: "suspendido"), no lo sumamos a W/D/L pero sí al total?
+            // De momento lo ignoramos para no romper la estadística
+            return; 
         }
-
-        // E. DETERMINAR GANADOR
-        if (misGoles > rivalGoles) stats[compName].w++;
-        else if (misGoles === rivalGoles) stats[compName].d++;
-        else stats[compName].l++;
 
         stats[compName].total++;
     });
 
-    // 4. PREPARAR ARRAYS (Porcentajes)
+    // 4. PREPARAR DATOS (Porcentajes)
     const labels = Object.keys(stats);
     const dataWins = [];
     const dataDraws = [];
@@ -13808,7 +13799,7 @@ function updateCompetitionChart() {
         const s = stats[comp];
         const total = s.total;
 
-        // Porcentajes
+        // Porcentajes (con 1 decimal)
         dataWins.push(((s.w / total) * 100).toFixed(1));
         dataDraws.push(((s.d / total) * 100).toFixed(1));
         dataLosses.push(((s.l / total) * 100).toFixed(1));
@@ -13834,19 +13825,19 @@ function updateCompetitionChart() {
                 {
                     label: 'Victorias',
                     data: dataWins,
-                    backgroundColor: '#22c55e',
+                    backgroundColor: '#22c55e', // Verde
                     barPercentage: 0.6,
                 },
                 {
                     label: 'Empates',
                     data: dataDraws,
-                    backgroundColor: '#9ca3af',
+                    backgroundColor: '#9ca3af', // Gris
                     barPercentage: 0.6,
                 },
                 {
                     label: 'Derrotas',
                     data: dataLosses,
-                    backgroundColor: '#ef4444',
+                    backgroundColor: '#ef4444', // Rojo
                     barPercentage: 0.6,
                 }
             ]
@@ -13860,7 +13851,7 @@ function updateCompetitionChart() {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const datasetIndex = context.datasetIndex;
+                            const datasetIndex = context.datasetIndex; // 0:W, 1:D, 2:L
                             const dataIndex = context.dataIndex;
                             const pct = context.raw;
                             
