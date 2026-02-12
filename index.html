@@ -2073,7 +2073,7 @@ const DB_MASCULINO=[
             { id: "p44", nombre: "Víctor", apellido: "Muñoz", apodo: "Víctor Múñoz", posicion: "extremo", rol: "EI", dorsal: 44,piePreferido:'Derecho', nacionalidad: "España", fechaNacimiento: "2003-07-13", categoria: "Cantera", estado: "Inactivo", valorMercado: "-", unidad:"M€", fechaFichaje: "01-07-2023", costeFichaje: "Cantera", finContrato: "30-06-2026", altura: "1.73 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/VICTOR_MU%C3%91OZ", historialTemporadas: [] }
 
 ]
-const DB_FEMENINO[
+const DB_FEMENINO=[
     // CUERPO TÉCNICO
             { id: "dt_fem", nombre: "Pau", apellido: "Quesada", apodo: "Pau Quesada", posicion: "entrenador", rol: "ENT", dorsal: "DT", nacionalidad: "España", fechaNacimiento: "1992-10-31", categoria: "Primer Equipo", estado: "Activo", altura: "1.80 m", foto: "https://assets.realmadrid.com/is/image/realmadrid/PAU_QUESADA_CT_AV39125_380x501?$Desktop$&fit=wrap&wid=288&hei=384" },
 
@@ -2214,7 +2214,7 @@ const TEAMS_CONFIG = {
 // ==========================================
 
 // AQUÍ DEBAJO EMPIEZA TU function selectTeam(team) { ...
-        function selecTeam(team)
+        function selectTeam(team){
             currentTeam = team;
             // IMPORTANT: Clear calendar events to avoid mixing teams
             calendarEvents = [];
