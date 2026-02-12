@@ -1139,31 +1139,44 @@
                         </div>
                         <div class="table-container">
                             <table class="w-full">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b select-none sticky top-0 z-10">
+<thead class="text-xs text-white uppercase bg-blue-900 border-b border-blue-800 select-none sticky top-0 z-10">
     <tr>
-        <th class="px-4 py-3 text-left text-xs font-semibold uppercase sortable" onclick="handleSort('name')" id="th-name">Jugador</th>
+        <th class="px-4 py-3 text-left font-semibold cursor-pointer hover:text-blue-200 transition-colors" onclick="handleSort('name')" id="th-name">
+            Jugador
+        </th>
         
-        <th id="th-matchesPlayed" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('matchesPlayed')" title="Partidos Jugados">PJ</th>
+        <th id="th-matchesPlayed" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('matchesPlayed')" title="Partidos Jugados">PJ</th>
         
-        <th id="th-starts" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-indigo-600" onclick="handleSort('starts')" title="Partidos como Titular">TIT</th>
+        <th id="th-starts" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('starts')" title="Partidos como Titular">TIT</th>
 
-        <th id="th-avgRating" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('avgRating')" title="Nota Media">Nota</th>
-        <th id="th-goals" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-emerald-600" onclick="handleSort('goals')" title="Goles Totales">Gol</th>
-        <th id="th-gPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-blue-500" onclick="handleSort('gPer90')" title="Goles cada 90 min">G/90'</th>
-        <th id="th-assists" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('assists')" title="Asistencias Totales">Asis</th>
-        <th id="th-aPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-blue-500" onclick="handleSort('aPer90')" title="Asistencias cada 90 min">A/90'</th>
-        <th id="th-ga" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('ga')" title="Goles + Asistencias">G+A</th>
-        <th id="th-gaPer90" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-purple-600" onclick="handleSort('gaPer90')" title="Producción (G+A) cada 90 min">G+A/90'</th>
-        <th id="th-minutes" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-gray-600" onclick="handleSort('minutes')" title="Minutos Totales">Min</th>
-        <th id="th-minPerMatch" class="px-2 py-3 text-center text-xs font-semibold uppercase sortable text-gray-500" onclick="handleSort('minPerMatch')" title="Promedio Minutos por Partido">Min/P</th>
-        <th id="th-mvpCount" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('mvpCount')" title="MVPs Ganados">MVP</th>
-        <th id="th-wins" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-green-600" onclick="handleSort('wins')" title="Victorias">V</th>
-        <th id="th-draws" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-amber-600" onclick="handleSort('draws')" title="Empates">E</th>
-        <th id="th-losses" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable text-red-600" onclick="handleSort('losses')" title="Derrotas">D</th>
-        <th id="th-yellowCards" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('yellowCards')" title="Amarillas">🟨</th>
-        <th id="th-redCards" class="px-4 py-3 text-center text-xs font-semibold uppercase sortable" onclick="handleSort('redCards')" title="Rojas">🟥</th>
+        <th id="th-avgRating" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('avgRating')" title="Nota Media">Nota</th>
+        
+        <th id="th-goals" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('goals')" title="Goles Totales">Gol</th>
+        
+        <th id="th-gPer90" class="px-2 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('gPer90')" title="Goles cada 90 min">G/90'</th>
+        
+        <th id="th-assists" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('assists')" title="Asistencias Totales">Asis</th>
+        
+        <th id="th-aPer90" class="px-2 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('aPer90')" title="Asistencias cada 90 min">A/90'</th>
+        
+        <th id="th-ga" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('ga')" title="Goles + Asistencias">G+A</th>
+        
+        <th id="th-gaPer90" class="px-2 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('gaPer90')" title="Producción (G+A) cada 90 min">G+A/90'</th>
+        
+        <th id="th-minutes" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('minutes')" title="Minutos Totales">Min</th>
+        
+        <th id="th-minPerMatch" class="px-2 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('minPerMatch')" title="Promedio Minutos por Partido">Min/P</th>
+        
+        <th id="th-mvpCount" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('mvpCount')" title="MVPs Ganados">MVP</th>
+        
+        <th id="th-wins" class="px-4 py-3 text-center font-semibold cursor-pointer text-green-300 hover:text-white" onclick="handleSort('wins')" title="Victorias">V</th>
+        <th id="th-draws" class="px-4 py-3 text-center font-semibold cursor-pointer text-amber-300 hover:text-white" onclick="handleSort('draws')" title="Empates">E</th>
+        <th id="th-losses" class="px-4 py-3 text-center font-semibold cursor-pointer text-red-300 hover:text-white" onclick="handleSort('losses')" title="Derrotas">D</th>
+        
+        <th id="th-yellowCards" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('yellowCards')" title="Amarillas">🟨</th>
+        <th id="th-redCards" class="px-4 py-3 text-center font-semibold cursor-pointer hover:text-blue-200" onclick="handleSort('redCards')" title="Rojas">🟥</th>
     </tr>
-    </thead>
+</thead>
                                 <tbody id="stats-table-body"></tbody>
                             </table>
                         </div>
