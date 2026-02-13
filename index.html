@@ -1111,6 +1111,45 @@
         </div>
     </div>
     </div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-2">
+        <h3 class="font-bold text-gray-800 text-lg">
+            🧠 Análisis de Fiabilidad
+        </h3>
+        
+        <div class="flex bg-gray-100 p-1 rounded-lg gap-1">
+            <button onclick="switchConsistencyTab('ranking')" id="btn-ranking" 
+                    class="px-3 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition-all">
+                🛡️ Ranking
+            </button>
+            <button onclick="switchConsistencyTab('scatter')" id="btn-mapa" 
+                    class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:bg-gray-200 transition-all">
+                💎 Mapa
+            </button>
+        </div>
+    </div>
+    
+    <div id="view-ranking" class="block animate-fade-in">
+        <div class="relative h-96 w-full">
+            <canvas id="guaranteeChart"></canvas>
+        </div>
+        <div class="mt-4 flex flex-wrap justify-center gap-4 text-[10px] text-gray-500">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-emerald-500"></span> Fiable</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-blue-500"></span> Normal</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-rose-500"></span> Irregular</span>
+        </div>
+        <p class="text-center text-[10px] text-gray-400 mt-1">* Top 12 jugadores por minutos.</p>
+    </div>
+
+    <div id="view-mapa" class="hidden animate-fade-in"> <div class="relative h-96 w-full">
+            <canvas id="qualityScatterChart"></canvas>
+        </div>
+        <p class="text-center text-[10px] text-gray-400 mt-2">
+            * Eje Y: Abajo = Más Estable. | Eje X: Derecha = Mejor Nota.
+        </p>
+    </div>
+</div>
+
                     <!-- Stats Filters -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1238,6 +1277,27 @@
         <h4 class="font-bold text-gray-800 text-lg mb-4">🏆 Tier List de la Temporada</h4>
         <div id="tier-list-container" class="space-y-2"></div>
     </div>
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <div class="flex justify-between items-end mb-4">
+        <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+            ⚖️ Balance Ofensivo
+            <span class="text-xs font-normal text-gray-500">(Goles vs Asistencias)</span>
+        </h3>
+        <div class="flex gap-3 text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Goleador</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Playmaker</span>
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-600"></span> Total</span>
+        </div>
+    </div>
+    
+    <div class="relative h-80 w-full">
+        <canvas id="scatterGoalAssistChart"></canvas>
+    </div>
+    
+    <p class="text-center text-xs text-gray-400 mt-2">
+        * El tamaño del círculo representa los minutos jugados.
+    </p>
+</div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
     
     <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-100 relative">
@@ -1290,6 +1350,7 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
                         <!-- Goal Connections -->
     <div class="mt-8">
     <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -1324,6 +1385,41 @@
 
 </div>
                     </div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        🔥 Racha de Contribuciones
+        <span class="text-xs font-normal text-gray-500 ml-auto">(Partidos seguidos G+A)</span>
+    </h3>
+    
+    <div class="relative h-80 w-full">
+        <canvas id="streakChart"></canvas>
+    </div>
+    
+    <div class="mt-4 flex justify-center gap-6 text-xs text-gray-500">
+        <div class="flex items-center gap-1">
+            <span class="w-3 h-3 rounded bg-orange-500"></span> Racha Actual
+        </div>
+        <div class="flex items-center gap-1">
+            <span class="w-3 h-3 rounded bg-gray-300"></span> Récord Personal
+        </div>
+    </div>
+</div>
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        🎯 Dependencia del Gol
+        <span class="text-xs font-normal text-gray-500 ml-auto">(% sobre el total)</span>
+    </h3>
+    
+    <div class="relative h-64 w-full">
+        <canvas id="dependencyChart"></canvas>
+        
+        <div id="dependencyAlert" class="absolute inset-0 flex items-center justify-center pointer-events-none flex-col">
+            </div>
+    </div>
+
+    <div id="dependencyLegend" class="flex flex-wrap justify-center gap-3 mt-4 text-xs text-gray-600">
+        </div>
+</div>
                     <!-- Heatmap by Position -->
                     <div class="mb-8">
                         <h4 class="font-bold text-gray-700 mb-4">Mapa de Rendimiento (Nota Media por Posición)</h4>
@@ -2992,15 +3088,45 @@ function renderStats() {
     const competitionFilter = document.getElementById('stats-filter-competition').value;
     const statusFilter = document.getElementById('stats-filter-status').value;
     
-    // 1. ACTUALIZAR CABECERAS
-    document.querySelectorAll('th.sortable').forEach(th => {
-        th.classList.remove('th-active');
-        th.innerHTML = th.innerText.replace(' ▲', '').replace(' ▼', '');
+// ---------------------------------------------------------
+    // 1. GESTIÓN VISUAL DE CABECERAS (LIMPIEZA TOTAL)
+    // ---------------------------------------------------------
+    
+
+    if(typeof renderConsistencyWidget === 'function') renderConsistencyWidget();
+    // Seleccionamos TODOS los th que tengan ID empezando por "th-"
+    const allHeaders = document.querySelectorAll('th[id^="th-"]');
+
+    allHeaders.forEach(th => {
+        // A. RESETEAR COLORES:
+        // Quitamos el "amarillo activo" y el fondo oscuro
+        th.classList.remove('text-amber-400', 'bg-slate-700');
+        
+        // Ponemos el color por defecto (Gris/Blanco suave)
+        th.classList.add('text-gray-200'); 
+
+        // B. LIMPIEZA DE FLECHAS (La clave):
+        // Usamos una Regex global (/.../g) para borrar CUALQUIER flecha que haya quedado
+        // Borramos ▲, ▼ y espacios extra al final
+        let cleanText = th.innerText.replace(/[▲▼]/g, '').trim();
+        th.innerText = cleanText;
     });
+
+    // ---------------------------------------------------------
+    // 2. MARCAR LA COLUMNA ACTIVA
+    // ---------------------------------------------------------
     const activeTh = document.getElementById(`th-${currentSortColumn}`);
+    
     if (activeTh) {
-        activeTh.classList.add('th-active');
-        activeTh.innerHTML += currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+        // Quitamos el gris apagado
+        activeTh.classList.remove('text-gray-200');
+
+        // Ponemos el estilo ACTIVO (Texto Ámbar + Fondo Slate)
+        activeTh.classList.add('text-amber-400', 'bg-slate-700'); 
+
+        // Añadimos la flecha nueva
+        const arrow = currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+        activeTh.innerText = activeTh.innerText + arrow;
     }
 
     // 2. FILTRAR PARTIDOS
@@ -4063,9 +4189,10 @@ function renderPerformanceMatrix(matches) {
             renderGoalConnections();
             setTimeout(() => {
         if(typeof updateCompetitionChart === 'function') updateCompetitionChart();
-        
-        // --- NUEVA LLAMADA ---
         if(typeof updateVictoryStyleChart === 'function') updateVictoryStyleChart();
+        if(typeof renderGoalsAssistsScatter === 'function') renderGoalsAssistsScatter();
+        if(typeof renderStreakChart === 'function') renderStreakChart();
+        if(typeof renderDependencyChart === 'function') renderDependencyChart();
     }, 100);
             const matches = getData('matches');
             const players = getPlayers();
@@ -13463,18 +13590,18 @@ function renderHomeAwayStats(matchesData) {
     
     const matches = matchesData || getData('matches');
 
-    
     if (!matches || matches.length === 0) {
         console.error("❌ ERROR: getData('matches') está vacío.");
         return;
     }
+    
     let stats = {
         home: { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
         away: { p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
     };
 
     matches.forEach(m => {
-        // Intento adivinar el nombre del campo, pero si falla, veremos el console.log
+        // Intento adivinar el nombre del campo
         const venue = String(m.venue || m.location || m.condicion || '').toLowerCase().trim();
         
         let type = null;
@@ -13508,8 +13635,6 @@ function renderHomeAwayStats(matchesData) {
         else { stats[type].l++; }
     });
 
-    console.log("📊 DATOS CALCULADOS:", stats);
-
     // Actualizar HTML
     try {
         const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
@@ -13541,7 +13666,8 @@ function renderHomeAwayStats(matchesData) {
                             stats.home.p ? (stats.home.ga/stats.home.p).toFixed(2) : 0,
                             stats.home.p ? (stats.home.pts/stats.home.p).toFixed(2) : 0
                         ],
-                        backgroundColor: '#3b82f6'
+                        backgroundColor: '#1e3a8a', // AZUL OSCURO (Elegante)
+                        borderRadius: 4
                     },
                     {
                         label: '✈️ Fuera',
@@ -13550,11 +13676,18 @@ function renderHomeAwayStats(matchesData) {
                             stats.away.p ? (stats.away.ga/stats.away.p).toFixed(2) : 0,
                             stats.away.p ? (stats.away.pts/stats.away.p).toFixed(2) : 0
                         ],
-                        backgroundColor: '#6366f1'
+                        backgroundColor: '#f59e0b', // DORADO/ÁMBAR (Contraste alto)
+                        borderRadius: 4
                     }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
         });
     }
 }
@@ -14026,6 +14159,902 @@ function updateVictoryStyleChart() {
         }
     });
 }
+// ==========================================
+// GRÁFICO: BALANCE GOLEADOR (CORREGIDO: Sin check de 'match.played')
+// ==========================================
+
+let goalsAssistsChartInstance = null;
+
+function renderGoalsAssistsScatter() {
+    console.log("⚖️ Calculando Balance Goleador (Versión Corregida)...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    // Usamos getPlayers() para tener la lista oficial con nombres y fotos
+    if (typeof getPlayers === 'function') {
+        basePlayers = getPlayers(); 
+    } else if (typeof window.players !== 'undefined') {
+        basePlayers = window.players;
+    }
+
+    const matches = getData('matches') || [];
+
+    if (basePlayers.length === 0 || matches.length === 0) {
+        return;
+    }
+
+    // 2. MAPA DE ACUMULACIÓN
+    const statsMap = {};
+
+    // A. Inicializar mapa con nombres correctos
+    basePlayers.forEach(p => {
+        const displayName = p.apodo || p.nombre || 'Jugador';
+        statsMap[p.id] = {
+            id: p.id,
+            name: displayName,
+            goals: 0,
+            assists: 0,
+            minutes: 0
+        };
+    });
+
+    // B. RECORRER PARTIDOS (AQUÍ ESTABA EL ERROR) 🚨
+    matches.forEach(match => {
+        // CORRECCIÓN: Eliminamos '!match.played'.
+        // Solo verificamos si existen estadísticas de jugadores guardadas.
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+
+        match.playerStats.forEach(stat => {
+            // Verificamos si el jugador existe en nuestra DB actual
+            if (statsMap[stat.playerId]) {
+                const g = parseInt(stat.goals || 0);
+                const a = parseInt(stat.assists || 0);
+                const m = parseInt(stat.minutes || 0);
+
+                statsMap[stat.playerId].goals += g;
+                statsMap[stat.playerId].assists += a;
+                statsMap[stat.playerId].minutes += m;
+            }
+        });
+    });
+
+    // 3. FILTRAR JUGADORES ACTIVOS
+    const activePlayers = Object.values(statsMap).filter(p => 
+        p.minutes > 0 || p.goals > 0 || p.assists > 0
+    );
+
+    if (activePlayers.length === 0) {
+        console.log("⚠️ No hay jugadores con estadísticas activas.");
+        return;
+    }
+
+    // 4. CALCULAR MÁXIMOS
+    const maxMinutes = Math.max(...activePlayers.map(p => p.minutes));
+    const maxGoals = Math.max(...activePlayers.map(p => p.goals), 1);
+    const maxAssists = Math.max(...activePlayers.map(p => p.assists), 1);
+
+    const MIN_RADIUS = 5;
+    const MAX_RADIUS = 25;
+
+    // 5. PREPARAR DATASETS
+    const chartData = activePlayers.map(p => {
+        let color = '#94a3b8'; // Gris
+
+        const isScorer = p.goals >= (maxGoals * 0.3) && p.goals > 0;
+        const isPlaymaker = p.assists >= (maxAssists * 0.3) && p.assists > 0;
+
+        if (isScorer && isPlaymaker) color = '#9333ea'; // Morado
+        else if (isScorer) color = '#3b82f6'; // Azul
+        else if (isPlaymaker) color = '#f59e0b'; // Ámbar
+
+        const radius = MIN_RADIUS + ((p.minutes / (maxMinutes || 1)) * (MAX_RADIUS - MIN_RADIUS));
+
+        return {
+            x: p.goals,
+            y: p.assists,
+            r: radius,
+            player: p.name,
+            minutes: p.minutes,
+            rawColor: color
+        };
+    });
+
+    // 6. RENDERIZAR GRÁFICO
+    const ctx = document.getElementById('scatterGoalAssistChart');
+    if (!ctx) return;
+
+    if (goalsAssistsChartInstance) {
+        goalsAssistsChartInstance.destroy();
+    }
+
+    goalsAssistsChartInstance = new Chart(ctx, {
+        type: 'bubble',
+        data: {
+            datasets: [{
+                label: 'Plantilla',
+                data: chartData,
+                backgroundColor: function(context) {
+                    return context.raw ? context.raw.rawColor : '#94a3b8';
+                },
+                borderColor: '#ffffff',
+                borderWidth: 1,
+                hoverBorderColor: '#1e293b',
+                hoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: 10 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.player;
+                        },
+                        afterLabel: function(context) {
+                            const d = context.raw;
+                            return `⚽ ${d.x} Goles | 👟 ${d.y} Asist.\n⏱️ ${d.minutes} mins`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Goles', font: {weight:'bold'} },
+                    min: -0.5,
+                    suggestedMax: maxGoals + 1,
+                    ticks: { stepSize: 1 }
+                },
+                y: {
+                    title: { display: true, text: 'Asistencias', font: {weight:'bold'} },
+                    min: -0.5,
+                    suggestedMax: maxAssists + 1,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        },
+        plugins: [{
+            id: 'quadrantLabelsSimple',
+            beforeDraw: (chart) => {
+                const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                ctx.save();
+                ctx.font = 'bold 10px sans-serif';
+                ctx.fillStyle = 'rgba(150, 150, 150, 0.2)';
+                ctx.textAlign = 'center';
+                ctx.fillText('CRACK', right - 30, top + 20);
+                ctx.fillText('GOL', right - 30, bottom - 20);
+                ctx.fillText('ASIST', left + 30, top + 20);
+                ctx.restore();
+            }
+        }]
+    });
+}
+// ==========================================
+// GRÁFICO: RACHA DE CONTRIBUCIONES (Goles + Asistencias)
+// ==========================================
+
+let streakChartInstance = null;
+
+function renderStreakChart() {
+    console.log("🔥 Calculando Rachas de Goles + Asistencias...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    if (typeof getPlayers === 'function') {
+        basePlayers = getPlayers();
+    } else if (typeof window.players !== 'undefined') {
+        basePlayers = window.players;
+    }
+
+    // Obtenemos los partidos
+    let matches = getData('matches') || [];
+
+    if (basePlayers.length === 0 || matches.length === 0) return;
+
+    // 2. ORDENAR PARTIDOS CRONOLÓGICAMENTE (Vital para una racha)
+    // Usamos match.date como confirmaste
+    matches.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // 3. INICIALIZAR MAPA DE JUGADORES
+    // Estructura: { id: { name: "Vini", current: 0, max: 0, active: false } }
+    const streakMap = {};
+
+    basePlayers.forEach(p => {
+        const displayName = p.apodo || p.nombre || 'Jugador';
+        streakMap[p.id] = {
+            id: p.id,
+            name: displayName,
+            current: 0,      // Racha actual
+            max: 0,          // Récord histórico
+            hasPlayed: false // Para saber si ha debutado
+        };
+    });
+
+    // 4. CALCULAR RACHAS
+    matches.forEach(match => {
+        // Solo analizamos partidos con estadísticas registradas
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+
+        match.playerStats.forEach(stat => {
+            const player = streakMap[stat.playerId];
+            if (!player) return; // Si el jugador ya no está en la base de datos, ignorar
+
+            // DATOS CONFIRMADOS:
+            const minutes = parseInt(stat.minutes || 0);
+            const goals = parseInt(stat.goals || 0);
+            const assists = parseInt(stat.assists || 0);
+            const contribution = goals + assists;
+
+            // LÓGICA DE RACHA:
+            if (minutes > 0) {
+                player.hasPlayed = true; // Ha jugado al menos una vez
+
+                if (contribution > 0) {
+                    // ¡Hay contribución! Aumentamos racha actual
+                    player.current++;
+                    
+                    // Comprobamos si superamos el récord personal
+                    if (player.current > player.max) {
+                        player.max = player.current;
+                    }
+                } else {
+                    // Jugó y NO contribuyó: La racha se rompe ❌
+                    player.current = 0;
+                }
+            }
+            // Si minutes === 0, no hacemos nada. La racha se MANTIENE (Pausa por lesión/descanso).
+        });
+    });
+
+    // 5. FILTRAR Y ORDENAR
+    // Queremos ver a los que tienen alguna racha interesante.
+    // Filtramos los que tengan un Récord > 1 o una Racha Actual > 0
+    let chartData = Object.values(streakMap).filter(p => p.max > 1 || p.current > 0);
+
+    // Ordenamos: Los que tienen la RACHA ACTUAL más alta van primero (arriba)
+    chartData.sort((a, b) => b.current - a.current);
+
+    // Top 10 para que el gráfico no sea eterno
+    chartData = chartData.slice(0, 10);
+
+    if (chartData.length === 0) {
+        console.log("⚠️ Aún no hay rachas significativas.");
+        return;
+    }
+
+    // 6. PREPARAR ARRAYS PARA CHART.JS
+    const labels = chartData.map(p => p.name);
+    const dataCurrent = chartData.map(p => p.current);
+    const dataMax = chartData.map(p => p.max); // El récord (fondo)
+
+    // 7. RENDERIZAR GRÁFICO
+    const ctx = document.getElementById('streakChart');
+    if (!ctx) return;
+
+    if (streakChartInstance) {
+        streakChartInstance.destroy();
+    }
+
+    streakChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Racha Actual 🔥',
+                    data: dataCurrent,
+                    backgroundColor: '#f97316', // Naranja Fuego (Orange-500)
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8,
+                    order: 1 // Capa superior
+                },
+                {
+                    label: 'Récord Personal 🏆',
+                    data: dataMax,
+                    backgroundColor: '#e5e7eb', // Gris claro (Gray-200) - Efecto fantasma
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8,
+                    order: 2 // Capa inferior (Fondo)
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontales
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }, // Usamos tu leyenda HTML personalizada
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.raw} partidos`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { stepSize: 1 }, // Solo enteros
+                    beginAtZero: true
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { weight: 'bold' } }
+                }
+            },
+            // Animación chula para las barras
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+// ==========================================
+// GRÁFICO: DEPENDENCIA DEL GOL (Donut Top 3 + Resto)
+// ==========================================
+
+let dependencyChartInstance = null;
+
+function renderDependencyChart() {
+    console.log("🎯 Calculando Dependencia del Gol...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    if (typeof getPlayers === 'function') basePlayers = getPlayers();
+    else if (typeof window.players !== 'undefined') basePlayers = window.players;
+
+    const matches = getData('matches') || [];
+
+    if (matches.length === 0) return;
+
+    // 2. CALCULAR EL "TOTAL REAL" DEL CLUB (Fuente de verdad: Marcadores)
+    let totalTeamGoals = 0;
+
+    matches.forEach(m => {
+        if (!m.result || !m.result.includes('-')) return;
+
+        // Detectar si somos Local o Visitante
+        const venue = String(m.venue || m.location || '').toLowerCase().trim();
+        let isLocal = venue.includes('local') || venue.includes('casa') || venue === 'h';
+        
+        // Parsear resultado "3-1"
+        const parts = m.result.split('-');
+        const goalsLocal = parseInt(parts[0]) || 0;
+        const goalsVisitor = parseInt(parts[1]) || 0;
+
+        // Sumar NUESTROS goles
+        if (isLocal) totalTeamGoals += goalsLocal;
+        else totalTeamGoals += goalsVisitor;
+    });
+
+    if (totalTeamGoals === 0) {
+        console.log("⚠️ Aún no hay goles registrados en marcadores.");
+        return;
+    }
+
+    // 3. CALCULAR GOLES POR JUGADOR (PlayerStats)
+    const playerGoalsMap = {};
+    
+    // Inicializar mapa
+    basePlayers.forEach(p => {
+        playerGoalsMap[p.id] = {
+            name: p.apodo || p.nombre || 'Jugador',
+            goals: 0
+        };
+    });
+
+    // Sumar goles asignados
+    matches.forEach(match => {
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+        match.playerStats.forEach(stat => {
+            if (playerGoalsMap[stat.playerId]) {
+                playerGoalsMap[stat.playerId].goals += parseInt(stat.goals || 0);
+            }
+        });
+    });
+
+    // 4. ORDENAR Y AGRUPAR (TOP 3 + RESTO)
+    let allScorers = Object.values(playerGoalsMap).filter(p => p.goals > 0);
+    allScorers.sort((a, b) => b.goals - a.goals); // Orden descendente
+
+    // Preparar datos finales
+    let chartLabels = [];
+    let chartData = [];
+    let chartColors = [];
+
+    // Colores para el Top 3 (Oro, Plata, Bronce visuales)
+    const topColors = ['#fbbf24', '#94a3b8', '#b45309']; // Amber-400, Slate-400, Amber-700
+    
+    // A. Procesar TOP 3
+    let assignedGoals = 0;
+    const top3 = allScorers.slice(0, 3);
+    
+    top3.forEach((p, index) => {
+        chartLabels.push(p.name);
+        chartData.push(p.goals);
+        chartColors.push(topColors[index] || '#cbd5e1'); // Color fallback
+        assignedGoals += p.goals;
+    });
+
+    // B. Procesar "RESTO DEL EQUIPO" (Jugadores fuera del Top 3)
+    const restOfPlayers = allScorers.slice(3);
+    let restGoals = restOfPlayers.reduce((sum, p) => sum + p.goals, 0);
+
+    if (restGoals > 0) {
+        chartLabels.push('Resto Equipo');
+        chartData.push(restGoals);
+        chartColors.push('#3b82f6'); // Azul (Trabajo en equipo)
+        assignedGoals += restGoals;
+    }
+
+    // C. Procesar "AUTOGOLES / NO ASIGNADOS" (Diferencia con el Total Real)
+    // Si el marcador dice 50 goles y los jugadores suman 48, faltan 2.
+    let unassignedGoals = totalTeamGoals - assignedGoals;
+    
+    // Evitar negativos por si acaso hay error en datos manuales
+    if (unassignedGoals < 0) unassignedGoals = 0; 
+
+    if (unassignedGoals > 0) {
+        chartLabels.push('Autogol/Otro');
+        chartData.push(unassignedGoals);
+        chartColors.push('#e2e8f0'); // Gris muy claro
+    }
+
+    // 5. DETECTAR DEPENDENCIA (ALERTA) 🚨
+    // Miramos si el Top 1 tiene más del 40% del TOTAL DEL CLUB
+    const top1Goals = top3.length > 0 ? top3[0].goals : 0;
+    const dependencyRatio = (top1Goals / totalTeamGoals) * 100;
+    const alertElement = document.getElementById('dependencyAlert');
+
+    if (alertElement) {
+        // Limpiar contenido previo
+        alertElement.innerHTML = '';
+        
+        if (dependencyRatio >= 40) {
+            // INYECTAR ALERTA VISUAL
+            alertElement.innerHTML = `
+                <div class="text-center animate-pulse">
+                    <div class="text-3xl">⚠️</div>
+                    <div class="text-xs font-bold text-red-500 uppercase tracking-widest mt-1">Dependencia</div>
+                    <div class="text-lg font-extrabold text-gray-800">${Math.round(dependencyRatio)}%</div>
+                    <div class="text-[10px] text-gray-400">${top3[0].name}</div>
+                </div>
+            `;
+        } else {
+            // ESTADO NORMAL (Mostrar total goles)
+            alertElement.innerHTML = `
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-700">${totalTeamGoals}</div>
+                    <div class="text-[10px] uppercase text-gray-400 tracking-widest">Goles Totales</div>
+                </div>
+            `;
+        }
+    }
+
+    // 6. RENDERIZAR GRÁFICO
+    const ctx = document.getElementById('dependencyChart');
+    if (!ctx) return;
+
+    if (dependencyChartInstance) {
+        dependencyChartInstance.destroy();
+    }
+
+    dependencyChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                data: chartData,
+                backgroundColor: chartColors,
+                borderWidth: 2,
+                borderColor: '#ffffff',
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%', // Tamaño del agujero central
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 10, font: { size: 10 } }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const percentage = ((value / totalTeamGoals) * 100).toFixed(1);
+                            return `${context.label}: ${value} Goles (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+// ==========================================
+// GRÁFICO: RANKING DE GARANTÍA (Opción C)
+// ==========================================
+
+let guaranteeChartInstance = null;
+
+function renderGuaranteeChart() {
+    console.log("🛡️ Calculando Ranking de Garantía (Top Minutos)...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    if (typeof getPlayers === 'function') basePlayers = getPlayers();
+    else if (typeof window.players !== 'undefined') basePlayers = window.players;
+
+    const matches = getData('matches') || [];
+
+    if (basePlayers.length === 0 || matches.length === 0) return;
+
+    // 2. ACUMULAR DATOS (Minutos y Notas)
+    const statsMap = {};
+
+    // Inicializamos mapa con todos los jugadores
+    basePlayers.forEach(p => {
+        statsMap[p.id] = {
+            id: p.id,
+            name: p.apodo || p.nombre,
+            ratings: [],
+            totalMinutes: 0
+        };
+    });
+
+    matches.forEach(match => {
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+
+        match.playerStats.forEach(stat => {
+            // Minutos
+            let mins = parseInt(stat.minutes || 0);
+            if (mins > 0 && statsMap[stat.playerId]) {
+                statsMap[stat.playerId].totalMinutes += mins;
+
+                // Nota
+                let rawRating = stat.rating;
+                if (rawRating !== undefined && rawRating !== null && rawRating !== "") {
+                    let rating = parseFloat(String(rawRating).replace(',', '.'));
+                    if (!isNaN(rating) && rating > 0) {
+                        statsMap[stat.playerId].ratings.push(rating);
+                    }
+                }
+            }
+        });
+    });
+
+    // 3. FILTRAR: SOLO EL "NÚCLEO DURO" (Top 12 por Minutos)
+    let allPlayers = Object.values(statsMap);
+    
+    // Ordenamos por Minutos Jugados (Descendente)
+    allPlayers.sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+    // Nos quedamos con los 12 que más han jugado
+    let coreTeam = allPlayers.slice(0, 12);
+
+    // Si nadie ha jugado (principio de temporada), salimos
+    if (coreTeam.length === 0 || coreTeam[0].totalMinutes === 0) {
+        console.log("⚠️ Aún no hay minutos suficientes para el Ranking.");
+        return;
+    }
+
+    // 4. CALCULAR MÉTRICAS (Media y Desviación)
+    let chartData = [];
+
+    coreTeam.forEach(p => {
+        // Si ha jugado muchos minutos pero no tiene notas, lo saltamos
+        if (p.ratings.length === 0) return;
+
+        // A. Media
+        const sum = p.ratings.reduce((a, b) => a + b, 0);
+        const mean = sum / p.ratings.length;
+
+        // B. Desviación Estándar (Consistencia)
+        let stdDev = 0;
+        if (p.ratings.length > 1) {
+            const squaredDiffs = p.ratings.map(r => Math.pow(r - mean, 2));
+            const variance = squaredDiffs.reduce((a, b) => a + b, 0) / p.ratings.length;
+            stdDev = Math.sqrt(variance);
+        }
+
+        // C. Color según Consistencia
+        let color = '#3b82f6'; // Azul (Normal)
+        let status = 'Normal';
+
+        if (stdDev < 0.5) {
+            color = '#10b981'; // Verde (Muy Fiable)
+            status = 'Roca 🧱';
+        } else if (stdDev > 1.2) {
+            color = '#f43f5e'; // Rojo (Irregular)
+            status = 'Montaña Rusa 🎢';
+        }
+
+        chartData.push({
+            name: p.name,
+            mean: parseFloat(mean.toFixed(2)),
+            stdDev: parseFloat(stdDev.toFixed(2)),
+            minutes: p.totalMinutes,
+            color: color,
+            status: status
+        });
+    });
+
+    // 5. ORDENAR FINAL: Por NOTA MEDIA (Los mejores arriba)
+    chartData.sort((a, b) => b.mean - a.mean);
+
+    // 6. RENDERIZAR
+    const ctx = document.getElementById('guaranteeChart');
+    if (!ctx) return;
+
+    if (guaranteeChartInstance) guaranteeChartInstance.destroy();
+
+    guaranteeChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.map(d => d.name),
+            datasets: [{
+                label: 'Nota Media',
+                data: chartData.map(d => d.mean),
+                backgroundColor: chartData.map(d => d.color),
+                borderRadius: 4,
+                barPercentage: 0.7
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontales
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = chartData[context.dataIndex];
+                            return `Nota Media: ${d.mean} (${d.status})`;
+                        },
+                        afterLabel: function(context) {
+                            const d = chartData[context.dataIndex];
+                            return `Minutos: ${d.minutes} | Variabilidad: ${d.stdDev}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: 10, // Escala de nota 0-10
+                    title: { display: true, text: 'Nota Media (Ranking Titulares)' },
+                    grid: { color: '#f3f4f6' }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+}
+// ==========================================
+// GRÁFICO: MAPA DE TALENTO (Opción B - Scatter)
+// ==========================================
+
+let qualityScatterChartInstance = null;
+
+function renderQualityScatterChart() {
+    console.log("💎 Generando Mapa de Talento (Quality vs Reliability)...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    if (typeof getPlayers === 'function') basePlayers = getPlayers();
+    else if (typeof window.players !== 'undefined') basePlayers = window.players;
+
+    const matches = getData('matches') || [];
+
+    if (basePlayers.length === 0 || matches.length === 0) return;
+
+    // 2. PROCESAR NOTAS
+    const statsMap = {};
+    let maxMinutes = 0;
+
+    matches.forEach(match => {
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+
+        match.playerStats.forEach(stat => {
+            let rawRating = stat.rating;
+            if (rawRating !== undefined && rawRating !== null && rawRating !== "") {
+                let rating = parseFloat(String(rawRating).replace(',', '.'));
+                let mins = parseInt(stat.minutes || 0);
+
+                if (!isNaN(rating) && rating > 0 && mins > 0) {
+                    if (!statsMap[stat.playerId]) {
+                        statsMap[stat.playerId] = { 
+                            name: '', // Lo rellenamos luego
+                            ratings: [], 
+                            totalMinutes: 0 
+                        };
+                    }
+                    statsMap[stat.playerId].ratings.push(rating);
+                    statsMap[stat.playerId].totalMinutes += mins;
+                    
+                    if (statsMap[stat.playerId].totalMinutes > maxMinutes) {
+                        maxMinutes = statsMap[stat.playerId].totalMinutes;
+                    }
+                }
+            }
+        });
+    });
+
+    // 3. CALCULAR MÉTRICAS (Ejes X e Y)
+    const chartData = [];
+    const MIN_GAMES = 3; // Mínimo para ser estadísticamente relevante
+
+    basePlayers.forEach(p => {
+        const data = statsMap[p.id];
+        if (!data || data.ratings.length < MIN_GAMES) return;
+
+        // A. Media (Eje X - Calidad)
+        const sum = data.ratings.reduce((a, b) => a + b, 0);
+        const mean = sum / data.ratings.length;
+
+        // B. Desviación Estándar (Eje Y - Inestabilidad)
+        const squaredDiffs = data.ratings.map(r => Math.pow(r - mean, 2));
+        const variance = squaredDiffs.reduce((a, b) => a + b, 0) / data.ratings.length;
+        const stdDev = Math.sqrt(variance);
+
+        // C. Tamaño Burbuja (Importancia)
+        // Escalamos entre 5px y 25px
+        const radius = 5 + ((data.totalMinutes / maxMinutes) * 20);
+
+        // D. Color Inteligente
+        let color = '#94a3b8'; // Gris (Normal)
+        
+        // ZONA MVP (Abajo Derecha): Nota alta (>7) y Muy Estable (<0.6)
+        if (mean >= 7 && stdDev <= 0.6) color = '#10b981'; // Verde Esmeralda
+        // ZONA PELIGRO (Arriba): Muy inestable (>1.2)
+        else if (stdDev > 1.2) color = '#f43f5e'; // Rojo
+        // ZONA CRACK (Derecha): Nota muy alta (>8) aunque sea algo inestable
+        else if (mean >= 8) color = '#fbbf24'; // Dorado
+
+        chartData.push({
+            x: parseFloat(mean.toFixed(2)),   // Nota Media
+            y: parseFloat(stdDev.toFixed(2)), // Inestabilidad
+            r: radius,
+            player: p.apodo || p.nombre,
+            minutes: data.totalMinutes,
+            rawColor: color
+        });
+    });
+
+    if (chartData.length === 0) {
+        console.log("⚠️ No hay suficientes datos para el mapa de talento.");
+        return;
+    }
+
+    // 4. RENDERIZAR GRÁFICO
+    const ctx = document.getElementById('qualityScatterChart');
+    if (!ctx) return;
+
+    if (qualityScatterChartInstance) qualityScatterChartInstance.destroy();
+
+    qualityScatterChartInstance = new Chart(ctx, {
+        type: 'bubble',
+        data: {
+            datasets: [{
+                label: 'Jugadores',
+                data: chartData,
+                backgroundColor: function(context) {
+                    return context.raw ? context.raw.rawColor : '#94a3b8';
+                },
+                borderColor: '#fff',
+                borderWidth: 1,
+                hoverBorderColor: '#1e293b',
+                hoverBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: 20 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw.player;
+                        },
+                        afterLabel: function(context) {
+                            const d = context.raw;
+                            return `⭐ Nota: ${d.x} | 📉 Var: ${d.y}\n⏱️ ${d.minutes} mins`;
+                        }
+                    }
+                },
+                // Plugin simple para etiquetas de fondo
+                quadrantLabels: true 
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Calidad (Nota Media) ➡️', font: {weight:'bold'} },
+                    min: 4,  // Empezamos en 4 para no desperdiciar espacio
+                    max: 10, // Hasta 10
+                    grid: { color: '#f1f5f9' }
+                },
+                y: {
+                    title: { display: true, text: '⬇️ Estabilidad (Menos es mejor)', font: {weight:'bold'} },
+                    min: 0,
+                    // Invertimos visualmente el eje Y? No, mejor normal pero con etiqueta clara.
+                    // Cuanto más abajo (cerca de 0), mejor.
+                    suggestedMax: 2.0,
+                    grid: { color: '#f1f5f9' }
+                }
+            }
+        },
+        // PLUGIN: Etiquetas de Cuadrantes
+        plugins: [{
+            id: 'quadrantLabelsQuality',
+            beforeDraw: (chart) => {
+                const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                ctx.save();
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.3)';
+                ctx.textAlign = 'center';
+                
+                // Definimos zonas visuales
+                // Abajo Derecha (MVP)
+                ctx.fillText('MVP FIABLE', right - 40, bottom - 30);
+                
+                // Arriba Derecha (Genio Inestable)
+                ctx.fillText('GENIO LOCO', right - 40, top + 30);
+                
+                // Abajo Izquierda (Cumplidor)
+                ctx.fillText('CUMPLIDOR', left + 40, bottom - 30);
+                
+                ctx.restore();
+            }
+        }]
+    });
+}
+window.switchConsistencyTab = function(tabName) {
+    const btnRanking = document.getElementById('btn-ranking');
+    const btnMapa = document.getElementById('btn-mapa');
+    const viewRanking = document.getElementById('view-ranking');
+    const viewMapa = document.getElementById('view-mapa');
+
+    if (tabName === 'ranking') {
+        // Activar Botón Ranking
+        btnRanking.className = "px-3 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition-all";
+        btnMapa.className = "px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:bg-gray-200 transition-all";
+        
+        // Mostrar Vista Ranking
+        viewRanking.classList.remove('hidden');
+        viewMapa.classList.add('hidden');
+    } else {
+        // Activar Botón Mapa
+        btnMapa.className = "px-3 py-1 text-xs font-bold rounded-md bg-white text-blue-600 shadow-sm transition-all";
+        btnRanking.className = "px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:bg-gray-200 transition-all";
+        
+        // Mostrar Vista Mapa
+        viewMapa.classList.remove('hidden');
+        viewRanking.classList.add('hidden');
+    }
+};
+// ==========================================
+// FUNCIÓN MAESTRA DE RENDERIZADO
+// ==========================================
+function renderConsistencyWidget() {
+    renderGuaranteeChart();     // Calcula y pinta el Ranking
+    renderQualityScatterChart(); // Calcula y pinta el Mapa (aunque esté oculto, se genera)
+}
+
 </script>
 </body>
 </html>    
