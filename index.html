@@ -2407,6 +2407,7 @@ const TEAMS_CONFIG = {
 
 // AQUÍ DEBAJO EMPIEZA TU function selectTeam(team) { ...
         function selectTeam(team){
+
             currentTeam = team;
             // IMPORTANT: Clear calendar events to avoid mixing teams
             calendarEvents = [];
@@ -8157,27 +8158,90 @@ function closeEditMatchModal() {
         }
 
         function confirmExtraRound() {
-            const playExtra = document.getElementById('chk-play-extra').checked;
-            
-            if (pendingExtraRoundComp) {
-                const state = getCompetitionState();
-                if (!state[pendingExtraRoundComp]) state[pendingExtraRoundComp] = {};
-                
-                // Guardamos la decisión: TRUE (juega) o FALSE (salta directo a octavos/cuartos)
-                state[pendingExtraRoundComp].playsExtra = playExtra;
-                saveCompetitionState(state);
-            }
-            
-            document.getElementById('extra-round-modal').classList.remove('active');
-            unlockScroll();
-            
-            // Refrescar y salir como si hubiera terminado el registro normal
-            resetNewMatchForm();
-            renderCompetitionStatus();
-            populateCompetitionSelect();
-            alert('✅ Partido registrado y configuración de fase final actualizada.');
-            showTab('partidos');
+    const playExtra = document.getElementById('chk-play-extra').checked;
+    
+    if (pendingExtraRoundComp) {
+        // 1. Guardar en Base de Datos (Persistencia)
+        const state = getCompetitionState();
+        if (!state[pendingExtraRoundComp]) state[pendingExtraRoundComp] = {};
+        
+        // Guardamos la decisión: TRUE (juega) o FALSE (salta)
+        state[pendingExtraRoundComp].playsExtra = playExtra;
+        saveCompetitionState(state);
+
+        // ---------------------------------------------------------
+        // 2. NUEVO: ACTUALIZAR MEMORIA (COMPETICIONES_ACTUALES)
+        // Esto hace que el cambio sea visible AL INSTANTE en el menú
+        // ---------------------------------------------------------
+        const compConfig = typeof COMPETICIONES_ACTUALES !== 'undefined' ? COMPETICIONES_ACTUALES[pendingExtraRoundComp] : null;
+        
+        if (compConfig && compConfig.fases) {
+            // Recorremos las fases buscando la ronda "Playoff" o "Dieciseisavos"
+            compConfig.fases.forEach(fase => {
+                if (fase.rondas) {
+                    fase.rondas.forEach(r => {
+                        // Identificamos la ronda extra por su ID habitual
+                        // Ajusta 'playoff' o 'dieciseis' si tus IDs son diferentes
+                        const esRondaExtra = r.id.includes('playoff') || r.id.includes('dieciseis') || r.id.includes('extra');
+                        
+                        if (esRondaExtra) {
+                            if (playExtra) {
+                                r.status = 'available'; // 🟢 La hacemos visible
+                                r.oculto = false;       // Por si usas propiedad booleana
+                            } else {
+                                r.status = 'skipped';   // ⏭️ La marcamos como saltada
+                                r.oculto = true;
+                            }
+                        }
+                    });
+                }
+            });
         }
+        // ---------------------------------------------------------
+    }
+    
+    document.getElementById('extra-round-modal').classList.remove('active');
+    unlockScroll();
+    
+    // Refrescar y salir
+    resetNewMatchForm();
+    renderCompetitionStatus();
+    populateCompetitionSelect(); // Esto ahora regenerará el menú con la ronda visible
+    
+    alert('✅ Configuración actualizada: ' + (playExtra ? 'Se ha activado la Ronda Extra.' : 'Salto directo a siguiente fase.'));
+    
+    showTab('partidos');
+}
+// Añade esto al inicio de tu app para mantener las rondas desbloqueadas tras F5
+function syncRoundsWithState() {
+    const state = getCompetitionState();
+    
+    // Recorremos las competiciones guardadas
+    Object.keys(state).forEach(compId => {
+        const compState = state[compId];
+        const compConfig = COMPETICIONES_ACTUALES[compId];
+
+        // Si el usuario activó la ronda extra...
+        if (compState && compState.playsExtra === true && compConfig) {
+            // ...la desbloqueamos en la configuración
+            if (compConfig.fases) {
+                compConfig.fases.forEach(fase => {
+                    if (fase.rondas) {
+                        fase.rondas.forEach(r => {
+                            if (r.id.includes('playoff') || r.id.includes('dieciseis')) {
+                                r.status = 'available';
+                                r.oculto = false;
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    });
+}
+
+// LLAMAR AL INICIAR LA PÁGINA:
+// syncRoundsWithState();
 
         // ==========================================
         // UTILS
@@ -13917,6 +13981,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. AHORA, ejecutamos el resto de inicializadores
     initDarkMode();
     preloadCalendars();
+    syncCompetitionConfig();
 
     // Inicia en modo Global por defecto
     if (appMode === 'global') {
