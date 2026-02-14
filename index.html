@@ -317,6 +317,17 @@
 
                 </div> <!-- End Bottom Stats -->
                 </div> <!-- End Dashboard Widgets Area -->
+<div id="probableLineupContainer" class="w-full h-full min-h-[500px]">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full animate-pulse flex flex-col gap-4">
+        <div class="h-6 bg-gray-200 rounded w-1/3"></div>
+        <div class="space-y-2">
+            <div class="h-10 bg-gray-100 rounded"></div>
+            <div class="h-10 bg-gray-100 rounded"></div>
+            <div class="h-10 bg-gray-100 rounded"></div>
+            <div class="h-10 bg-gray-100 rounded"></div>
+        </div>
+    </div>
+</div>
                 <div class="mt-8 bg-white rounded-xl shadow-sm p-6 border border-gray-200" id="widget-data-management">
                     <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                         💾 Gestión de Datos
@@ -1277,6 +1288,33 @@
         <h4 class="font-bold text-gray-800 text-lg mb-4">🏆 Tier List de la Temporada</h4>
         <div id="tier-list-container" class="space-y-2"></div>
     </div>
+
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
+    <div class="flex justify-between items-end mb-4">
+        <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+            🌊 Olas de Forma
+            <span class="text-xs font-normal text-gray-500 ml-auto">(Rendimiento por Competición)</span>
+        </h3>
+    </div>
+
+    <div id="wavesTabsContainer" class="flex gap-2 mb-4 overflow-x-auto pb-2 border-b border-gray-100">
+        </div>
+    
+    <div class="overflow-x-auto pb-2">
+        <div id="formHeatmapContainer" class="min-w-full">
+            </div>
+    </div>
+
+    <div class="mt-4 flex flex-wrap justify-center gap-3 text-[10px] text-gray-500 font-medium">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-600"></span> 9+</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-emerald-400"></span> 8-9</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-blue-400"></span> 7-8</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-yellow-300"></span> 6-7</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-rose-400"></span> -6</span>
+    </div>
+</div>
+
+
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
     <div class="flex justify-between items-end mb-4">
         <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
@@ -1318,6 +1356,22 @@
         </div>
     </div>
     </div>
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+    <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        🎪 Factor X
+        <span class="text-xs font-normal text-gray-500 ml-auto">(Puntos rescatados con G+A)</span>
+    </h3>
+    
+    <div class="relative h-80 w-full">
+        <canvas id="factorXChart"></canvas>
+    </div>
+    
+    <div class="mt-4 text-center">
+        <p class="text-[10px] text-gray-400">
+            * Puntos que el equipo habría perdido si restamos los goles y asistencias de ese jugador.
+        </p>
+    </div>
+</div>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
                         <div class="flex flex-col md:flex-row justify-between items-center mb-4">
                             <div>
@@ -3088,7 +3142,7 @@ function renderStats() {
     const competitionFilter = document.getElementById('stats-filter-competition').value;
     const statusFilter = document.getElementById('stats-filter-status').value;
     
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
     // 1. GESTIÓN VISUAL DE CABECERAS (LIMPIEZA TOTAL)
     // ---------------------------------------------------------
     
@@ -4193,6 +4247,8 @@ function renderPerformanceMatrix(matches) {
         if(typeof renderGoalsAssistsScatter === 'function') renderGoalsAssistsScatter();
         if(typeof renderStreakChart === 'function') renderStreakChart();
         if(typeof renderDependencyChart === 'function') renderDependencyChart();
+        if(typeof renderFactorXChart === 'function') renderFactorXChart();
+        if(typeof renderFormWaves === 'function') renderFormWaves();
     }, 100);
             const matches = getData('matches');
             const players = getPlayers();
@@ -4710,6 +4766,8 @@ function renderPerformanceMatrix(matches) {
                 ${renderLeaderRow('Mejor Nota', '⭐', topR, true)}
                 ${renderLeaderRow('Más MVPs', '🏆', topM)}
             `;
+            if (typeof renderProbableLineupWidget === 'function')renderProbableLineupWidget();
+
 
             document.getElementById('dashboard-leaders').innerHTML = leadersHtml || '<p class="text-gray-500 text-sm text-center">Faltan datos para calcular líderes.</p>';
             renderAIPrediction();
@@ -4995,9 +5053,6 @@ function renderPlayers() {
     }).join('');
 }
 
-// ==========================================
-// FUNCIÓN PRINCIPAL: VER FICHA JUGADOR (CON DATOS POR COMPETICIÓN)
-// ==========================================
 
 let currentPlayerDetailsId = null;
 
@@ -5132,7 +5187,29 @@ function viewPlayerDetails(playerId) {
     const profileHTML = renderProfileTabContent(player, trophiesHtml);
 
     // 2. Pestaña Temporada
-    const seasonHTML = renderSeasonTabContent(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
+    let seasonHTML = renderSeasonTabContent(player, stats, avgRating, playerMatches, ratingsHistory, statsByComp);
+    // Sustituye el bloque anterior por este:
+seasonHTML += `
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-6">
+        <h4 class="font-bold text-gray-800 text-sm mb-4 flex items-center gap-2 border-b pb-2">
+            🎯 Origen de los Goles
+            <span class="text-xs font-normal text-gray-500 ml-auto">(Desglose por tipo)</span>
+        </h4>
+        
+        <div class="flex flex-col gap-6 items-center justify-center">
+            <div class="relative h-72 w-full max-w-md flex-shrink-0">
+                <canvas id="playerTargetChart"></canvas>
+            </div>
+            
+            <div id="targetLegend" class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-gray-700">
+                </div>
+        </div>
+        
+        <p class="text-center text-[10px] text-gray-400 mt-4 italic">
+            * Basado en etiquetas de goles (Pie der/izq, Cabeza...)
+        </p>
+    </div>
+`;
     
     // 3. Pestaña Historial
     const historyHTML = typeof renderHistoryTab === 'function' ? renderHistoryTab(player, playerMatches) : '';
@@ -5160,6 +5237,7 @@ function viewPlayerDetails(playerId) {
         runCounters(); 
         renderPlayerDetailChart(ratingsHistory);
         renderMarketValueChart(player);
+        if(typeof renderPlayerTargetChart === 'function') renderPlayerTargetChart(player.id);
     }, 50);
 }
 
@@ -15054,7 +15132,715 @@ function renderConsistencyWidget() {
     renderGuaranteeChart();     // Calcula y pinta el Ranking
     renderQualityScatterChart(); // Calcula y pinta el Mapa (aunque esté oculto, se genera)
 }
+// ==========================================
+// GRÁFICO: FACTOR X (Puntos Ganados)
+// ==========================================
 
+let factorXChartInstance = null;
+
+function renderFactorXChart() {
+    console.log("🎪 Calculando Factor X (Puntos Rescatados)...");
+
+    // 1. OBTENER DATOS
+    let basePlayers = [];
+    if (typeof getPlayers === 'function') basePlayers = getPlayers();
+    else if (typeof window.players !== 'undefined') basePlayers = window.players;
+
+    const matches = getData('matches') || [];
+
+    if (basePlayers.length === 0 || matches.length === 0) return;
+
+    // 2. INICIALIZAR CONTADORES
+    const pointsMap = {};
+    basePlayers.forEach(p => {
+        pointsMap[p.id] = {
+            name: p.apodo || p.nombre,
+            pointsWon: 0,
+            decisiveGames: 0
+        };
+    });
+
+    // 3. SIMULACIÓN PARTIDO A PARTIDO
+    matches.forEach(match => {
+        // Validaciones básicas
+        if (!match.result || !match.result.includes('-')) return;
+        if (!match.playerStats || !Array.isArray(match.playerStats)) return;
+
+        // A. INTERPRETAR MARCADOR REAL (OPCIÓN A: Local - Visitante)
+        const parts = match.result.split('-');
+        const scoreHome = parseInt(parts[0]);
+        const scoreAway = parseInt(parts[1]);
+        
+        // Determinar quién soy yo (Home o Away)
+        // Buscamos 'Home' (o variantes) para saber si soy el local
+        const loc = (match.location || '').toLowerCase();
+        const isHome = loc === 'home' || loc === 'casa' || loc === 'local';
+
+        const myRealGoals = isHome ? scoreHome : scoreAway;
+        const oppRealGoals = isHome ? scoreAway : scoreHome;
+
+        // Calcular Puntos Reales (3, 1, 0)
+        let realPoints = 0;
+        if (myRealGoals > oppRealGoals) realPoints = 3;
+        else if (myRealGoals === oppRealGoals) realPoints = 1;
+
+        // Si perdimos (0 puntos), ningún jugador pudo "rescatar" nada (salvo evitar goleada, pero eso no da puntos)
+        if (realPoints === 0) return;
+
+        // B. SIMULAR AUSENCIA DE CADA JUGADOR
+        match.playerStats.forEach(stat => {
+            const pid = stat.playerId;
+            if (!pointsMap[pid]) return;
+
+            // Su contribución en este partido
+            const goals = parseInt(stat.goals || 0);
+            const assists = parseInt(stat.assists || 0);
+            const contribution = goals + assists;
+
+            if (contribution > 0) {
+                // RESTA MATEMÁTICA: ¿Qué pasa si quitamos sus goles/asistencias?
+                // Nota: Restamos del marcador de MI equipo.
+                let myHypoGoals = myRealGoals - contribution;
+                
+                // Seguridad: No podemos tener goles negativos
+                if (myHypoGoals < 0) myHypoGoals = 0;
+
+                // Calcular Puntos Hipotéticos
+                let hypoPoints = 0;
+                if (myHypoGoals > oppRealGoals) hypoPoints = 3;
+                else if (myHypoGoals === oppRealGoals) hypoPoints = 1;
+
+                // C. CALCULAR IMPACTO (Diferencia)
+                const impact = realPoints - hypoPoints;
+
+                if (impact > 0) {
+                    pointsMap[pid].pointsWon += impact;
+                    pointsMap[pid].decisiveGames += 1;
+                }
+            }
+        });
+    });
+
+    // 4. FILTRAR Y ORDENAR
+    let chartData = Object.values(pointsMap).filter(p => p.pointsWon > 0);
+
+    // Ordenar de mayor a menor impacto
+    chartData.sort((a, b) => b.pointsWon - a.pointsWon);
+
+    // Top 10 para no saturar
+    chartData = chartData.slice(0, 10);
+
+    if (chartData.length === 0) {
+        console.log("⚠️ Ningún jugador ha cambiado el signo de un partido todavía.");
+        return;
+    }
+
+    // 5. RENDERIZAR GRÁFICO
+    const ctx = document.getElementById('factorXChart');
+    if (!ctx) return;
+
+    if (factorXChartInstance) factorXChartInstance.destroy();
+
+    // Crear degradado dorado para el MVP
+    const gradientGold = ctx.getContext('2d').createLinearGradient(0, 0, 400, 0);
+    gradientGold.addColorStop(0, '#f59e0b'); // Amber 500
+    gradientGold.addColorStop(1, '#fbbf24'); // Amber 400
+
+    factorXChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.map(d => d.name),
+            datasets: [{
+                label: 'Puntos Ganados',
+                data: chartData.map(d => d.pointsWon),
+                backgroundColor: function(context) {
+                    // El Top 1 va en Oro, el resto en azul o gris
+                    const index = context.dataIndex;
+                    if (index === 0) return gradientGold; // MVP
+                    if (index === 1) return '#94a3b8'; // Plata (Gris)
+                    if (index === 2) return '#b45309'; // Bronce
+                    return '#3b82f6'; // Resto
+                },
+                borderRadius: 4,
+                barPercentage: 0.7
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Barras horizontales
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const d = chartData[context.dataIndex];
+                            return `Impacto: +${d.pointsWon} Puntos`;
+                        },
+                        afterLabel: function(context) {
+                            const d = chartData[context.dataIndex];
+                            return `Decisivo en ${d.decisiveGames} partidos`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Puntos directos a la clasificación' },
+                    grid: { borderDash: [2, 2] },
+                    ticks: { stepSize: 1 }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+}
+// ==========================================
+// GRÁFICO: DIANA DE GOLES (Corregido)
+// ==========================================
+
+let playerTargetChartInstance = null;
+
+function renderPlayerTargetChart(playerId) {
+    console.log(`🎯 Generando Diana de Goles para ${playerId}...`);
+
+    const matches = getData('matches') || [];
+    if (matches.length === 0) return;
+
+    const stats = { right: 0, left: 0, head: 0, penalty: 0, other: 0 };
+    let totalGoalsAnalyzed = 0;
+
+    matches.forEach(match => {
+        if (!match.playerStats) return;
+        const pStat = match.playerStats.find(p => p.playerId === playerId);
+
+        if (pStat && pStat.detailGoalTypes && Array.isArray(pStat.detailGoalTypes)) {
+            pStat.detailGoalTypes.forEach(goal => {
+                if (!goal.tags) return;
+                const tags = goal.tags.map(t => t.toLowerCase());
+
+                if (tags.some(t => t.includes('penal'))) stats.penalty++;
+                else if (tags.some(t => t.includes('cabeza'))) stats.head++;
+                else if (tags.some(t => t.includes('derecho'))) stats.right++;
+                else if (tags.some(t => t.includes('izquierdo') || t.includes('zurda'))) stats.left++;
+                else stats.other++;
+                
+                totalGoalsAnalyzed++;
+            });
+        }
+    });
+
+    if (totalGoalsAnalyzed === 0) {
+        const legendDiv = document.getElementById('targetLegend');
+        if (legendDiv) legendDiv.innerHTML = "<p class='text-xs text-gray-400'>Sin datos detallados</p>";
+        return;
+    }
+
+    const chartData = {
+        labels: ['Pie Derecho', 'Pie Izquierdo', 'Cabeza', 'Penalti', 'Otros'],
+        data: [stats.right, stats.left, stats.head, stats.penalty, stats.other],
+        colors: ['#3b82f6', '#f59e0b', '#10b981', '#ef4444', '#94a3b8']
+    };
+
+    const filteredLabels = [];
+    const filteredData = [];
+    const filteredColors = [];
+
+    chartData.data.forEach((val, i) => {
+        if (val > 0) {
+            filteredLabels.push(chartData.labels[i]);
+            filteredData.push(val);
+            filteredColors.push(chartData.colors[i]);
+        }
+    });
+
+    const ctx = document.getElementById('playerTargetChart');
+    if (!ctx) return;
+    if (playerTargetChartInstance) playerTargetChartInstance.destroy();
+
+    playerTargetChartInstance = new Chart(ctx, {
+        type: 'polarArea',
+        data: {
+            labels: filteredLabels,
+            datasets: [{
+                data: filteredData,
+                backgroundColor: filteredColors,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    ticks: { display: false },
+                    grid: { color: '#f1f5f9' },
+                    pointLabels: {
+                        display: true,
+                        centerPointLabels: true,
+                        font: { size: 11, weight: 'bold' } // Etiquetas internas un poco más grandes
+                    }
+                }
+            },
+            plugins: {
+                // --- CAMBIO CLAVE: OCULTAMOS LA LEYENDA AUTOMÁTICA ---
+                legend: { display: false }, 
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let val = context.raw;
+                            let percentage = ((val / totalGoalsAnalyzed) * 100).toFixed(0);
+                            return `${context.label}: ${val} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Rellenar Leyenda Manual (Debajo)
+    const legendDiv = document.getElementById('targetLegend');
+    if (legendDiv) {
+        legendDiv.innerHTML = filteredLabels.map((label, i) => `
+            <div class="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-full border">
+                <span class="w-3 h-3 rounded-full" style="background-color: ${filteredColors[i]}"></span>
+                <span class="font-bold">${filteredData[i]}</span> ${label}
+            </div>
+        `).join('');
+    }
+}
+// ==========================================
+// GRÁFICO: OLAS DE FORMA (Rondas Inteligentes)
+// ==========================================
+
+// Variable global para recordar pestaña activa
+let currentWaveComp = 'Todas';
+
+function renderFormWaves(targetComp = null) {
+    console.log(`🌊 Generando Olas de Forma... Filtro: ${targetComp || currentWaveComp}`);
+
+    const container = document.getElementById('formHeatmapContainer');
+    const tabsContainer = document.getElementById('wavesTabsContainer');
+    
+    if (!container || !tabsContainer) return;
+
+    // 1. OBTENER DATOS
+    let basePlayers = typeof getPlayers === 'function' ? getPlayers() : window.players;
+    const matches = getData('matches') || [];
+
+    if (!basePlayers || matches.length === 0) return;
+
+    // 2. OBTENER SOLO PARTIDOS JUGADOS
+    let playedMatches = matches
+        .filter(m => m.outcome && m.outcome.trim() !== '')
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (playedMatches.length === 0) {
+        container.innerHTML = "<p class='text-center text-gray-400 py-4'>Sin partidos jugados.</p>";
+        return;
+    }
+
+    // 3. GESTIÓN DE PESTAÑAS
+    // Extraemos las competiciones disponibles
+    const competitions = ['Todas', ...new Set(playedMatches.map(m => m.competition || 'Otras'))];
+
+    if (targetComp) currentWaveComp = targetComp;
+
+    // Renderizar Botones
+    tabsContainer.innerHTML = competitions.map(comp => {
+        const isActive = comp === currentWaveComp;
+        const activeClass = "bg-slate-800 text-white shadow-md border-slate-800";
+        const inactiveClass = "bg-white text-gray-500 hover:bg-gray-50 border-gray-200";
+        
+        return `
+            <button onclick="renderFormWaves('${comp}')" 
+                    class="px-3 py-1 text-xs font-bold rounded-full border transition-all whitespace-nowrap ${isActive ? activeClass : inactiveClass}">
+                ${comp}
+            </button>
+        `;
+    }).join('');
+
+    // 4. FILTRAR PARTIDOS
+    let matchesToShow = playedMatches;
+    if (currentWaveComp !== 'Todas') {
+        matchesToShow = playedMatches.filter(m => (m.competition || 'Otras') === currentWaveComp);
+    }
+
+    if (matchesToShow.length === 0) {
+        container.innerHTML = "<p class='text-center text-gray-400 py-8'>No hay partidos en esta competición.</p>";
+        return;
+    }
+
+    // 5. PREPARAR JUGADORES
+    const playersWithMinutes = basePlayers.map(p => {
+        let totalMins = 0;
+        matchesToShow.forEach(m => {
+            if (m.playerStats) {
+                const stats = m.playerStats.find(s => s.playerId === p.id);
+                if (stats) totalMins += parseInt(stats.minutes || 0);
+            }
+        });
+        return { ...p, totalMinutes: totalMins };
+    }).filter(p => p.totalMinutes > 30) // Umbral mínimo minutos
+      .sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+    // --- HELPER: GENERAR ETIQUETA DE COLUMNA ---
+    const getRoundLabel = (match, index) => {
+        const r = (match.round || '').toLowerCase();
+        
+        // 1. Si es Jornada (ej: "Jornada 14")
+        if (r.includes('jornada')) {
+            const num = r.match(/\d+/); // Busca el número
+            return num ? `J${num[0]}` : `J${index + 1}`;
+        }
+        
+        // 2. Rondas de Copa/Champions
+        if (r.includes('dieciseis')) return '16vos';
+        if (r.includes('octavos')) return '8vos';
+        if (r.includes('cuartos')) return '4tos';
+        if (r.includes('semifinal') || r.includes('semi')) return 'Semi';
+        if (r.includes('final')) return 'Final';
+        if (r.includes('previa')) return 'Prev';
+        if (r.includes('grupo')) return 'Grup';
+
+        // 3. Fallback: Si no sabemos qué es, usamos contador secuencial
+        return `J${index + 1}`;
+    };
+
+    // 6. CONSTRUIR HEADER (Aquí usamos la nueva lógica)
+    let html = `
+        <table class="w-full border-collapse text-xs">
+            <thead>
+                <tr>
+                    <th class="p-2 text-left bg-white sticky left-0 z-20 border-b border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[100px]">
+                        Jugador
+                    </th>
+                    ${matchesToShow.map((m, i) => `
+                        <th class="p-1 min-w-[45px] text-center text-gray-500 font-bold border-b border-gray-100" 
+                            title="${m.round || 'Partido Oficial'} vs ${m.opponent} (${m.result})">
+                            ${getRoundLabel(m, i)}
+                        </th>
+                    `).join('')}
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // 7. GENERAR FILAS (Igual que antes)
+    playersWithMinutes.forEach(p => {
+        html += `
+            <tr class="hover:bg-gray-50 transition-colors group">
+                <td class="p-2 font-semibold text-gray-700 bg-white sticky left-0 z-10 border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] whitespace-nowrap group-hover:bg-gray-50">
+                    ${p.apodo || p.nombre}
+                </td>
+        `;
+
+        matchesToShow.forEach(m => {
+            const stats = m.playerStats ? m.playerStats.find(s => s.playerId === p.id) : null;
+            
+            let colorClass = 'bg-gray-100 text-gray-300';
+            let textValue = '-';
+            let tooltip = `vs ${m.opponent}: No jugó`;
+
+            if (stats && parseInt(stats.minutes) > 0) {
+                let rating = parseFloat(String(stats.rating || 0).replace(',', '.'));
+
+                if (!isNaN(rating) && rating > 0) {
+                    if (rating >= 9) colorClass = 'bg-emerald-600 text-white font-bold shadow-sm';
+                    else if (rating >= 8) colorClass = 'bg-emerald-400 text-white font-bold';
+                    else if (rating >= 7) colorClass = 'bg-blue-400 text-white';
+                    else if (rating >= 6) colorClass = 'bg-yellow-300 text-slate-800';
+                    else colorClass = 'bg-rose-400 text-white';
+
+                    textValue = rating.toFixed(1);
+                    tooltip = `${m.round || 'Partido'} vs ${m.opponent}\nNota: ${textValue}\nMinutos: ${stats.minutes}'`;
+                } else {
+                    textValue = 'SC';
+                    colorClass = 'bg-gray-200 text-gray-500 text-[10px]';
+                }
+            }
+
+            html += `
+                <td class="p-1 border border-white">
+                    <div class="w-10 h-8 mx-auto rounded flex items-center justify-center text-[10px] transition-transform hover:scale-110 cursor-help ${colorClass}" 
+                         title="${tooltip}">
+                        ${textValue}
+                    </div>
+                </td>
+            `;
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+    container.innerHTML = html;
+}
+
+function calcularProbabilidadTitularidad(jugador, numPartidos = 10) {
+    const matches = getData('matches') || [];
+    const partidosRecientes = matches.slice(-numPartidos);
+    
+    // 1. DATOS HISTÓRICOS
+    let titularidades = 0;
+    let minutosTotales = 0;
+    let minutosPosibles = 0;
+    let rachaActual = 0; // partidos seguidos titular
+    let rachaMaxima = 0;
+    
+    // Recorrer de más antiguo a más reciente para calcular rachas
+    partidosRecientes.forEach((match, index) => {
+        const stats = match.playerStats.find(ps => ps.playerId === jugador.id);
+        
+        if (stats) {
+            const minutos = parseInt(stats.minutes) || 0;
+            const esTitular = minutos >= 45; // Umbral: jugó 1ª parte
+            
+            minutosTotales += minutos;
+            minutosPosibles += 90;
+            
+            if (esTitular) {
+                titularidades++;
+                rachaActual++;
+                rachaMaxima = Math.max(rachaMaxima, rachaActual);
+            } else {
+                rachaActual = 0;
+            }
+        } else {
+            // No convocado = racha rota
+            rachaActual = 0;
+        }
+    });
+    
+    // 2. FACTORES DE PESO
+    
+    // A. Frecuencia base (% de veces titular)
+    const frecuenciaBase = (titularidades / partidosRecientes.length) * 100;
+    
+    // B. Peso por minutos (importancia real)
+    const pesoMinutos = (minutosTotales / minutosPosibles) * 100;
+    
+    // C. Factor racha (momentum)
+    // Si lleva 3+ seguidos, aumenta probabilidad
+    let factorRacha = 0;
+    if (rachaActual >= 5) factorRacha = 15;
+    else if (rachaActual >= 3) factorRacha = 10;
+    else if (rachaActual >= 1) factorRacha = 5;
+    else if (rachaMaxima > 0) factorRacha = -10; // Rotó recientemente
+    
+    // D. Factor estado físico (lesiones)
+    const ultimoPartido = partidosRecientes[partidosRecientes.length - 1];
+    const statsUltimo = ultimoPartido?.playerStats.find(ps => ps.playerId === jugador.id);
+    const minutosUltimo = statsUltimo ? parseInt(statsUltimo.minutes) : 0;
+    
+    let factorFisico = 0;
+    if (!statsUltimo) factorFisico = -20; // No convocado último = duda
+    else if (minutosUltimo < 20) factorFisico = -10; // Entró al final = gestión
+    
+    // E. Factor posición (rotación natural)
+    // Algunas posiciones rotan más
+    const posicion = jugador.posicion;
+    let factorPosicion = 0;
+    if (posicion === 'portero') factorPosicion = 10; // Portero fijo
+    else if (posicion === 'defensa') factorPosicion = 0;
+    else if (posicion === 'centrocampista') factorPosicion = -5; // Mucha competencia
+    else if (posicion === 'extremo' || posicion === 'delantero') factorPosicion = -5;
+    
+    // 3. CÁLCULO FINAL
+    const probabilidadBruta = (
+        (frecuenciaBase * 0.4) +      // 40% histórico
+        (pesoMinutos * 0.3) +          // 30% minutos reales
+        factorRacha +                  // 15% momentum
+        factorFisico +                 // 10% estado
+        factorPosicion                 // 5% posición
+    );
+    
+    // Ajustar a rango 0-100
+    const probabilidad = Math.max(0, Math.min(100, probabilidadBruta));
+    
+    // 4. CONFIDENZA DEL CÁLCULO
+    let confianza;
+    if (partidosRecientes.length >= 8) confianza = 'Alta';
+    else if (partidosRecientes.length >= 5) confianza = 'Media';
+    else confianza = 'Baja (pocos datos)';
+    
+    // 5. INTERPRETACIÓN
+    let categoria, color, emoji;
+    if (probabilidad >= 85) {
+        categoria = 'Titular casi seguro';
+        color = 'emerald';
+        emoji = '🔒';
+    } else if (probabilidad >= 60) {
+        categoria = 'Favorito';
+        color = 'blue';
+        emoji = '👍';
+    } else if (probabilidad >= 40) {
+        categoria = 'Duda / Rotación';
+        color = 'yellow';
+        emoji = '🤔';
+    } else if (probabilidad >= 20) {
+        categoria = 'Suplente probable';
+        color = 'orange';
+        emoji = '🪑';
+    } else {
+        categoria = 'Descartado';
+        color = 'red';
+        emoji = '❌';
+    }
+    
+    return {
+        nombre: jugador.apodo,
+        probabilidad: Math.round(probabilidad),
+        frecuenciaBase: Math.round(frecuenciaBase),
+        pesoMinutos: Math.round(pesoMinutos),
+        rachaActual,
+        factorRacha,
+        factorFisico,
+        categoria,
+        color,
+        emoji,
+        confianza,
+        partidosAnalizados: partidosRecientes.length
+    };
+}
+// ==========================================
+// WIDGET DASHBOARD: EL 11 PROBABLE (CORREGIDO)
+// ==========================================
+
+function renderProbableLineupWidget() {
+    console.log("🔮 Generando el 11 más probable (Corrección NaN)...");
+
+    const container = document.getElementById('probableLineupContainer');
+    if (!container) return;
+
+    // 1. OBTENER DATOS
+    let allPlayers = typeof getPlayers === 'function' ? getPlayers() : window.players;
+    
+    if (!allPlayers || allPlayers.length === 0) {
+        container.innerHTML = "<div class='p-4 text-center text-gray-400 text-xs'>Sin jugadores disponibles</div>";
+        return;
+    }
+
+    // 2. FILTRAR Y CALCULAR
+    // Quitamos entrenadores
+    const playersOnly = allPlayers.filter(p => p.dorsal !== 'DT' && p.posicion !== 'Entrenador');
+
+    // Calculamos probabilidad y SANITIZAMOS (Corregimos el NaN)
+    const squadProbs = playersOnly.map(p => {
+        let prob = 0;
+        
+        if (typeof calcularProbabilidadTitularidad === 'function') {
+            const calc = calcularProbabilidadTitularidad(p, 10);
+            
+            // --- AQUÍ ESTÁ EL ARREGLO ---
+            // Si devuelve NaN, null o undefined, forzamos a 0
+            if (calc && !isNaN(calc.probabilidad) && calc.probabilidad !== null) {
+                prob = calc.probabilidad;
+            } else {
+                prob = 0; 
+            }
+        }
+
+        return { ...p, probabilidad: prob }; 
+    });
+
+    // 3. ORDENAR Y CORTAR (TOP 11)
+    // Orden descendente estricto
+    squadProbs.sort((a, b) => b.probabilidad - a.probabilidad);
+
+    // Nos quedamos SOLO con los 11 mejores
+    // (Ojo: si todos son 0, cogerá a los 11 primeros por orden de lista)
+    const startingXI = squadProbs.slice(0, 11);
+
+    // 4. GENERAR HTML
+    let html = `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-full flex flex-col">
+            <div class="flex justify-between items-center mb-5 pb-2 border-b border-gray-100">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🛡️ Alineación Probable
+                </h3>
+                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-bold uppercase tracking-wide">
+                    Top 11
+                </span>
+            </div>
+
+            <div class="space-y-3 overflow-y-auto pr-1 custom-scrollbar">
+    `;
+
+    if (startingXI.length === 0) {
+        html += `<p class="text-center text-gray-400 text-sm py-4">Faltan datos de partidos.</p>`;
+    } else {
+        startingXI.forEach((p, index) => {
+            // Colores dinámicos
+            let barColor = 'bg-gray-300';
+            let percentColor = 'text-gray-400';
+
+            // Lógica de colores semáforo
+            if (p.probabilidad >= 90) { barColor = 'bg-emerald-500'; percentColor = 'text-emerald-600 font-bold'; }
+            else if (p.probabilidad >= 70) { barColor = 'bg-blue-500'; percentColor = 'text-blue-600 font-bold'; }
+            else if (p.probabilidad >= 50) { barColor = 'bg-amber-400'; percentColor = 'text-amber-600'; }
+            else if (p.probabilidad > 0) { barColor = 'bg-rose-400'; percentColor = 'text-rose-600'; }
+            else { 
+                // Si es 0% (El caso de Lunin ahora)
+                barColor = 'bg-gray-200'; 
+                percentColor = 'text-gray-300'; 
+            }
+
+            html += `
+                <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-all group border border-transparent hover:border-slate-100">
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-mono font-bold text-slate-300 w-5 text-center group-hover:text-slate-500">
+                            ${index + 1}
+                        </span>
+
+                        <div class="w-9 h-9 rounded-full bg-white border border-gray-200 overflow-hidden shadow-sm relative">
+                            <img src="${p.foto}" 
+                                 class="w-full h-full object-cover" 
+                                 onerror="this.src='https://via.placeholder.com/150?text=Player'">
+                        </div>
+
+                        <div class="leading-tight">
+                            <div class="font-bold text-gray-700 text-sm">
+                                ${p.apodo || p.nombre}
+                            </div>
+                            <div class="text-[10px] text-gray-400 uppercase tracking-wide">
+                                ${p.posicion || 'Jugador'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-end w-24">
+                        <span class="text-xs ${percentColor}">${p.probabilidad}%</span>
+                        <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                            <div class="${barColor} h-full rounded-full transition-all duration-1000" 
+                                 style="width: ${p.probabilidad}%"></div>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+        });
+    }
+
+    html += `
+            </div>
+            
+            <div class="mt-auto pt-3 text-center">
+                <p class="text-[10px] text-gray-300">
+                    Basado en minutos, racha y estado físico.
+                </p>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
 </script>
 </body>
 </html>    
