@@ -8811,6 +8811,10 @@ function renderAll(prefixInput) {
                 }
             });
         }
+        function getPositionName(formation, index) {
+    const roles = FORMATION_ROLES[formation] || FORMATION_ROLES['default'];
+    return roles[index] || 'Jugador de Campo';
+}
 function goToStep3() {
     const titularesIds = Object.values(currentPitchPlayers).filter(id => id);
     
