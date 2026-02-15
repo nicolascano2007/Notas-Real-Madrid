@@ -5215,6 +5215,8 @@ seasonHTML += `
 `;
     seasonHTML += getComfortZoneHTML(player, matches);
     seasonHTML += getTacticalRadarHTML(player, matches); // <--- NUEVO RADAR
+    seasonHTML += getStarterVsSubHTML(player, matches); // <--- NUEVO WIDGET
+    seasonHTML += getDisciplineByOutcomeHTML(player, matches); // <--- NUEVA
 
     
     // 3. Pestaña Historial
@@ -16752,6 +16754,270 @@ function getSubstitutionHeatmapHTML(matches) {
 
             <div class="mt-4 text-[10px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
                 * Calculado según los minutos jugados por los suplentes (90' - min. jugados).
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: RENDIMIENTO TITULAR VS SUPLENTE
+// ==========================================
+function getStarterVsSubHTML(player, matches) {
+    // 1. ACUMULADORES
+    const stats = {
+        starter: { games: 0, mins: 0, goals: 0, ratingSum: 0, ratingCount: 0 },
+        sub:     { games: 0, mins: 0, goals: 0, ratingSum: 0, ratingCount: 0 }
+    };
+
+    // 2. PROCESAR DATOS
+    matches.filter(m => m.outcome).forEach(m => {
+        const pStats = m.playerStats ? m.playerStats.find(s => s.playerId === player.id) : null;
+        
+        if (pStats && pStats.minutes > 0) {
+            const type = pStats.isStarter ? 'starter' : 'sub';
+            
+            stats[type].games++;
+            stats[type].mins += parseInt(pStats.minutes);
+            stats[type].goals += parseInt(pStats.goals || 0);
+            
+            if (pStats.rating) {
+                stats[type].ratingSum += parseFloat(pStats.rating);
+                stats[type].ratingCount++;
+            }
+        }
+    });
+
+    // 3. VALIDACIÓN: ¿Ha jugado en ambos roles?
+    if (stats.starter.games === 0 || stats.sub.games === 0) return '';
+
+    // 4. CÁLCULOS DE MEDIAS
+    const calc = (s) => ({
+        rating: s.ratingCount > 0 ? (s.ratingSum / s.ratingCount).toFixed(1) : 0,
+        g90: s.mins > 0 ? ((s.goals / s.mins) * 90).toFixed(2) : 0,
+        avgMins: Math.round(s.mins / s.games)
+    });
+
+    const startData = calc(stats.starter);
+    const subData = calc(stats.sub);
+
+    // 5. GENERAR FILAS DE COMPARACIÓN
+    const renderRow = (label, valStart, valSub, isBetterHigher = true, suffix = '') => {
+        const diff = (valSub - valStart).toFixed(1);
+        const numDiff = parseFloat(diff);
+        
+        let diffColor = 'text-gray-400';
+        let diffIcon = '';
+
+        if (numDiff > 0) {
+            // Suplente es mayor
+            diffColor = isBetterHigher ? 'text-emerald-600 font-bold' : 'text-gray-500';
+            diffIcon = isBetterHigher ? '🚀' : '+';
+        } else if (numDiff < 0) {
+            // Titular es mayor
+            diffColor = isBetterHigher ? 'text-gray-400' : 'text-emerald-600 font-bold';
+        }
+
+        // Barras visuales (Max width relativo)
+        const maxVal = Math.max(parseFloat(valStart), parseFloat(valSub), 0.1); // Evitar div by 0
+        const wStart = (parseFloat(valStart) / maxVal) * 100;
+        const wSub = (parseFloat(valSub) / maxVal) * 100;
+
+        return `
+            <div class="grid grid-cols-12 gap-2 items-center mb-3 text-xs">
+                <div class="col-span-3 text-gray-500 font-bold uppercase tracking-wider text-[10px]">${label}</div>
+                
+                <div class="col-span-3 flex flex-col justify-center border-r border-gray-100 pr-2">
+                    <div class="flex justify-between mb-0.5">
+                        <span class="font-bold text-gray-700">${valStart}${suffix}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-blue-500 h-full rounded-full" style="width: ${wStart}%"></div>
+                    </div>
+                </div>
+
+                <div class="col-span-3 flex flex-col justify-center pl-2">
+                    <div class="flex justify-between mb-0.5">
+                        <span class="font-bold text-gray-700">${valSub}${suffix}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-amber-500 h-full rounded-full" style="width: ${wSub}%"></div>
+                    </div>
+                </div>
+
+                <div class="col-span-3 text-right ${diffColor} text-[10px]">
+                    ${numDiff > 0 ? '+' : ''}${diff}${suffix} ${diffIcon}
+                </div>
+            </div>
+        `;
+    };
+
+    // Detectar si es un "Super-Sub" (Mejor G90 o Nota como suplente)
+    const isSuperSub = (parseFloat(subData.g90) > parseFloat(startData.g90)) || 
+                       (parseFloat(subData.rating) > parseFloat(startData.rating) + 0.5);
+    
+    const badge = isSuperSub 
+        ? '<span class="bg-amber-100 text-amber-700 text-[9px] px-2 py-0.5 rounded-full border border-amber-200 font-bold uppercase animate-pulse">🔥 Super-Sub</span>' 
+        : '';
+
+    // 6. RENDER FINAL
+    return `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🎭 Roles
+                </h3>
+                ${badge}
+            </div>
+            
+            <div class="grid grid-cols-12 gap-2 mb-2 text-[9px] text-gray-400 uppercase text-center">
+                <div class="col-span-3 text-left">Métrica</div>
+                <div class="col-span-3 text-blue-500 font-bold">Titular (${stats.starter.games})</div>
+                <div class="col-span-3 text-amber-600 font-bold">Suplente (${stats.sub.games})</div>
+                <div class="col-span-3 text-right">Dif.</div>
+            </div>
+
+            ${renderRow('Nota Media', startData.rating, subData.rating)}
+            ${renderRow('Goles / 90\'', startData.g90, subData.g90)}
+            ${renderRow('Mins / Partido', startData.avgMins, subData.avgMins, false, "'")}
+            
+            <div class="mt-2 text-[9px] text-gray-400 text-center italic">
+                * Comparativa de rendimiento medio en ambos roles.
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: TARJETAS POR TIPO DE PARTIDO (Psicología)
+// ==========================================
+function getDisciplineByOutcomeHTML(player, matches) {
+    // 1. INICIALIZAR CONTADORES
+    const stats = {
+        win:  { label: 'Victorias', color: 'text-emerald-600', bg: 'bg-emerald-500', games: 0, yellow: 0, red: 0 },
+        draw: { label: 'Empates',   color: 'text-blue-500',    bg: 'bg-blue-400',    games: 0, yellow: 0, red: 0 },
+        loss: { label: 'Derrotas',  color: 'text-rose-600',    bg: 'bg-rose-500',    games: 0, yellow: 0, red: 0 }
+    };
+
+    // 2. PROCESAR PARTIDOS
+    matches.filter(m => m.outcome).forEach(m => {
+        const pStats = m.playerStats ? m.playerStats.find(s => s.playerId === player.id) : null;
+        
+        // Solo contamos si jugó
+        if (pStats && pStats.minutes > 0) {
+            
+            // Determinar resultado (Win/Draw/Loss)
+            // Usamos m.outcome si existe, o calculamos al vuelo
+            let outcome = 'draw';
+            if (m.outcome) {
+                // Si tu sistema guarda 'win', 'draw', 'loss' directamente
+                outcome = m.outcome; 
+            } else {
+                // Fallback: Calcular por goles
+                const [goalsHome, goalsAway] = m.result.split('-').map(Number);
+                const isHome = m.venue === 'local' || m.venue === 'home';
+                const myGoals = isHome ? goalsHome : goalsAway;
+                const oppGoals = isHome ? goalsAway : goalsHome;
+                
+                if (myGoals > oppGoals) outcome = 'win';
+                else if (myGoals < oppGoals) outcome = 'loss';
+            }
+
+            // Normalizar string (por si acaso)
+            if (outcome === 'ganado') outcome = 'win';
+            if (outcome === 'empatado') outcome = 'draw';
+            if (outcome === 'perdido') outcome = 'loss';
+
+            if (stats[outcome]) {
+                stats[outcome].games++;
+                // Sumamos tarjetas (Parseando strings "1, 2" o números directos)
+                const countCards = (str) => (!str) ? 0 : str.toString().split(',').filter(s => s.trim() !== '').length;
+                
+                stats[outcome].yellow += countCards(pStats.detailYellow || pStats.yellowCards);
+                stats[outcome].red += countCards(pStats.detailRed || pStats.redCards);
+            }
+        }
+    });
+
+    // Si no tiene tarjetas en general, no mostramos el widget
+    const totalCards = Object.values(stats).reduce((acc, s) => acc + s.yellow + s.red, 0);
+    if (totalCards === 0) return '';
+
+    // 3. CALCULAR PROMEDIOS (INTENSIDAD)
+    // Calculamos "Tarjetas por partido" para que la barra sea proporcional a la agresividad
+    let maxAvg = 0;
+    
+    Object.keys(stats).forEach(k => {
+        const s = stats[k];
+        s.avgYellow = s.games > 0 ? (s.yellow / s.games) : 0;
+        s.avgRed = s.games > 0 ? (s.red / s.games) : 0;
+        
+        // Peso extra a la roja para que se vea bien en el gráfico
+        s.score = s.avgYellow + (s.avgRed * 3); 
+        if (s.score > maxAvg) maxAvg = s.score;
+    });
+
+    // 4. DETECTAR TENDENCIA ("MAL PERDER")
+    const lossScore = stats.loss.score;
+    const winScore = stats.win.score;
+    
+    let badge = '';
+    if (stats.loss.games > 0 && lossScore > (winScore * 2) && (stats.loss.yellow > 0 || stats.loss.red > 0)) {
+        badge = '<span class="bg-rose-100 text-rose-700 text-[9px] px-2 py-0.5 rounded-full border border-rose-200 font-bold uppercase animate-pulse">🤬 Frustración</span>';
+    } else if (totalCards > 0 && lossScore < winScore) {
+        badge = '<span class="bg-blue-100 text-blue-700 text-[9px] px-2 py-0.5 rounded-full border border-blue-200 font-bold uppercase">🧘 Zen</span>';
+    }
+
+    // 5. GENERAR COLUMNAS HTML
+    const renderColumn = (type) => {
+        const s = stats[type];
+        if (s.games === 0) return ''; // Ocultar columna si nunca ha empatado, etc.
+
+        // Cálculo de altura de barras (relativo al máximo de intensidad)
+        // Mínimo 5% para que se vea algo si hay 0
+        const hYellow = Math.max((s.avgYellow / (maxAvg || 1)) * 100, 2); 
+        const hRed = Math.max(((s.avgRed * 3) / (maxAvg || 1)) * 100, 0); 
+        
+        // Opacidad si no hay tarjetas
+        const emptyStyle = (s.yellow === 0 && s.red === 0) ? 'opacity-30 grayscale' : '';
+
+        return `
+            <div class="flex-1 flex flex-col items-center gap-2 ${emptyStyle}">
+                <div class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">${s.label}</div>
+                
+                <div class="w-full max-w-[60px] h-24 bg-gray-50 rounded-lg flex flex-col justify-end p-1 relative border border-gray-100 group">
+                    
+                    ${s.red > 0 ? `
+                    <div class="w-full bg-rose-500 rounded-t-sm mb-0.5 relative shadow-sm" style="height: ${hRed}%">
+                        <div class="absolute inset-0 flex items-center justify-center text-[9px] text-white font-bold">${s.red}</div>
+                    </div>` : ''}
+                    
+                    <div class="w-full bg-amber-400 ${s.red > 0 ? 'rounded-b-sm' : 'rounded-sm'} relative shadow-sm transition-all duration-500" style="height: ${hYellow}%">
+                        <div class="absolute inset-0 flex items-center justify-center text-[10px] text-amber-900 font-bold">${s.yellow}</div>
+                    </div>
+                </div>
+
+                <div class="text-[9px] text-gray-400 font-mono bg-gray-100 px-1.5 rounded">
+                    ${s.games} part.
+                </div>
+            </div>
+        `;
+    };
+
+    return `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    ⚖️ Disciplina
+                </h3>
+                ${badge}
+            </div>
+
+            <div class="flex justify-around items-end gap-2">
+                ${renderColumn('win')}
+                <div class="w-px h-20 bg-gray-100"></div> ${renderColumn('draw')}
+                <div class="w-px h-20 bg-gray-100"></div> ${renderColumn('loss')}
+            </div>
+            
+            <div class="mt-3 text-[9px] text-gray-400 text-center italic">
+                * Altura basada en el promedio de tarjetas por partido.
             </div>
         </div>
     `;
