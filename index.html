@@ -1160,6 +1160,8 @@
         </p>
     </div>
 </div>
+<div id="general-subs-heatmap-container"></div>
+
 
                     <!-- Stats Filters -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
@@ -1405,14 +1407,7 @@
                             </div>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
-                        <!-- Goal Connections -->
-    <div class="mt-8">
-    <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
-        <span>🔗</span> Conexiones (Asistente ➔ Goleador)
-    </h3>
-    <div id="goal-connections-container">
-        <!-- El contenido se generará aquí con JavaScript -->
-    </div>
+<div id="unified-connections-wrapper" class="mt-8">
     </div>
 <div id="stats-visual-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8 mb-12 hidden">
 
@@ -3403,6 +3398,9 @@ function renderStats() {
         goalContainer.innerHTML = (typeof renderGoalAnalysis === 'function') 
             ? renderGoalAnalysis() 
             : '';
+        const subsContainer = document.getElementById('general-subs-heatmap-container');
+    if (subsContainer) subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
+    
     }
 
     // 3. Renderizar el resto de gráficos existentes
@@ -4250,6 +4248,9 @@ function renderPerformanceMatrix(matches) {
         if(typeof renderDependencyChart === 'function') renderDependencyChart();
         if(typeof renderFactorXChart === 'function') renderFactorXChart();
         if(typeof renderFormWaves === 'function') renderFormWaves();
+        if(typeof renderNetworkWidget === 'function')renderNetworkWidget();
+        if(typeof renderUnifiedConnections === 'function')renderUnifiedConnections();
+
     }, 100);
             const matches = getData('matches');
             const players = getPlayers();
@@ -5210,7 +5211,11 @@ seasonHTML += `
             * Basado en etiquetas de goles (Pie der/izq, Cabeza...)
         </p>
     </div>
+
 `;
+    seasonHTML += getComfortZoneHTML(player, matches);
+    seasonHTML += getTacticalRadarHTML(player, matches); // <--- NUEVO RADAR
+
     
     // 3. Pestaña Historial
     const historyHTML = typeof renderHistoryTab === 'function' ? renderHistoryTab(player, playerMatches) : '';
@@ -16021,6 +16026,735 @@ function syncExtraRounds() {
             }
         }
     });
+}
+// ==========================================
+// WIDGET: ZONA DE CONFORT (POSICIONES)
+// ==========================================
+function getComfortZoneHTML(player, matches) {
+    // 1. DEFINICIÓN DE ROLES POR FORMACIÓN (Tu mapa exacto convertido a siglas)
+    const FORMATION_SLOTS = {
+        '4-3-3': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MC', 'MC', 'EI', 'DC', 'ED'],
+        '4-4-2': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'EI', 'MC', 'MC', 'ED', 'DC', 'DC'],
+        '4-2-3-1': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MCD', 'EI', 'MCO', 'ED', 'DC'],
+        '3-5-2': ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'MCD', 'LD', 'MC', 'MC', 'DC', 'DC']
+    };
+
+    // Colores para cada posición (Estética)
+    const POS_COLORS = {
+        'POR': 'bg-gray-500',
+        'LI': 'bg-blue-400', 'LD': 'bg-blue-400', 'DFC': 'bg-blue-600',
+        'MCD': 'bg-amber-600', 'MC': 'bg-amber-400', 'MCO': 'bg-amber-300',
+        'EI': 'bg-emerald-400', 'ED': 'bg-emerald-400', 'DC': 'bg-emerald-600'
+    };
+
+    // 2. PROCESAR DATOS
+    let positionStats = {};
+    let totalMinutesAnalyzed = 0;
+
+    // Filtramos partidos jugados por el jugador
+    matches.filter(m => m.outcome).forEach(m => {
+        const stats = m.playerStats ? m.playerStats.find(s => s.playerId === player.id) : null;
+        
+        // Solo analizamos si jugó y si tenemos datos de su posición (pitchSlot)
+        // Nota: Los suplentes a veces no tienen pitchSlot si no se gestionó en la pizarra.
+        // Si stats.pitchSlot es null, no podemos adivinar dónde jugó, así que lo ignoramos para este gráfico.
+        if (stats && stats.minutes > 0 && stats.pitchSlot !== undefined && stats.pitchSlot !== null) {
+            
+            const formation = m.formation || '4-3-3';
+            const schema = FORMATION_SLOTS[formation];
+            
+            if (schema && schema[stats.pitchSlot]) {
+                const role = schema[stats.pitchSlot];
+                const mins = parseInt(stats.minutes);
+
+                if (!positionStats[role]) positionStats[role] = 0;
+                positionStats[role] += mins;
+                totalMinutesAnalyzed += mins;
+            }
+        }
+    });
+
+    if (totalMinutesAnalyzed === 0) return ''; // No hay datos suficientes
+
+    // 3. ORDENAR Y CALCULAR PORCENTAJES
+    // Convertimos el objeto a array para ordenar
+    const sortedPositions = Object.entries(positionStats)
+        .map(([role, mins]) => ({
+            role,
+            mins,
+            percent: (mins / totalMinutesAnalyzed) * 100
+        }))
+        .sort((a, b) => b.mins - a.mins); // Ordenar de mayor a menor uso
+
+    // Detectar Polivalencia
+    const uniquePositions = sortedPositions.length;
+    let polyLabel = '';
+    if (uniquePositions >= 3) polyLabel = '<span class="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded border border-purple-200">Polivalente</span>';
+
+    // 4. GENERAR HTML
+    let barsHTML = '';
+    let legendHTML = '';
+
+    sortedPositions.forEach(pos => {
+        const colorClass = POS_COLORS[pos.role] || 'bg-gray-400';
+        const percentFixed = pos.percent.toFixed(1);
+        
+        // Barra segmentada (La parte visual "Scatter")
+        barsHTML += `
+            <div class="h-full ${colorClass} first:rounded-l-md last:rounded-r-md border-r border-white/20 relative group hover:opacity-90 transition-opacity" 
+                 style="width: ${pos.percent}%"
+                 title="${pos.role}: ${percentFixed}% (${pos.mins}')">
+            </div>
+        `;
+
+        // Leyenda debajo
+        legendHTML += `
+            <div class="flex items-center gap-1.5 min-w-[30%] mb-1">
+                <div class="w-2 h-2 rounded-full ${colorClass}"></div>
+                <div class="text-xs text-gray-600 font-bold w-8">${pos.role}</div>
+                <div class="text-xs text-gray-400">${Math.round(pos.percent)}%</div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🎯 Zona de Confort
+                </h3>
+                ${polyLabel}
+            </div>
+
+            <div class="mb-3 text-xs text-gray-500">
+                Posición Natural: <span class="font-bold text-gray-800">${player.posicion || 'N/A'}</span>
+                ${sortedPositions[0].role !== player.posicion ? 
+                    `vs Realidad: <strong class="text-emerald-600">${sortedPositions[0].role}</strong>` : 
+                    '<span class="text-emerald-500">✔ Coincide</span>'}
+            </div>
+
+            <div class="w-full h-6 flex rounded-md overflow-hidden bg-gray-100 mb-4 shadow-inner">
+                ${barsHTML}
+            </div>
+
+            <div class="flex flex-wrap gap-x-4">
+                ${legendHTML}
+            </div>
+            
+            <div class="mt-2 text-[10px] text-gray-400 text-center">
+                Basado en ${totalMinutesAnalyzed} minutos analizados en pizarra.
+            </div>
+        </div>
+    `;
+}
+function getConnectionsData(matches) {
+    const connections = {}; // Clave: "ID_Asistente|ID_Goleador", Valor: conteo
+    const playerTotals = {}; // Para saber quiénes son los más relevantes y pintarlos en el círculo
+
+    matches.forEach(m => {
+        if (!m.playerStats) return;
+
+        // 1. Separar Goles y Asistencias del partido
+        const goals = [];
+        const assists = [];
+
+        m.playerStats.forEach(ps => {
+            // Extraer minutos de los goles
+            if (ps.detailGoals) {
+                const minutes = ps.detailGoals.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
+                minutes.forEach(min => goals.push({ playerId: ps.playerId, minute: min }));
+            }
+            // Extraer minutos de las asistencias
+            if (ps.detailAssists) {
+                const minutes = ps.detailAssists.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
+                minutes.forEach(min => assists.push({ playerId: ps.playerId, minute: min }));
+            }
+        });
+
+        // 2. CRUZAR POR MINUTO (Margen de error +/- 1 minuto por si acaso)
+        goals.forEach(g => {
+            const assist = assists.find(a => Math.abs(a.minute - g.minute) <= 1 && a.playerId !== g.playerId);
+            
+            if (assist) {
+                // ¡CONEXIÓN ENCONTRADA!
+                const key = `${assist.playerId}|${g.playerId}`;
+                if (!connections[key]) connections[key] = 0;
+                connections[key]++;
+
+                // Sumar relevancia para el ranking
+                playerTotals[assist.playerId] = (playerTotals[assist.playerId] || 0) + 1;
+                playerTotals[g.playerId] = (playerTotals[g.playerId] || 0) + 1;
+            }
+        });
+    });
+
+    return { connections, playerTotals };
+}
+function renderNetworkWidget() {
+    console.log("🕸️ Generando Mapa de Conexiones...");
+    const container = document.getElementById('networkMapContainer');
+    if (!container) return;
+
+    const matches = getData('matches') || [];
+    const allPlayers = getPlayers();
+    const { connections, playerTotals } = getConnectionsData(matches);
+
+    const topPlayerIds = Object.keys(playerTotals)
+        .sort((a, b) => playerTotals[b] - playerTotals[a])
+        .slice(0, 6);
+
+    if (topPlayerIds.length < 2) {
+        container.innerHTML = "<p class='text-gray-400 text-center py-10'>Faltan datos de asistencias por minuto.</p>";
+        return;
+    }
+
+    const size = 450;
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = 160;
+
+    // Calcular posiciones
+    const coords = {};
+    topPlayerIds.forEach((pid, index) => {
+        const angle = (index / topPlayerIds.length) * 2 * Math.PI - (Math.PI / 2);
+        coords[pid] = {
+            x: cx + radius * Math.cos(angle),
+            y: cy + radius * Math.sin(angle),
+            angle
+        };
+    });
+
+    // Helper: punto en curva Bézier
+    function getQuadraticPoint(t, p0, p1, p2) {
+        const x = (1-t)*(1-t)*p0.x + 2*(1-t)*t*p1.x + t*t*p2.x;
+        const y = (1-t)*(1-t)*p0.y + 2*(1-t)*t*p1.y + t*t*p2.y;
+        return {x, y};
+    }
+
+    // DEFS con flechas
+    const defs = `
+        <defs>
+            <marker id="arrow-gray" markerWidth="12" markerHeight="12" 
+                    refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,12 L12,6 z" fill="#94a3b8" />
+            </marker>
+            <marker id="arrow-blue" markerWidth="12" markerHeight="12" 
+                    refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,12 L12,6 z" fill="#3b82f6" />
+            </marker>
+        </defs>
+    `;
+
+    // Generar conexiones con curvas y flechas
+    let linesSVG = '';
+
+    Object.entries(connections).forEach(([key, count]) => {
+        const [fromId, toId] = key.split('|');
+        
+        if (!coords[fromId] || !coords[toId]) return;
+
+        const start = coords[fromId];
+        const end = coords[toId];
+        
+        // Detectar si hay conexión inversa (para separar arcos)
+        const reverseKey = `${toId}|${fromId}`;
+        const hasReverse = connections[reverseKey];
+        
+        let curvature = 0.3;
+        if (hasReverse) {
+            curvature = 0.5;
+            if (fromId > toId) curvature = -0.5; // Arco opuesto
+        }
+
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const controlX = midX - dy * curvature;
+        const controlY = midY + dx * curvature;
+
+        const strokeWidth = Math.min(2 + count * 0.8, 6);
+        const isStrong = count >= 3;
+        const color = isStrong ? '#3b82f6' : '#94a3b8';
+        const opacity = isStrong ? 0.9 : 0.6;
+        const markerId = isStrong ? 'url(#arrow-blue)' : 'url(#arrow-gray)';
+
+        // Punto para etiqueta (60% del camino)
+        const labelPos = getQuadraticPoint(0.6, start, {x: controlX, y: controlY}, end);
+
+        // Ajustar punto final para que la flecha no tape la foto
+        const angleEnd = Math.atan2(end.y - controlY, end.x - controlX);
+        const endX = end.x - 36 * Math.cos(angleEnd);
+        const endY = end.y - 36 * Math.sin(angleEnd);
+
+        linesSVG += `
+            <path d="M ${start.x} ${start.y} Q ${controlX} ${controlY} ${endX} ${endY}" 
+                  stroke="${color}" 
+                  stroke-width="${strokeWidth}" 
+                  fill="none"
+                  opacity="${opacity}"
+                  stroke-linecap="round"
+                  marker-end="${markerId}" />
+            
+            <!-- Círculo blanco con número -->
+            <circle cx="${labelPos.x}" cy="${labelPos.y}" r="14" 
+                    fill="white" stroke="${color}" stroke-width="2"/>
+            <text x="${labelPos.x}" y="${labelPos.y + 4}" 
+                  text-anchor="middle" font-size="12" font-weight="bold" 
+                  fill="${color}">
+                ${count}
+            </text>
+        `;
+    });
+
+    // Fondo decorativo
+    const bgSVG = `
+        <circle cx="${cx}" cy="${cy}" r="${radius}" 
+                fill="none" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+        <circle cx="${cx}" cy="${cy}" r="${radius * 0.6}" 
+                fill="#f8fafc" opacity="0.3"/>
+    `;
+
+    // Nodos (fotos)
+    let nodesHTML = '';
+    topPlayerIds.forEach(pid => {
+        const p = allPlayers.find(pl => pl.id === pid);
+        const { x, y } = coords[pid];
+        const total = playerTotals[pid];
+        
+        nodesHTML += `
+            <div class="absolute w-16 h-16 rounded-full border-4 border-white shadow-xl 
+                        bg-gray-100 flex items-center justify-center z-20 
+                        hover:scale-115 hover:z-30 transition-all duration-200 
+                        group cursor-pointer" 
+                 style="left: ${x - 32}px; top: ${y - 32}px;">
+                
+                <img src="${p.foto}" class="w-full h-full rounded-full object-cover">
+                
+                <div class="absolute -top-2 -right-2 min-w-[24px] h-6 px-1.5 
+                            bg-gradient-to-br from-blue-500 to-blue-600 text-white 
+                            text-xs font-bold rounded-full flex items-center justify-center
+                            border-2 border-white shadow-md">
+                    ${total}
+                </div>
+                
+                <div class="absolute -bottom-8 opacity-0 group-hover:opacity-100 
+                            transition-opacity bg-slate-800 text-white text-xs 
+                            font-bold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap
+                            pointer-events-none">
+                    ${p.apodo}
+                    <div class="absolute -top-1 left-1/2 -translate-x-1/2 
+                                w-2 h-2 bg-slate-800 rotate-45"></div>
+                </div>
+            </div>
+        `;
+    });
+
+    const totalConnections = Object.values(connections).reduce((a,b) => a+b, 0);
+
+    container.innerHTML = `
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🕸️ Mapa de Conexiones
+                    <span class="text-xs font-normal text-gray-500 bg-gray-100 
+                                 px-2.5 py-1 rounded-full">
+                        Top ${topPlayerIds.length} Socios
+                    </span>
+                </h3>
+                <span class="text-sm text-gray-400">${totalConnections} pases de gol</span>
+            </div>
+            
+            <div class="relative mx-auto" style="width: ${size}px; height: ${size}px;">
+                <svg width="${size}" height="${size}" class="absolute inset-0 z-0">
+                    ${defs}
+                    ${bgSVG}
+                    ${linesSVG}
+                </svg>
+                ${nodesHTML}
+            </div>
+
+            <div class="mt-4 flex justify-center gap-6 text-xs">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-1 bg-gray-400 rounded-full"></span>
+                    <span class="text-gray-500">1-2 asistencias</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-2 bg-blue-500 rounded-full"></span>
+                    <span class="text-gray-500">3+ asistencias</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500">→</span>
+                    <span class="text-gray-500">dirección del pase</span>
+                </div>
+            </div>
+            
+            <p class="mt-3 text-[10px] text-gray-400 text-center">
+                Conexión confirmada por coincidencia de minuto (Gol/Asistencia)
+            </p>
+        </div>
+    `;
+}
+// Variable para recordar la pestaña activa
+let activeConnectionTab = 'lista'; 
+
+function renderUnifiedConnections() {
+    const container = document.getElementById('unified-connections-wrapper');
+    if (!container) return;
+
+    const isList = activeConnectionTab === 'lista';
+    const btnActive = "bg-slate-800 text-white shadow-md font-bold";
+    const btnInactive = "text-gray-500 hover:text-gray-700 font-medium hover:bg-gray-100";
+
+    container.innerHTML = `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-h-[520px]">
+            
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-50 shrink-0">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🔗 Conexiones <span class="text-xs font-normal text-gray-400 hidden sm:inline">(Asistente ➔ Goleador)</span>
+                </h3>
+                
+                <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
+                    <button onclick="toggleConnectionTab('lista')" 
+                            class="px-4 py-1.5 rounded-md text-xs transition-all ${isList ? btnActive : btnInactive}">
+                        📋 Lista
+                    </button>
+                    <button onclick="toggleConnectionTab('mapa')" 
+                            class="px-4 py-1.5 rounded-md text-xs transition-all ${!isList ? btnActive : btnInactive}">
+                        🕸️ Mapa
+                    </button>
+                </div>
+            </div>
+
+            <div id="connections-content-area" class="flex-1 min-h-[420px] flex justify-center items-center overflow-visible relative">
+                </div>
+            
+            ${!isList ? '<div class="mt-4 text-[10px] text-gray-400 text-center italic shrink-0">* Grosor = Cantidad de asistencias</div>' : ''}
+        </div>
+    `;
+
+    // 2. INYECTAR EL CONTENIDO
+    const contentArea = document.getElementById('connections-content-area');
+    
+    if (activeConnectionTab === 'lista') {
+        // --- VISTA LISTA ---
+        contentArea.innerHTML = '<div id="goal-connections-container" class="w-full h-full"></div>';
+        
+        // Llamada a tu función de lista existente
+        if (typeof renderGoalConnections === 'function') {
+            renderGoalConnections(); 
+        } else {
+            contentArea.innerHTML = "<p class='text-gray-400 text-xs'>Cargando lista...</p>";
+        }
+
+    } else {
+        // --- VISTA MAPA ---
+        // Aseguramos que el contenedor del mapa tenga espacio
+        contentArea.innerHTML = '<div id="networkMapContainer" class="w-full h-full flex justify-center items-center"></div>';
+        
+        // Llamada a tu función de mapa existente
+        if (typeof renderNetworkWidget === 'function') {
+            renderNetworkWidget();
+        } else {
+            contentArea.innerHTML = "<p class='text-gray-400 text-xs'>Cargando mapa...</p>";
+        }
+    }
+}
+
+function toggleConnectionTab(tabName) {
+    activeConnectionTab = tabName;
+    renderUnifiedConnections();
+}
+// ==========================================
+// WIDGET: RADAR DE POLIVALENCIA TÁCTICA (SVG)
+// ==========================================
+function getTacticalRadarHTML(player, matches) {
+    // 1. DEFINICIÓN DE ROLES (Reutilizamos la lógica de Zona de Confort)
+    const FORMATION_SLOTS = {
+        '4-3-3': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MC', 'MC', 'EI', 'DC', 'ED'],
+        '4-4-2': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'EI', 'MC', 'MC', 'ED', 'DC', 'DC'],
+        '4-2-3-1': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MCD', 'EI', 'MCO', 'ED', 'DC'],
+        '3-5-2': ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'MCD', 'LD', 'MC', 'MC', 'DC', 'DC']
+    };
+
+    // Orden lógico para el radar (Sentido agujas del reloj: Portero -> Def -> Med -> Del)
+    const ROLE_ORDER = ['POR', 'LD', 'DFC', 'LI', 'MCD', 'MC', 'MCO', 'ED', 'EI', 'DC'];
+
+    // 2. PROCESAR DATOS: Calcular Nota Media por Posición
+    let roleStats = {}; // { 'MC': { sumRating: 15, count: 2 }, ... }
+
+    matches.filter(m => m.outcome).forEach(m => {
+        const stats = m.playerStats ? m.playerStats.find(s => s.playerId === player.id) : null;
+        
+        // Solo contamos si jugó y tiene valoración (Rating)
+        if (stats && stats.minutes > 0 && stats.rating && stats.pitchSlot !== undefined) {
+            const formation = m.formation || '4-3-3';
+            const schema = FORMATION_SLOTS[formation];
+            
+            if (schema && schema[stats.pitchSlot]) {
+                const role = schema[stats.pitchSlot];
+                const rating = parseFloat(stats.rating);
+
+                if (!roleStats[role]) roleStats[role] = { sum: 0, count: 0 };
+                roleStats[role].sum += rating;
+                roleStats[role].count++;
+            }
+        }
+    });
+
+    // Convertir a array de datos finales
+    let dataPoints = Object.keys(roleStats).map(role => {
+        return {
+            role: role,
+            avg: (roleStats[role].sum / roleStats[role].count).toFixed(1),
+            count: roleStats[role].count
+        };
+    });
+
+    // Si no ha jugado, no mostramos nada
+    if (dataPoints.length === 0) return '';
+
+    // ORDENAR: Usamos ROLE_ORDER para que el gráfico tenga sentido táctico
+    // (Ej: Que LI y LD no estén opuestos si queremos ver defensa junta)
+    dataPoints.sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
+
+    // Si solo tiene 1 o 2 posiciones, añadimos "dummies" transparentes para que el SVG no se rompa
+    // y mantenga una forma estética mínima (triángulo)
+    let isSpecialist = false;
+    if (dataPoints.length < 3) {
+        isSpecialist = true;
+        // No añadimos dummies para no falsear, pero trataremos el SVG distinto
+    }
+
+    // 3. CONFIGURACIÓN SVG
+    const size = 280;
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = 90; // Radio del gráfico
+    const maxRating = 10; // Escala 0-10
+
+    // Función para calcular coordenadas (Polar -> Cartesiana)
+    const getCoords = (value, index, total) => {
+        const angle = (Math.PI * 2 * index) / total - (Math.PI / 2); // -PI/2 para empezar arriba a las 12
+        const r = (value / maxRating) * radius;
+        return {
+            x: cx + r * Math.cos(angle),
+            y: cy + r * Math.sin(angle),
+            labelX: cx + (radius + 25) * Math.cos(angle), // Etiqueta más lejos
+            labelY: cy + (radius + 25) * Math.sin(angle)
+        };
+    };
+
+    // 4. GENERAR EL GRID (LA TELARAÑA DE FONDO)
+    let gridSVG = '';
+    const levels = 4; // Círculos concéntricos (2.5, 5.0, 7.5, 10.0)
+    
+    // Si hay menos de 3 puntos, el radar es feo, así que forzamos un mínimo de 3 ejes visuales
+    // duplicando el último punto solo para el grid (truco visual)
+    const axisCount = Math.max(dataPoints.length, 3); 
+
+    // Dibujar polígonos de fondo (niveles)
+    for (let i = 1; i <= levels; i++) {
+        let levelPoints = [];
+        const levelRadius = (radius / levels) * i;
+        for (let j = 0; j < axisCount; j++) {
+            const angle = (Math.PI * 2 * j) / axisCount - (Math.PI / 2);
+            levelPoints.push(`${cx + levelRadius * Math.cos(angle)},${cy + levelRadius * Math.sin(angle)}`);
+        }
+        gridSVG += `<polygon points="${levelPoints.join(' ')}" fill="none" stroke="#e2e8f0" stroke-width="1" />`;
+    }
+
+    // Dibujar ejes (líneas desde el centro)
+    let axesSVG = '';
+    let labelsHTML = '';
+    let shapePoints = [];
+    let dotsSVG = '';
+
+    // Si hay menos de 3 datos reales, usamos lógica especial para dibujarlo
+    // Pero para simplificar, si es < 3, simplemente mostramos los ejes que hay
+    
+    dataPoints.forEach((point, i) => {
+        // Coordenadas del valor (Rating)
+        const coords = getCoords(point.avg, i, dataPoints.length); // Usamos longitud real
+        shapePoints.push(`${coords.x},${coords.y}`);
+
+        // Coordenadas del extremo del eje (10)
+        const maxCoords = getCoords(10, i, dataPoints.length);
+
+        // Línea del eje
+        axesSVG += `<line x1="${cx}" y1="${cy}" x2="${maxCoords.x}" y2="${maxCoords.y}" stroke="#cbd5e1" stroke-dasharray="4" />`;
+
+        // Punto de dato
+        let colorDot = parseFloat(point.avg) >= 8 ? '#10b981' : (parseFloat(point.avg) >= 6 ? '#f59e0b' : '#ef4444');
+        dotsSVG += `<circle cx="${coords.x}" cy="${coords.y}" r="4" fill="${colorDot}" stroke="white" stroke-width="2" />`;
+
+        // Etiqueta HTML (Posicion absoluta sobre el SVG)
+        // Ajustamos un poco para centrar el texto
+        const alignStyle = `left: ${coords.labelX - 20}px; top: ${coords.labelY - 15}px;`;
+        
+        labelsHTML += `
+            <div class="absolute w-10 text-center flex flex-col items-center" style="${alignStyle}">
+                <span class="text-[10px] font-bold text-gray-700 bg-white/80 px-1 rounded">${point.role}</span>
+                <span class="text-[9px] font-bold ${parseFloat(point.avg)>=7?'text-emerald-600':'text-gray-400'}">${point.avg}</span>
+            </div>
+        `;
+    });
+
+    // Construir el Polígono relleno
+    let polygonSVG = '';
+    if (dataPoints.length >= 3) {
+        polygonSVG = `<polygon points="${shapePoints.join(' ')}" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="2" />`;
+    } else if (dataPoints.length === 2) {
+        // Si son 2 puntos, es una línea
+        polygonSVG = `<line x1="${shapePoints[0].split(',')[0]}" y1="${shapePoints[0].split(',')[1]}" x2="${shapePoints[1].split(',')[0]}" y2="${shapePoints[1].split(',')[1]}" stroke="#10b981" stroke-width="2" />`;
+    } else {
+        // Si es 1 punto, ya se dibuja el círculo (dot)
+    }
+
+    // Etiqueta de Polivalencia
+    const versatilityScore = dataPoints.length; 
+    let badge = '';
+    if (versatilityScore >= 4) badge = '<span class="bg-purple-100 text-purple-700 text-[10px] px-2 py-0.5 rounded-full border border-purple-200 font-bold">💎 Todoterreno</span>';
+    else if (versatilityScore === 1) badge = '<span class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full border border-blue-200 font-bold">🎯 Especialista</span>';
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 relative overflow-visible flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    📡 Radar Táctico
+                </h3>
+                ${badge}
+            </div>
+            
+            <div class="relative w-[280px] h-[280px]">
+                <svg width="280" height="280" class="absolute top-0 left-0">
+                    <circle cx="${cx}" cy="${cy}" r="${radius}" fill="#f8fafc" opacity="0.5" />
+                    
+                    ${gridSVG}
+                    ${axesSVG}
+                    ${polygonSVG}
+                    ${dotsSVG}
+                </svg>
+                
+                ${labelsHTML}
+            </div>
+
+            <div class="text-[9px] text-gray-400 text-center mt-[-20px]">
+                * Nota media (0-10) por demarcación en el campo.
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: MAPA DE CALOR DE SUSTITUCIONES
+// ==========================================
+function getSubstitutionHeatmapHTML(matches) {
+    // 1. DEFINIR LOS CUBOS DE TIEMPO (INTERVALOS)
+    const buckets = {
+        '0-45': { label: "1ª Parte / Descanso", count: 0, color: "bg-blue-400", icon: "⏸️" },
+        '46-60': { label: "Inicio 2ª Parte",    count: 0, color: "bg-indigo-400", icon: "⚡" },
+        '61-70': { label: "Momento Táctico",    count: 0, color: "bg-amber-400", icon: "🧠" },
+        '71-80': { label: "Revulsivos",         count: 0, color: "bg-orange-500", icon: "🔥" },
+        '81-90': { label: "Cierre / Tiempo",    count: 0, color: "bg-red-500", icon: "🔒" }
+    };
+
+    let totalSubs = 0;
+
+    // 2. PROCESAR DATOS
+    matches.filter(m => m.outcome).forEach(m => {
+        if (!m.playerStats) return;
+
+        m.playerStats.forEach(ps => {
+            // Lógica: Es suplente (no titular) Y jugó algún minuto
+            if (!ps.isStarter && ps.minutes > 0) {
+                
+                // CÁLCULO APROXIMADO DEL MINUTO DE ENTRADA
+                // Asumimos que jugó hasta el final del partido (90')
+                let minuteIn = 91 - ps.minutes;
+                
+                // Corrección: Si jugó 45 min o más siendo suplente, asumimos que entró al descanso (46')
+                // o en la primera parte.
+                if (minuteIn < 46) minuteIn = 45; 
+
+                // ASIGNAR AL CUBO CORRESPONDIENTE
+                if (minuteIn <= 45) buckets['0-45'].count++;
+                else if (minuteIn <= 60) buckets['46-60'].count++;
+                else if (minuteIn <= 70) buckets['61-70'].count++;
+                else if (minuteIn <= 80) buckets['71-80'].count++;
+                else buckets['81-90'].count++;
+
+                totalSubs++;
+            }
+        });
+    });
+
+    if (totalSubs === 0) return ''; // No hay datos
+
+    // 3. ENCONTRAR EL MÁXIMO (Para escalar las barras al 100% del ancho disponible)
+    let maxCount = 0;
+    Object.values(buckets).forEach(b => {
+        if (b.count > maxCount) maxCount = b.count;
+    });
+
+    // 4. GENERAR HTML
+    let barsHTML = '';
+
+    Object.entries(buckets).forEach(([range, data]) => {
+        // Porcentaje de la barra (Visual)
+        const widthPercent = (data.count / maxCount) * 100;
+        // Porcentaje real (Dato)
+        const realPercent = Math.round((data.count / totalSubs) * 100);
+        
+        // Opacidad baja si es 0
+        const opacityClass = data.count === 0 ? 'opacity-30 grayscale' : '';
+
+        barsHTML += `
+            <div class="flex items-center gap-3 mb-3 ${opacityClass} group">
+                <div class="w-12 text-right text-xs font-bold text-gray-500 font-mono pt-1">
+                    ${range}'
+                </div>
+
+                <div class="flex-1">
+                    <div class="h-8 w-full bg-gray-50 rounded-r-lg relative overflow-visible flex items-center">
+                        <div class="h-full ${data.color} rounded-r-lg transition-all duration-500 relative flex items-center shadow-sm" 
+                             style="width: ${Math.max(widthPercent, 2)}%"> <span class="absolute right-2 text-xs opacity-50 group-hover:opacity-100 transition-opacity">
+                                ${widthPercent > 20 ? data.icon : ''} 
+                             </span>
+                        </div>
+                        
+                        <div class="absolute left-2 text-[10px] font-bold ${widthPercent > 40 ? 'text-white' : 'text-gray-600 ml-' + (widthPercent + 2)} flex gap-2 items-center z-10 whitespace-nowrap">
+                            <span>${realPercent}%</span>
+                            <span class="font-normal opacity-80 hidden sm:inline">(${data.count} cambios)</span>
+                        </div>
+                    </div>
+                    <div class="text-[9px] text-gray-400 pl-1 mt-0.5 uppercase tracking-wider">
+                        ${data.label}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    ⏱️ Mapa de Sustituciones
+                </h3>
+                <span class="bg-gray-100 text-gray-500 text-[10px] px-2 py-1 rounded-full">
+                    Total: ${totalSubs} cambios
+                </span>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                ${barsHTML}
+            </div>
+
+            <div class="mt-4 text-[10px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
+                * Calculado según los minutos jugados por los suplentes (90' - min. jugados).
+            </div>
+        </div>
+    `;
 }
 </script>
 </body>
