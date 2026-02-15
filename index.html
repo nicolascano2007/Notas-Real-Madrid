@@ -3399,7 +3399,13 @@ function renderStats() {
             ? renderGoalAnalysis() 
             : '';
         const subsContainer = document.getElementById('general-subs-heatmap-container');
-    if (subsContainer) subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
+    if (subsContainer){
+
+    subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
+     const goalsByPosHTML = getGoalsByPositionWidget();    
+        subsContainer.innerHTML += `<div class="mt-6">${goalsByPosHTML}</div>`;
+    }
+    
     
     }
 
@@ -17054,6 +17060,138 @@ function getDisciplineByOutcomeHTML(player, matches) {
             
             <div class="mt-3 text-[9px] text-gray-400 text-center italic">
                 * Altura basada en la intensidad de tarjetas (Amarilla=1, Roja=3).
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: GOLES POR POSICIÓN TÁCTICA
+// ==========================================
+function getGoalsByPositionWidget() {
+    const matches = getData('matches') || [];
+    const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
+
+    // 1. DEFINIR ROLES (Misma lógica que en Zona de Confort)
+    const FORMATION_SLOTS = {
+        '4-3-3': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MC', 'MC', 'EI', 'DC', 'ED'],
+        '4-4-2': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'EI', 'MC', 'MC', 'ED', 'DC', 'DC'],
+        '4-2-3-1': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MCD', 'EI', 'MCO', 'ED', 'DC'],
+        '3-5-2': ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'MCD', 'LD', 'MC', 'MC', 'DC', 'DC']
+    };
+
+    // Colores por línea
+    const ROLE_STYLES = {
+        'DC': { color: 'bg-emerald-500', label: 'Delantero Centro' },
+        'EI': { color: 'bg-emerald-400', label: 'Extremo Izquierdo' },
+        'ED': { color: 'bg-emerald-400', label: 'Extremo Derecho' },
+        'MCO':{ color: 'bg-amber-400',   label: 'Mediapunta' },
+        'MC': { color: 'bg-amber-500',   label: 'Mediocentro' },
+        'MCD':{ color: 'bg-amber-600',   label: 'Pivote Defensivo' },
+        'LI': { color: 'bg-blue-400',    label: 'Lateral Izquierdo' },
+        'LD': { color: 'bg-blue-400',    label: 'Lateral Derecho' },
+        'DFC':{ color: 'bg-blue-600',    label: 'Defensa Central' },
+        'POR':{ color: 'bg-gray-500',    label: 'Portero' }
+    };
+
+    // 2. PROCESAR GOLES
+    // Estructura: stats['DC'] = { total: 10, players: { 'id1': 5, 'id2': 5 } }
+    let positionStats = {};
+
+    matches.filter(m => m.outcome).forEach(m => {
+        if (!m.playerStats) return;
+
+        const formation = m.formation || '4-3-3';
+        const schema = FORMATION_SLOTS[formation];
+
+        m.playerStats.forEach(ps => {
+            const goals = parseInt(ps.goals || 0);
+            
+            // Solo procesamos si hubo gol y sabemos dónde jugó (pitchSlot)
+            if (goals > 0 && ps.pitchSlot !== undefined && ps.pitchSlot !== null && schema) {
+                const role = schema[ps.pitchSlot]; // Ej: "DC"
+                
+                if (!positionStats[role]) positionStats[role] = { total: 0, players: {} };
+                
+                positionStats[role].total += goals;
+                
+                if (!positionStats[role].players[ps.playerId]) positionStats[role].players[ps.playerId] = 0;
+                positionStats[role].players[ps.playerId] += goals;
+            }
+        });
+    });
+
+    // Si no hay goles, salir
+    if (Object.keys(positionStats).length === 0) return '';
+
+    // 3. ORDENAR POSICIONES POR TOTAL DE GOLES (De más a menos)
+    const sortedRoles = Object.keys(positionStats).sort((a, b) => positionStats[b].total - positionStats[a].total);
+
+    // 4. GENERAR HTML
+    let contentHTML = '';
+
+    sortedRoles.forEach(role => {
+        const data = positionStats[role];
+        const style = ROLE_STYLES[role] || { color: 'bg-gray-400', label: role };
+        
+        // Ordenar jugadores dentro de esa posición
+        const sortedPlayers = Object.entries(data.players).sort((a, b) => b[1] - a[1]);
+        
+        // Max goles en esta posición (para escalar las barras al 100%)
+        const maxGoalsInRole = sortedPlayers[0][1];
+
+        // HTML DE LOS JUGADORES
+        let playersHTML = sortedPlayers.map(([pid, count]) => {
+            const p = allPlayers.find(pl => pl.id === pid) || { apodo: '?', foto: '' };
+            const percent = (count / maxGoalsInRole) * 100; // Escala relativa al líder de la posición
+            
+            return `
+                <div class="flex items-center gap-3 mb-1.5 text-xs group">
+                    <div class="w-24 flex items-center gap-2 shrink-0">
+                        <img src="${p.foto}" class="w-5 h-5 rounded-full object-cover border border-gray-100 bg-white">
+                        <span class="truncate font-medium text-gray-600">${p.apodo}</span>
+                    </div>
+                    
+                    <div class="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden">
+                        <div class="h-full ${style.color} rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                    
+                    <div class="w-12 text-right font-bold text-gray-700">${count} ⚽</div>
+                </div>
+            `;
+        }).join('');
+
+        // BLOQUE DE LA POSICIÓN
+        contentHTML += `
+            <div class="mb-5 last:mb-0">
+                <div class="flex justify-between items-end mb-2 border-b border-gray-100 pb-1">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold text-white ${style.color} shadow-sm">
+                            ${role}
+                        </span>
+                        <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                            ${style.label}
+                        </span>
+                    </div>
+                    <span class="text-sm font-bold text-gray-800">${data.total} <span class="text-xs font-normal text-gray-400">Total</span></span>
+                </div>
+                
+                <div class="pl-2">
+                    ${playersHTML}
+                </div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+                🥅 Goles por Demarcación
+            </h3>
+            <div class="flex flex-col">
+                ${contentHTML}
+            </div>
+             <div class="mt-2 text-[10px] text-gray-400 text-center italic">
+                * Goles asignados según la posición ocupada en la pizarra del partido.
             </div>
         </div>
     `;
