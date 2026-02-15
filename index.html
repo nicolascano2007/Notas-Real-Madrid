@@ -273,22 +273,19 @@
                         </div>
                     </div>
                 </div>
-              <div id="widget-semaforo" class="" draggable="false">
-                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      🚦 Semáforo de Forma <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Últimos 3 partidos</span>
-              </h3>
+              <div class="w-full mt-6"> <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2 px-1">
+        🚦 Semáforo de Forma <span class="text-xs font-normal text-gray-400 ml-auto">Últimos 3 partidos</span>
+    </h3>
 
-               <div id="semaforo-content" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <p class="text-center text-gray-400 py-4 col-span-3">Cargando datos...</p>
-            </div>
+    <div id="semaforo-content" class="w-full"></div>
 
-          <div id="semaforo-expand-btn-container" class="hidden text-center">
-            <button onclick="toggleTrafficAll()" id="btn-traffic-all" 
-                class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full text-sm transition-all shadow-sm border border-gray-200">
-               Ver todos los jugadores ▼
-                       </button>
-                        </div>
-            </div> <!-- End Semaforo -->
+    <div id="semaforo-expand-btn-container" class="hidden mt-3 text-center">
+        <button id="btn-traffic-all" onclick="toggleTrafficAll()" 
+                class="w-full py-2 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-blue-600 rounded-lg transition-colors uppercase tracking-wide border border-dashed border-gray-200">
+            Ver todos los jugadores ▼
+        </button>
+    </div>
+</div>
             <div id="top-performances-container" class="animate-fade-in hidden" draggable="false">
     <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
         <span>🌟</span> Actuaciones Legendarias (Top 5)
@@ -3392,25 +3389,33 @@ function renderStats() {
     }
 
     // 2. Inyectar el Análisis de Goles en su hueco específico
+    // ... (Tu código anterior) ...
+
     const goalContainer = document.getElementById('stats-goal-analysis-container');
     if (goalContainer) {
         // Llamamos a la función que crea las barras y lo metemos en el DIV
         goalContainer.innerHTML = (typeof renderGoalAnalysis === 'function') 
             ? renderGoalAnalysis() 
             : '';
+        
+        // --- AQUÍ ESTÁ EL BLOQUE A MODIFICAR ---
         const subsContainer = document.getElementById('general-subs-heatmap-container');
-    if (subsContainer){
+        if (subsContainer) {
+            // 1. Mapa de Calor (Heatmap)
+            subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
+            
+            // 2. Goles por Posición
+            const goalsByPosHTML = getGoalsByPositionWidget();    
+            subsContainer.innerHTML += `<div class="mt-6">${goalsByPosHTML}</div>`;
 
-    subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
-     const goalsByPosHTML = getGoalsByPositionWidget();    
-        subsContainer.innerHTML += `<div class="mt-6">${goalsByPosHTML}</div>`;
-    }
-    
-    
+            // 3. NUEVO: Jerarquía de Plantilla (Titularidad)
+            const hierarchyHTML = getSquadHierarchyWidget();
+            subsContainer.innerHTML += `<div class="mt-6">${hierarchyHTML}</div>`;
+            subsContainer.innerHTML += `<div class="mt-6">${getOffensiveParticipationWidget()}</div>`;
+        }
     }
 
-    // 3. Renderizar el resto de gráficos existentes
-    // Nota: Asegúrate de que 'renderCharts' pinte dentro de 'stats-charts-wrapper' 
+
     // o el ID que tengas configurado para ello.
     if(typeof renderCharts === 'function') renderCharts(filteredMatches);
     if(typeof renderBestXI === 'function') renderBestXI();
@@ -5223,6 +5228,7 @@ seasonHTML += `
     seasonHTML += getTacticalRadarHTML(player, matches); // <--- NUEVO RADAR
     seasonHTML += getStarterVsSubHTML(player, matches); // <--- NUEVO WIDGET
     seasonHTML += getDisciplineByOutcomeHTML(player, matches); // <--- NUEVA
+    seasonHTML += getFormSparklineHTML(player, matches); // <--- NUEVO SPARKLINE
 
     
     // 3. Pestaña Historial
@@ -9824,47 +9830,40 @@ function updateComparatorChart() {
                 `;
             }).join('');
         }
+// ==========================================
+// WIDGET: SEMÁFORO (ESTADO DE FORMA) - VERSIÓN FULL WIDTH
+// ==========================================
 function renderTrafficLight() {
     const matches = getData('matches');
     const players = getPlayers();
-    const container = document.getElementById('semaforo-content');
-    const btnContainer = document.getElementById('semaforo-expand-btn-container');
     
+    const container = document.getElementById('semaforo-content');
+    const btnContainer = document.getElementById('semaforo-expand-btn-container'); 
+    const btn = document.getElementById('btn-traffic-all'); 
+
     if (!container) return;
 
-    // 1. OBTENER ÚLTIMOS 3 PARTIDOS (CORREGIDO)
-    // En lugar de reverse(), ordenamos por FECHA REAL (Descendente: más nuevo primero)
+    // 1. LÓGICA DE DATOS (Orden cronológico inverso)
     const sortedMatches = [...matches].sort((a, b) => new Date(b.date) - new Date(a.date));
-
     const playerRatingsMap = {};
 
-    // Recorremos partidos desde el más reciente hacia atrás
     sortedMatches.forEach(m => {
+        if (!m.playerStats) return;
         m.playerStats.forEach(ps => {
-            // Validar que la nota existe
-            if (ps.rating !== null && ps.rating !== undefined && ps.rating !== "") {
-                const val = parseFloat(ps.rating);
-                
-                // CORRECCIÓN: Aceptamos 0 como nota válida (val >= 0)
-                if (!isNaN(val) && val >= 0) {
-                    if (!playerRatingsMap[ps.playerId]) playerRatingsMap[ps.playerId] = [];
-                    
-                    // Solo guardamos las 3 primeras notas que encontremos (que serán las más recientes)
-                    if (playerRatingsMap[ps.playerId].length < 3) {
-                        playerRatingsMap[ps.playerId].push(val);
-                    }
-                }
+            const val = parseFloat(ps.rating);
+            if (!isNaN(val) && val >= 0) {
+                if (!playerRatingsMap[ps.playerId]) playerRatingsMap[ps.playerId] = [];
+                // Solo las 3 notas más recientes
+                if (playerRatingsMap[ps.playerId].length < 3) playerRatingsMap[ps.playerId].push(val);
             }
         });
     });
 
-    // 2. CALCULAR MEDIAS
+    // Calcular medias
     const averages = [];
     Object.keys(playerRatingsMap).forEach(pId => {
         const ratings = playerRatingsMap[pId];
         const p = players.find(pl => pl.id === pId);
-        
-        // Solo si el jugador existe, está activo y ha jugado al menos 1 de los últimos partidos
         if (p && p.estado === 'Activo' && ratings.length > 0) {
             const sum = ratings.reduce((a, b) => a + b, 0);
             const avg = (sum / ratings.length).toFixed(2);
@@ -9872,182 +9871,105 @@ function renderTrafficLight() {
         }
     });
 
-    // Ordenar por nota media (Mejor nota arriba)
     averages.sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
 
-    // Clasificar en grupos
     const green = averages.filter(p => parseFloat(p.avg) >= 7.5);
     const yellow = averages.filter(p => parseFloat(p.avg) >= 6.0 && parseFloat(p.avg) < 7.5);
     const red = averages.filter(p => parseFloat(p.avg) < 6.0);
 
-    // 3. RENDERIZAR
-    const needsExpand = green.length > 3 || yellow.length > 3 || red.length > 3;
-
+    // 2. RENDERIZADO (Forzamos w-full y grid flexible)
+    // Usamos 'gap-2' en lugar de 'gap-4' para ganar espacio si la pantalla es pequeña
     container.innerHTML = `
-        ${renderTrafficListSimple('🔥 En Racha (>7.5)', 'green', green)}
-        ${renderTrafficListSimple('⚖️ Estables (6.0-7.5)', 'yellow', yellow)}
-        ${renderTrafficListSimple('❄️ Fríos (<6.0)', 'red', red)}
+        <div class="grid grid-cols-3 gap-2 w-full min-w-full">
+            ${renderTrafficColumn('🔥 En Racha (>7.5)', 'green', green)}
+            ${renderTrafficColumn('⚖️ Estables (6.0-7.5)', 'yellow', yellow)}
+            ${renderTrafficColumn('❄️ Fríos (<6.0)', 'red', red)}
+        </div>
     `;
 
-    // Mostrar u ocultar el botón global de "Ver todos"
-    if (needsExpand) {
-        btnContainer.classList.remove('hidden');
-        if(document.getElementById('btn-traffic-all')) {
-            document.getElementById('btn-traffic-all').innerHTML = 'Ver todos los jugadores ▼';
+    // 3. GESTIÓN DEL BOTÓN GLOBAL
+    const needsExpand = green.length > 3 || yellow.length > 3 || red.length > 3;
+
+    if (btnContainer && btn) {
+        if (needsExpand) {
+            btnContainer.classList.remove('hidden');
+            btn.innerHTML = 'Ver todos los jugadores ▼';
+            btn.setAttribute('data-expanded', 'false');
+        } else {
+            btnContainer.classList.add('hidden');
         }
-    } else {
-        btnContainer.classList.add('hidden');
     }
 }
 
-        // Función auxiliar simplificada (sin botón individual)
-        function renderTrafficListSimple(title, colorName, list) {
-            const colors = {
-                'green': 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                'yellow': 'bg-amber-50 text-amber-800 border-amber-200',
-                'red': 'bg-red-50 text-red-800 border-red-200'
-            };
-            const badgeColor = {
-                'green': 'bg-emerald-500',
-                'yellow': 'bg-amber-500',
-                'red': 'bg-red-500'
-            };
+// --- HELPER: RENDERIZAR COLUMNA ---
+function renderTrafficColumn(title, colorName, list) {
+    const styles = {
+        'green':  { header: 'bg-emerald-50 text-emerald-800 border-emerald-200', badge: 'bg-emerald-500' },
+        'yellow': { header: 'bg-amber-50 text-amber-800 border-amber-200',    badge: 'bg-amber-500' },
+        'red':    { header: 'bg-red-50 text-red-800 border-red-200',          badge: 'bg-red-500' }
+    };
+    const style = styles[colorName];
 
-            let html = `
-                <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-full">
-                    <div class="p-3 ${colors[colorName]} font-bold text-center border-b uppercase text-xs tracking-wider">
-                        ${title}
-                    </div>
-                    <div class="p-2 space-y-2">
-            `;
+    // Calculamos altura para que las 3 columnas se vean igual de llenas
+    let html = `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col w-full h-full">
+            <div class="p-2 md:p-3 ${style.header} font-bold text-center border-b uppercase text-[10px] md:text-xs tracking-wider truncate">
+                ${title} <span class="opacity-70">(${list.length})</span>
+            </div>
+            <div class="p-1 md:p-2 flex flex-col gap-1 md:gap-2">
+    `;
 
-            if (list.length === 0) {
-                html += `<div class="text-center text-gray-400 text-xs italic py-4">Vacío</div>`;
-            } else {
-                list.forEach((p, index) => {
-                    // Si el índice es mayor a 2 (es el 4º elemento o más), lo ocultamos por defecto
-                    const isHidden = index >= 3 ? 'hidden traffic-hidden-item' : '';
-                    
-                    html += `
-                        <div class="${isHidden} flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100 transition-all">
-                            <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top">
-                            <div class="flex-1 min-w-0">
-                                <p class="text-xs font-bold truncate text-gray-800">${p.apodo || p.apellido}</p>
-                                <p class="text-[9px] text-gray-400">${p.games} part.</p>
-                            </div>
-                            <div class="${badgeColor[colorName]} text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
-                                ${p.avg}
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            html += `</div></div>`;
-            return html;
-        }
-
-        // 4. FUNCIÓN GLOBAL TOGGLE
-        window.toggleTrafficAll = function() {
-            const hiddenItems = document.querySelectorAll('.traffic-hidden-item');
-            const btn = document.getElementById('btn-traffic-all');
+    if (list.length === 0) {
+        html += `<div class="text-center text-gray-300 text-[10px] italic py-4">Vacío</div>`;
+    } else {
+        list.forEach((p, index) => {
+            const isHidden = index >= 3 ? 'hidden traffic-hidden-item' : '';
             
-            // Comprobamos si hay alguno oculto actualmente (es decir, estamos en estado "contraído")
-            // Nota: .hidden es la clase de Tailwind display:none
-            const isCollapsed = hiddenItems.length > 0 && hiddenItems[0].classList.contains('hidden');
-
-            if (isCollapsed) {
-                // EXPANDIR: Quitamos la clase 'hidden' a todos
-                hiddenItems.forEach(el => el.classList.remove('hidden'));
-                btn.innerHTML = 'Ver menos ▲';
-            } else {
-                // CONTRAER: Ponemos la clase 'hidden' a todos
-                hiddenItems.forEach(el => el.classList.add('hidden'));
-                btn.innerHTML = 'Ver todos los jugadores ▼';
-            }
-        };
-
-        // --- Función Auxiliar para ocultar/mostrar ---
-        function renderTrafficList(title, colorName, list) {
-            // Colores de encabezado
-            const colors = {
-                'green': 'bg-green-100 text-green-800 border-green-200',
-                'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                'red': 'bg-red-100 text-red-800 border-red-200'
-            };
-            const badgeColor = {
-                'green': 'bg-green-500',
-                'yellow': 'bg-yellow-500',
-                'red': 'bg-red-500'
-            };
-
-            // Separar visibles (Top 3) y ocultos
-            const visible = list.slice(0, 3);
-            const hidden = list.slice(3);
-
-            let html = `
-                <div class="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col h-full">
-                    <div class="p-3 ${colors[colorName]} font-bold text-center border-b uppercase text-xs tracking-wider">
-                        ${title} (${list.length})
+            // He ajustado el diseño de la tarjeta para que quepa mejor en espacios estrechos
+            html += `
+                <div class="${isHidden} flex items-center gap-2 p-1.5 md:p-2 rounded-lg bg-gray-50 border border-gray-100 relative group w-full">
+                    <img src="${p.foto}" class="w-6 h-6 md:w-8 md:h-8 rounded-full object-cover object-top bg-white shrink-0 border border-gray-200">
+                    
+                    <div class="flex-1 min-w-0 flex flex-col justify-center">
+                        <p class="text-[10px] md:text-xs font-bold truncate text-gray-700 leading-tight">
+                            ${p.apodo || p.apellido}
+                        </p>
+                        <p class="text-[8px] md:text-[9px] text-gray-400 leading-tight truncate">
+                            ${p.games} part.
+                        </p>
                     </div>
-                    <div class="p-2 space-y-2">
-            `;
 
-            // Renderizar los primeros 3
-            if (visible.length === 0) {
-                html += `<div class="text-center text-gray-400 text-xs italic py-4">Sin jugadores</div>`;
-            } else {
-                html += visible.map(p => createTrafficCard(p, badgeColor[colorName])).join('');
-            }
-
-            // Si hay ocultos, añadir botón y contenedor oculto
-            if (hidden.length > 0) {
-                html += `
-                    <div id="more-${colorName}" class="hidden space-y-2 mt-2 pt-2 border-t border-dashed border-gray-200">
-                        ${hidden.map(p => createTrafficCard(p, badgeColor[colorName])).join('')}
-                    </div>
-                    <button onclick="toggleTrafficSection('${colorName}')" id="btn-${colorName}" 
-                        class="w-full mt-2 py-1 text-[10px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded uppercase transition-colors flex items-center justify-center gap-1">
-                        <span>Ver ${hidden.length} más</span> ▼
-                    </button>
-                `;
-            }
-
-            html += `</div></div>`;
-            return html;
-        }
-
-        function createTrafficCard(p, colorClass) {
-            return `
-                <div class="flex items-center gap-3 p-2 rounded-lg bg-gray-50 border border-gray-100">
-                    <img src="${p.foto}" class="w-8 h-8 rounded-full object-cover object-top">
-                    <div class="flex-1 min-w-0">
-                        <p class="text-xs font-bold truncate text-gray-800">${p.apodo || p.apellido}</p>
-                    </div>
-                    <div class="${colorClass} text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
+                    <div class="${style.badge} text-white text-[10px] md:text-xs font-bold px-1.5 py-0.5 md:px-2 md:py-1 rounded-md shadow-sm shrink-0 whitespace-nowrap">
                         ${p.avg}
                     </div>
                 </div>
             `;
-        }
+        });
+    }
 
-        // Función para abrir/cerrar
-        window.toggleTrafficSection = function(colorName) {
-            const content = document.getElementById(`more-${colorName}`);
-            const btn = document.getElementById(`btn-${colorName}`);
-            
-            if (content.classList.contains('hidden')) {
-                // Abrir
-                content.classList.remove('hidden');
-                btn.innerHTML = `<span>Ver menos</span> ▲`;
-            } else {
-                // Cerrar
-                content.classList.add('hidden');
-                // Recalcular cuántos quedan ocultos para el texto
-                // (Truco: contamos los hijos del div oculto)
-                const count = content.children.length;
-                btn.innerHTML = `<span>Ver ${count} más</span> ▼`;
-            }
-        };
+    html += `</div></div>`;
+    return html;
+}
+
+// (La función window.toggleTrafficAll se mantiene igual que la anterior)
+window.toggleTrafficAll = function() {
+    const hiddenItems = document.querySelectorAll('.traffic-hidden-item');
+    const btn = document.getElementById('btn-traffic-all');
+    if (!btn) return;
+
+    const isExpanded = btn.getAttribute('data-expanded') === 'true';
+
+    if (!isExpanded) {
+        hiddenItems.forEach(el => el.classList.remove('hidden'));
+        btn.innerHTML = 'Ver menos ▲';
+        btn.setAttribute('data-expanded', 'true');
+    } else {
+        hiddenItems.forEach(el => el.classList.add('hidden'));
+        btn.innerHTML = 'Ver todos los jugadores ▼';
+        btn.setAttribute('data-expanded', 'false');
+    }
+};
+
         // ==========================================
         // IMPORTADOR CSV (NOTAS DESDE EXCEL)
         // ==========================================
@@ -13469,12 +13391,15 @@ function analyzeGoalConnections() {
 
 /**
  * Renderiza la sección de estadísticas de conexiones en la UI.
+ * VERSIÓN ADAPTADA AL TOGGLE UNIVERSAL
  */
 function renderGoalConnections() {
     const container = document.getElementById('goal-connections-container');
     if (!container) return;
 
     const players = getPlayers();
+    
+    // 1. OBTENER Y PROCESAR DATOS
     const connectionsData = analyzeGoalConnections();
 
     if (Object.keys(connectionsData).length === 0) {
@@ -13492,11 +13417,12 @@ function renderGoalConnections() {
         })
         .sort((a, b) => b.totalAssists - a.totalAssists);
 
-    const VISIBLE_LIMIT = 3; // Mostrar los 3 máximos asistentes por defecto
+    // 2. SEPARAR VISIBLES Y OCULTOS
+    const VISIBLE_LIMIT = 3; 
     const visibleItems = sortedAssisters.slice(0, VISIBLE_LIMIT);
     const hiddenItems = sortedAssisters.slice(VISIBLE_LIMIT);
 
-    // Función auxiliar para crear una tarjeta de conexión individual
+    // Helper: Crear Tarjeta HTML (Igual que antes)
     const createConnectionCard = ({ assisterId, targets }) => {
         const assister = players.find(p => p.id === assisterId);
         if (!assister) return '';
@@ -13519,8 +13445,7 @@ function renderGoalConnections() {
                         <div class="text-[10px] text-gray-400 uppercase font-bold">Asistencias</div>
                     </div>
                 </div>
-                <div class="p-4 space-y-3">
-        `;
+                <div class="p-4 space-y-3 flex-1">`; // flex-1 para que estire
 
         sortedTargets.forEach(([scorerId, count]) => {
             const scorer = players.find(p => p.id === scorerId);
@@ -13536,8 +13461,7 @@ function renderGoalConnections() {
                             <span class="text-green-500">➔</span>
                             <span class="font-bold text-xl text-green-600">⚽</span>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
         });
 
@@ -13545,19 +13469,29 @@ function renderGoalConnections() {
         return cardHtml;
     };
 
-    // Construir el HTML final
-    let finalHtml = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${visibleItems.map(createConnectionCard).join('')}
-                     </div>`;
+    // 3. GENERAR HTML ESTRUCTURA
+    // ID único para la sección oculta
+    const uniqueHiddenId = 'goal-connections-hidden-list';
 
+    // Grid de elementos visibles
+    let finalHtml = `
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${visibleItems.map(createConnectionCard).join('')}
+        </div>
+    `;
+
+    // Si hay elementos ocultos, añadimos el grid oculto y el botón universal
     if (hiddenItems.length > 0) {
         finalHtml += `
-            <div id="more-connections-content" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+            <div id="${uniqueHiddenId}" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 transition-all">
                 ${hiddenItems.map(createConnectionCard).join('')}
             </div>
+
             <div class="text-center mt-6">
-                <button onclick="toggleGoalConnections()" id="btn-toggle-connections" 
-                    class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full text-sm transition-all shadow-sm border border-gray-200">
+                <button onclick="toggleWidgetSection('${uniqueHiddenId}', this)" 
+                        data-more="Mostrar {n} más ▼" 
+                        data-less="Mostrar menos ▲"
+                        class="px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-full text-sm transition-all shadow-sm border border-gray-200">
                     Mostrar ${hiddenItems.length} más ▼
                 </button>
             </div>
@@ -13565,25 +13499,6 @@ function renderGoalConnections() {
     }
 
     container.innerHTML = finalHtml;
-}
-/**
- * Muestra u oculta las tarjetas de conexiones adicionales.
- */
-function toggleGoalConnections() {
-    const content = document.getElementById('more-connections-content');
-    const btn = document.getElementById('btn-toggle-connections');
-    if (!content || !btn) return;
-
-    const isHidden = content.classList.contains('hidden');
-
-    if (isHidden) {
-        content.classList.remove('hidden');
-        btn.innerHTML = 'Mostrar menos ▲';
-    } else {
-        content.classList.add('hidden');
-        const count = content.children.length; // Cuenta cuántas tarjetas hay ocultas
-        btn.innerHTML = `Mostrar ${count} más ▼`;
-    }
 }
 
 async function generateSeasonYearbook() {
@@ -16411,11 +16326,12 @@ function renderUnifiedConnections() {
     if (!container) return;
 
     const isList = activeConnectionTab === 'lista';
+    // Estilos de botones
     const btnActive = "bg-slate-800 text-white shadow-md font-bold";
     const btnInactive = "text-gray-500 hover:text-gray-700 font-medium hover:bg-gray-100";
 
-    container.innerHTML = `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full min-h-[520px]">
+   container.innerHTML = `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-auto min-h-[520px] transition-all duration-300">
             
             <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-50 shrink-0">
                 <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
@@ -16434,8 +16350,8 @@ function renderUnifiedConnections() {
                 </div>
             </div>
 
-            <div id="connections-content-area" class="flex-1 min-h-[420px] flex justify-center items-center overflow-visible relative">
-                </div>
+            <div id="connections-content-area" class="flex-1 w-full relative">
+            </div>
             
             ${!isList ? '<div class="mt-4 text-[10px] text-gray-400 text-center italic shrink-0">* Grosor = Cantidad de asistencias</div>' : ''}
         </div>
@@ -16446,21 +16362,20 @@ function renderUnifiedConnections() {
     
     if (activeConnectionTab === 'lista') {
         // --- VISTA LISTA ---
+        // La lista ocupa todo el ancho y empieza arriba
         contentArea.innerHTML = '<div id="goal-connections-container" class="w-full h-full"></div>';
         
-        // Llamada a tu función de lista existente
         if (typeof renderGoalConnections === 'function') {
-            renderGoalConnections(); 
+            renderGoalConnections(); // Esta función ya inyecta su propio botón toggle dentro
         } else {
             contentArea.innerHTML = "<p class='text-gray-400 text-xs'>Cargando lista...</p>";
         }
 
     } else {
         // --- VISTA MAPA ---
-        // Aseguramos que el contenedor del mapa tenga espacio
+        // Al mapa SÍ le damos centrado vertical y horizontal explícitamente aquí
         contentArea.innerHTML = '<div id="networkMapContainer" class="w-full h-full flex justify-center items-center"></div>';
         
-        // Llamada a tu función de mapa existente
         if (typeof renderNetworkWidget === 'function') {
             renderNetworkWidget();
         } else {
@@ -17196,6 +17111,375 @@ function getGoalsByPositionWidget() {
         </div>
     `;
 }
+// ==========================================
+// WIDGET: CURVA DE FORMA (SPARKLINE)
+// ==========================================
+function getFormSparklineHTML(player, matches) {
+    // 1. OBTENER ÚLTIMOS 5 PARTIDOS JUGADOS CON NOTA
+    const ratings = [];
+    
+    // Filtramos partidos donde jugó y tiene nota
+    const playedMatches = matches
+        .filter(m => m.outcome) // Solo terminados
+        .sort((a, b) => new Date(a.date) - new Date(b.date)); // Orden cronológico (antiguo a nuevo)
+
+    playedMatches.forEach(m => {
+        if (!m.playerStats) return;
+        const ps = m.playerStats.find(s => s.playerId === player.id);
+        if (ps && ps.minutes > 0 && ps.rating) {
+            ratings.push({
+                rating: parseFloat(ps.rating),
+                rival: m.opponent, // Para el tooltip
+                result: m.result
+            });
+        }
+    });
+
+    // Nos quedamos con los últimos 5
+    const last5 = ratings.slice(-5);
+
+    if (last5.length < 2) return ''; // Necesitamos al menos 2 puntos para una línea
+
+    // 2. CALCULAR TENDENCIA
+    const first = last5[0].rating;
+    const last = last5[last5.length - 1].rating;
+    const max = Math.max(...last5.map(r => r.rating));
+    const min = Math.min(...last5.map(r => r.rating));
+    const diff = last - first;
+    const volatility = max - min;
+
+    let trend = { label: 'Irregular', color: 'text-amber-500', icon: '🟡', stroke: '#f59e0b' };
+
+    if (volatility <= 1.0) {
+        trend = { label: 'Consistente', color: 'text-blue-500', icon: '🔵', stroke: '#3b82f6' };
+    } else if (diff >= 0.5) {
+        trend = { label: 'Subiendo', color: 'text-emerald-500', icon: '🟢', stroke: '#10b981' };
+    } else if (diff <= -0.5) {
+        trend = { label: 'Bajando', color: 'text-rose-500', icon: '🔴', stroke: '#f43f5e' };
+    }
+
+    // 3. GENERAR SVG (SPARKLINE)
+    const width = 150;
+    const height = 40;
+    const padding = 5;
+    
+    // Escala Y: Mapeamos las notas (0-10) a la altura del SVG (height-0)
+    // Truco: Usamos un rango dinámico (min-max) para que la curva se note más, 
+    // pero con un suelo de 4.0 para no exagerar notas bajas.
+    const getY = (val) => {
+        const visualMin = 4; // Nota mínima visual
+        const visualMax = 10;
+        const normalized = (val - visualMin) / (visualMax - visualMin);
+        // Invertimos Y porque en SVG 0 es arriba
+        return height - (Math.max(0, normalized) * height) + padding; 
+    };
+
+    const getX = (index) => (index / (last5.length - 1)) * width + padding;
+
+    // Construir la línea (Polyline)
+    const points = last5.map((r, i) => `${getX(i)},${getY(r.rating)}`).join(' ');
+
+    // Construir los puntos (Circles)
+    const dotsSVG = last5.map((r, i) => {
+        return `<circle cx="${getX(i)}" cy="${getY(r.rating)}" r="3" fill="white" stroke="${trend.stroke}" stroke-width="2">
+            <title>vs ${r.rival}: ${r.rating}</title>
+        </circle>`;
+    }).join('');
+
+    // HTML de los números debajo
+    const numbersHTML = last5.map(r => {
+        let colorClass = 'text-gray-400';
+        if (r.rating >= 8) colorClass = 'text-emerald-600 font-bold';
+        else if (r.rating < 6) colorClass = 'text-rose-500';
+        
+        return `<span class="text-[10px] ${colorClass}">${r.rating}</span>`;
+    }).join('<span class="text-gray-300 mx-1">─</span>');
+
+    return `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mt-6 flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-2">
+                <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                    📈 Forma (Últimos 5)
+                </h3>
+                <span class="text-xs font-bold ${trend.color} bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                    ${trend.icon} ${trend.label}
+                </span>
+            </div>
+
+            <div class="relative w-full h-16 flex justify-center items-center overflow-visible">
+                <svg width="${width + 10}" height="${height + 15}" class="overflow-visible">
+                    <polyline points="${points}" fill="none" stroke="${trend.stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    ${dotsSVG}
+                </svg>
+            </div>
+
+            <div class="flex items-center justify-between w-full max-w-[160px] mt-1">
+                ${numbersHTML}
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: JERARQUÍA DE PLANTILLA (% TITULARIDAD)
+// ==========================================
+function getSquadHierarchyWidget() {
+    const matches = getData('matches') || [];
+    const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
+
+    // 1. CALCULAR TOTAL DE PARTIDOS JUGADOS POR EL EQUIPO
+    // Solo cuentan los partidos terminados (con outcome)
+    const playedMatches = matches.filter(m => m.outcome);
+    const totalTeamMatches = playedMatches.length;
+
+    if (totalTeamMatches === 0) return '';
+
+    // 2. CONTAR TITULARIDADES POR JUGADOR
+    const playerStarts = {};
+
+    playedMatches.forEach(m => {
+        if (!m.playerStats) return;
+        m.playerStats.forEach(ps => {
+            if (ps.isStarter) {
+                playerStarts[ps.playerId] = (playerStarts[ps.playerId] || 0) + 1;
+            }
+        });
+    });
+
+    // 3. CREAR ARRAY DE DATOS Y ORDENAR
+    // Filtramos solo jugadores con al menos 1 titularidad para no llenar la lista de ceros
+    const hierarchyData = Object.keys(playerStarts)
+        .map(pid => {
+            const starts = playerStarts[pid];
+            const percentage = Math.round((starts / totalTeamMatches) * 100);
+            return {
+                playerId: pid,
+                starts: starts,
+                percent: percentage
+            };
+        })
+        .sort((a, b) => b.percent - a.percent); // Ordenar de mayor a menor %
+
+    // 4. GENERAR HTML
+    let listHTML = '';
+
+    hierarchyData.forEach(item => {
+        const p = allPlayers.find(pl => pl.id === item.playerId) || { apodo: '?', foto: '' };
+        
+        // Determinar Estatus y Color
+        let status = { label: 'Residual', icon: '👻', color: 'bg-gray-400', text: 'text-gray-400' };
+        
+        if (item.percent >= 90) {
+            status = { label: 'Intocable', icon: '🔒', color: 'bg-purple-600', text: 'text-purple-700' };
+        } else if (item.percent >= 70) {
+            status = { label: 'Clave', icon: '🔑', color: 'bg-emerald-500', text: 'text-emerald-600' };
+        } else if (item.percent >= 40) {
+            status = { label: 'Rotación', icon: '🔄', color: 'bg-blue-500', text: 'text-blue-600' };
+        } else if (item.percent >= 15) {
+            status = { label: 'Revulsivo', icon: '🪑', color: 'bg-amber-500', text: 'text-amber-600' };
+        }
+
+        listHTML += `
+            <div class="flex items-center gap-3 mb-3 last:mb-0 group">
+                <div class="w-28 flex items-center gap-2 shrink-0">
+                    <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white shadow-sm">
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="truncate text-xs font-bold text-gray-700">${p.apodo}</span>
+                        <span class="text-[9px] text-gray-400">${item.starts}/${totalTeamMatches} incios</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
+                    <div class="h-full ${status.color} rounded-full transition-all duration-700 relative group-hover:opacity-80" 
+                         style="width: ${item.percent}%">
+                    </div>
+                </div>
+
+                <div class="w-10 text-right text-xs font-bold text-gray-700 font-mono">${item.percent}%</div>
+
+                <div class="w-20 text-right">
+                    <span class="text-[9px] font-bold ${status.text} bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 whitespace-nowrap">
+                        ${status.icon} ${status.label}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🏛️ Jerarquía de la Plantilla
+                </h3>
+                <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    Base: ${totalTeamMatches} partidos
+                </span>
+            </div>
+            
+            <div class="flex flex-col">
+                ${listHTML}
+            </div>
+
+            <div class="mt-4 flex flex-wrap justify-center gap-3 text-[9px] text-gray-400 border-t border-gray-50 pt-2">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-600"></span> >90% Intocable</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> >70% Clave</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> >40% Rotación</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> >15% Revulsivo</span>
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: PARTICIPACIÓN OFENSIVA (GOL O ASISTENCIA)
+// ==========================================
+function getOffensiveParticipationWidget() {
+    const matches = getData('matches') || [];
+    const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
+
+    // 1. PROCESAR DATOS
+    // Mapa: { 'p1': { played: 10, produced: 5 }, ... }
+    const stats = {};
+
+    matches.filter(m => m.outcome).forEach(m => {
+        if (!m.playerStats) return;
+
+        m.playerStats.forEach(ps => {
+            // Solo si jugó minutos
+            if (ps.minutes > 0) {
+                if (!stats[ps.playerId]) stats[ps.playerId] = { played: 0, produced: 0 };
+                
+                stats[ps.playerId].played++;
+
+                const goals = parseInt(ps.goals || 0);
+                const assists = parseInt(ps.assists || 0);
+
+                // ¿Participó en el marcador?
+                if (goals > 0 || assists > 0) {
+                    stats[ps.playerId].produced++;
+                }
+            }
+        });
+    });
+
+    // 2. FILTRAR Y ORDENAR
+    // Convertimos a array, calculamos % y ordenamos.
+    // Filtramos jugadores con menos de 3 partidos para no desvirtuar (ej: jugó 1, marcó 1 = 100%)
+    const ranking = Object.keys(stats)
+        .map(pid => {
+            const s = stats[pid];
+            const percent = s.played > 0 ? Math.round((s.produced / s.played) * 100) : 0;
+            return {
+                id: pid,
+                played: s.played,
+                produced: s.produced,
+                percent: percent
+            };
+        })
+        .filter(item => item.played >= 3) // Mínimo 3 partidos para salir en el ranking
+        .sort((a, b) => b.percent - a.percent);
+
+    if (ranking.length === 0) return '';
+
+    // 3. GENERAR HTML
+    let listHTML = '';
+
+    ranking.forEach(item => {
+        const p = allPlayers.find(pl => pl.id === item.id) || { apodo: '?', foto: '' };
+        
+        // Determinar Estilo según porcentaje
+        let style = { label: 'Irrelevante', icon: '🚨', color: 'bg-gray-400', text: 'text-gray-400' };
+        
+        if (item.percent >= 75) {
+            style = { label: 'Omnipresente', icon: '🔥', color: 'bg-rose-500', text: 'text-rose-600' };
+        } else if (item.percent >= 50) {
+            style = { label: 'Decisivo', icon: '⚡', color: 'bg-emerald-500', text: 'text-emerald-600' };
+        } else if (item.percent >= 30) {
+            style = { label: 'Cumplidor', icon: '✅', color: 'bg-blue-500', text: 'text-blue-600' };
+        } else if (item.percent >= 10) {
+            style = { label: 'Frío', icon: '❄️', color: 'bg-sky-300', text: 'text-sky-400' };
+        }
+
+        listHTML += `
+            <div class="flex items-center gap-3 mb-3 last:mb-0 group">
+                <div class="w-28 flex items-center gap-2 shrink-0">
+                    <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white">
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="truncate text-xs font-bold text-gray-700">${p.apodo}</span>
+                        <span class="text-[9px] text-gray-400">${item.produced} de ${item.played} part.</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
+                    <div class="h-full ${style.color} rounded-full transition-all duration-700 relative group-hover:opacity-80" 
+                         style="width: ${item.percent}%">
+                    </div>
+                </div>
+
+                <div class="w-10 text-right text-xs font-bold text-gray-700 font-mono">${item.percent}%</div>
+
+                <div class="w-24 text-right">
+                    <span class="text-[9px] font-bold ${style.text} bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 whitespace-nowrap">
+                        ${style.icon} ${style.label}
+                    </span>
+                </div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🎯 Impacto Ofensivo
+                </h3>
+                <span class="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    % Partidos con Gol o Asistencia
+                </span>
+            </div>
+            
+            <div class="flex flex-col">
+                ${listHTML}
+            </div>
+
+            <div class="mt-4 text-[9px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
+                * Se requiere un mínimo de 3 partidos jugados para aparecer.
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// FUNCIÓN GLOBAL: EXPANDIR / CONTRAER LISTAS
+// ==========================================
+window.toggleWidgetSection = function(targetId, btn) {
+    const container = document.getElementById(targetId);
+    
+    // Si no encuentra el contenedor, paramos para evitar errores
+    if (!container) {
+        console.error(`No se encontró el contenedor con ID: ${targetId}`);
+        return;
+    }
+
+    // Detectar estado actual (si está oculto o no)
+    const isHidden = container.classList.contains('hidden');
+    
+    // Leer textos configurados en el botón (o usar valores por defecto)
+    // El atributo data-more suele ser "Ver {n} más ▼"
+    const textMore = btn.dataset.more || 'Ver más ▼';
+    const textLess = btn.dataset.less || 'Ver menos ▲';
+
+    if (isHidden) {
+        // ACCIÓN: MOSTRAR
+        container.classList.remove('hidden');
+        btn.innerHTML = textLess;
+    } else {
+        // ACCIÓN: OCULTAR
+        container.classList.add('hidden');
+        
+        // Contamos cuántos elementos hijos hay para reemplazar el "{n}"
+        const count = container.children.length;
+        btn.innerHTML = textMore.replace('{n}', count);
+    }
+};
 </script>
 </body>
 </html>    
