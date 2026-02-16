@@ -16980,13 +16980,13 @@ function getDisciplineByOutcomeHTML(player, matches) {
     `;
 }
 // ==========================================
-// WIDGET: GOLES POR POSICIÓN TÁCTICA
+// WIDGET: GOLES POR POSICIÓN TÁCTICA (CON TOGGLE)
 // ==========================================
 function getGoalsByPositionWidget() {
     const matches = getData('matches') || [];
     const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
 
-    // 1. DEFINIR ROLES (Misma lógica que en Zona de Confort)
+    // 1. DEFINIR ROLES
     const FORMATION_SLOTS = {
         '4-3-3': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MC', 'MC', 'EI', 'DC', 'ED'],
         '4-4-2': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'EI', 'MC', 'MC', 'ED', 'DC', 'DC'],
@@ -16994,7 +16994,6 @@ function getGoalsByPositionWidget() {
         '3-5-2': ['POR', 'DFC', 'DFC', 'DFC', 'LI', 'MCD', 'LD', 'MC', 'MC', 'DC', 'DC']
     };
 
-    // Colores por línea
     const ROLE_STYLES = {
         'DC': { color: 'bg-emerald-500', label: 'Delantero Centro' },
         'EI': { color: 'bg-emerald-400', label: 'Extremo Izquierdo' },
@@ -17009,24 +17008,19 @@ function getGoalsByPositionWidget() {
     };
 
     // 2. PROCESAR GOLES
-    // Estructura: stats['DC'] = { total: 10, players: { 'id1': 5, 'id2': 5 } }
     let positionStats = {};
 
     matches.filter(m => m.outcome).forEach(m => {
         if (!m.playerStats) return;
-
         const formation = m.formation || '4-3-3';
         const schema = FORMATION_SLOTS[formation];
 
         m.playerStats.forEach(ps => {
             const goals = parseInt(ps.goals || 0);
-            
-            // Solo procesamos si hubo gol y sabemos dónde jugó (pitchSlot)
             if (goals > 0 && ps.pitchSlot !== undefined && ps.pitchSlot !== null && schema) {
-                const role = schema[ps.pitchSlot]; // Ej: "DC"
+                const role = schema[ps.pitchSlot];
                 
                 if (!positionStats[role]) positionStats[role] = { total: 0, players: {} };
-                
                 positionStats[role].total += goals;
                 
                 if (!positionStats[role].players[ps.playerId]) positionStats[role].players[ps.playerId] = 0;
@@ -17035,29 +17029,28 @@ function getGoalsByPositionWidget() {
         });
     });
 
-    // Si no hay goles, salir
     if (Object.keys(positionStats).length === 0) return '';
 
-    // 3. ORDENAR POSICIONES POR TOTAL DE GOLES (De más a menos)
+    // 3. ORDENAR Y PREPARAR HTML
     const sortedRoles = Object.keys(positionStats).sort((a, b) => positionStats[b].total - positionStats[a].total);
+    
+    // --- LÓGICA DE TOGGLE ---
+    const LIMIT = 3; // Mostrar solo las 3 posiciones más goleadoras al principio
+    let visibleHTML = '';
+    let hiddenHTML = '';
 
-    // 4. GENERAR HTML
-    let contentHTML = '';
-
-    sortedRoles.forEach(role => {
+    sortedRoles.forEach((role, index) => {
         const data = positionStats[role];
         const style = ROLE_STYLES[role] || { color: 'bg-gray-400', label: role };
         
-        // Ordenar jugadores dentro de esa posición
+        // Ordenar jugadores
         const sortedPlayers = Object.entries(data.players).sort((a, b) => b[1] - a[1]);
-        
-        // Max goles en esta posición (para escalar las barras al 100%)
         const maxGoalsInRole = sortedPlayers[0][1];
 
-        // HTML DE LOS JUGADORES
+        // HTML JUGADORES
         let playersHTML = sortedPlayers.map(([pid, count]) => {
             const p = allPlayers.find(pl => pl.id === pid) || { apodo: '?', foto: '' };
-            const percent = (count / maxGoalsInRole) * 100; // Escala relativa al líder de la posición
+            const percent = (count / maxGoalsInRole) * 100;
             
             return `
                 <div class="flex items-center gap-3 mb-1.5 text-xs group">
@@ -17065,18 +17058,16 @@ function getGoalsByPositionWidget() {
                         <img src="${p.foto}" class="w-5 h-5 rounded-full object-cover border border-gray-100 bg-white">
                         <span class="truncate font-medium text-gray-600">${p.apodo}</span>
                     </div>
-                    
                     <div class="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden">
                         <div class="h-full ${style.color} rounded-full" style="width: ${percent}%"></div>
                     </div>
-                    
                     <div class="w-12 text-right font-bold text-gray-700">${count} ⚽</div>
                 </div>
             `;
         }).join('');
 
-        // BLOQUE DE LA POSICIÓN
-        contentHTML += `
+        // BLOQUE HTML DE LA POSICIÓN COMPLETA
+        const blockHTML = `
             <div class="mb-5 last:mb-0">
                 <div class="flex justify-between items-end mb-2 border-b border-gray-100 pb-1">
                     <div class="flex items-center gap-2">
@@ -17089,23 +17080,51 @@ function getGoalsByPositionWidget() {
                     </div>
                     <span class="text-sm font-bold text-gray-800">${data.total} <span class="text-xs font-normal text-gray-400">Total</span></span>
                 </div>
-                
                 <div class="pl-2">
                     ${playersHTML}
                 </div>
             </div>
         `;
+
+        // Distribuir en visible u oculto
+        if (index < LIMIT) {
+            visibleHTML += blockHTML;
+        } else {
+            hiddenHTML += blockHTML;
+        }
     });
 
+    // ID único para este widget
+    const uniqueId = 'goals-by-pos-hidden';
+
+    // 4. RETURN FINAL
+    // Nota: Uso h-auto para que crezca correctamente
     return `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-auto transition-all duration-300">
             <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
                 🥅 Goles por Demarcación
             </h3>
+            
             <div class="flex flex-col">
-                ${contentHTML}
+                ${visibleHTML}
             </div>
-             <div class="mt-2 text-[10px] text-gray-400 text-center italic">
+
+            ${hiddenHTML ? `
+                <div id="${uniqueId}" class="flex flex-col hidden border-t border-dashed border-gray-100 mt-4 pt-4 transition-all">
+                    ${hiddenHTML}
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button onclick="toggleWidgetSection('${uniqueId}', this)" 
+                            data-more="Ver {n} demarcaciones más ▼" 
+                            data-less="Ver menos ▲"
+                            class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200">
+                        Ver ${sortedRoles.length - LIMIT} demarcaciones más ▼
+                    </button>
+                </div>
+            ` : ''}
+
+            <div class="mt-4 text-[10px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
                 * Goles asignados según la posición ocupada en la pizarra del partido.
             </div>
         </div>
@@ -17219,23 +17238,22 @@ function getFormSparklineHTML(player, matches) {
         </div>
     `;
 }
+
 // ==========================================
-// WIDGET: JERARQUÍA DE PLANTILLA (% TITULARIDAD)
+// WIDGET: JERARQUÍA DE PLANTILLA (% TITULARIDAD) - CON TOGGLE
 // ==========================================
 function getSquadHierarchyWidget() {
     const matches = getData('matches') || [];
     const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
 
-    // 1. CALCULAR TOTAL DE PARTIDOS JUGADOS POR EL EQUIPO
-    // Solo cuentan los partidos terminados (con outcome)
+    // 1. CALCULAR TOTAL
     const playedMatches = matches.filter(m => m.outcome);
     const totalTeamMatches = playedMatches.length;
 
     if (totalTeamMatches === 0) return '';
 
-    // 2. CONTAR TITULARIDADES POR JUGADOR
+    // 2. CONTAR TITULARIDADES
     const playerStarts = {};
-
     playedMatches.forEach(m => {
         if (!m.playerStats) return;
         m.playerStats.forEach(ps => {
@@ -17245,46 +17263,39 @@ function getSquadHierarchyWidget() {
         });
     });
 
-    // 3. CREAR ARRAY DE DATOS Y ORDENAR
-    // Filtramos solo jugadores con al menos 1 titularidad para no llenar la lista de ceros
+    // 3. CREAR ARRAY Y ORDENAR
     const hierarchyData = Object.keys(playerStarts)
         .map(pid => {
             const starts = playerStarts[pid];
             const percentage = Math.round((starts / totalTeamMatches) * 100);
-            return {
-                playerId: pid,
-                starts: starts,
-                percent: percentage
-            };
+            return { playerId: pid, starts: starts, percent: percentage };
         })
-        .sort((a, b) => b.percent - a.percent); // Ordenar de mayor a menor %
+        .sort((a, b) => b.percent - a.percent);
 
-    // 4. GENERAR HTML
-    let listHTML = '';
+    // 4. GENERAR HTML CON TOGGLE
+    const LIMIT = 5; // Mostrar los 5 más titulares
+    let visibleHTML = '';
+    let hiddenHTML = '';
 
-    hierarchyData.forEach(item => {
+    // ID único para este toggle
+    const uniqueId = 'squad-hierarchy-hidden';
+
+    hierarchyData.forEach((item, index) => {
         const p = allPlayers.find(pl => pl.id === item.playerId) || { apodo: '?', foto: '' };
         
-        // Determinar Estatus y Color
         let status = { label: 'Residual', icon: '👻', color: 'bg-gray-400', text: 'text-gray-400' };
-        
-        if (item.percent >= 90) {
-            status = { label: 'Intocable', icon: '🔒', color: 'bg-purple-600', text: 'text-purple-700' };
-        } else if (item.percent >= 70) {
-            status = { label: 'Clave', icon: '🔑', color: 'bg-emerald-500', text: 'text-emerald-600' };
-        } else if (item.percent >= 40) {
-            status = { label: 'Rotación', icon: '🔄', color: 'bg-blue-500', text: 'text-blue-600' };
-        } else if (item.percent >= 15) {
-            status = { label: 'Revulsivo', icon: '🪑', color: 'bg-amber-500', text: 'text-amber-600' };
-        }
+        if (item.percent >= 90) status = { label: 'Intocable', icon: '🔒', color: 'bg-purple-600', text: 'text-purple-700' };
+        else if (item.percent >= 70) status = { label: 'Clave', icon: '🔑', color: 'bg-emerald-500', text: 'text-emerald-600' };
+        else if (item.percent >= 40) status = { label: 'Rotación', icon: '🔄', color: 'bg-blue-500', text: 'text-blue-600' };
+        else if (item.percent >= 15) status = { label: 'Revulsivo', icon: '🪑', color: 'bg-amber-500', text: 'text-amber-600' };
 
-        listHTML += `
+        const rowHTML = `
             <div class="flex items-center gap-3 mb-3 last:mb-0 group">
                 <div class="w-28 flex items-center gap-2 shrink-0">
                     <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white shadow-sm">
                     <div class="flex flex-col overflow-hidden">
                         <span class="truncate text-xs font-bold text-gray-700">${p.apodo}</span>
-                        <span class="text-[9px] text-gray-400">${item.starts}/${totalTeamMatches} incios</span>
+                        <span class="text-[9px] text-gray-400">${item.starts}/${totalTeamMatches} inicios</span>
                     </div>
                 </div>
 
@@ -17303,10 +17314,13 @@ function getSquadHierarchyWidget() {
                 </div>
             </div>
         `;
+
+        if (index < LIMIT) visibleHTML += rowHTML;
+        else hiddenHTML += rowHTML;
     });
 
     return `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 h-auto transition-all duration-300">
             <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
                 <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                     🏛️ Jerarquía de la Plantilla
@@ -17317,8 +17331,23 @@ function getSquadHierarchyWidget() {
             </div>
             
             <div class="flex flex-col">
-                ${listHTML}
+                ${visibleHTML}
             </div>
+
+            ${hiddenHTML ? `
+                <div id="${uniqueId}" class="flex flex-col hidden mt-3 pt-3 border-t border-dashed border-gray-100 transition-all">
+                    ${hiddenHTML}
+                </div>
+
+                <div class="mt-4 text-center">
+                    <button onclick="toggleWidgetSection('${uniqueId}', this)" 
+                            data-more="Ver {n} jugadores más ▼" 
+                            data-less="Ver menos ▲"
+                            class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200">
+                        Ver ${hierarchyData.length - LIMIT} jugadores más ▼
+                    </button>
+                </div>
+            ` : ''}
 
             <div class="mt-4 flex flex-wrap justify-center gap-3 text-[9px] text-gray-400 border-t border-gray-50 pt-2">
                 <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-600"></span> >90% Intocable</span>
@@ -17330,30 +17359,23 @@ function getSquadHierarchyWidget() {
     `;
 }
 // ==========================================
-// WIDGET: PARTICIPACIÓN OFENSIVA (GOL O ASISTENCIA)
+// WIDGET: PARTICIPACIÓN OFENSIVA (CON TOGGLE)
 // ==========================================
 function getOffensiveParticipationWidget() {
     const matches = getData('matches') || [];
     const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
 
     // 1. PROCESAR DATOS
-    // Mapa: { 'p1': { played: 10, produced: 5 }, ... }
     const stats = {};
 
     matches.filter(m => m.outcome).forEach(m => {
         if (!m.playerStats) return;
-
         m.playerStats.forEach(ps => {
-            // Solo si jugó minutos
             if (ps.minutes > 0) {
                 if (!stats[ps.playerId]) stats[ps.playerId] = { played: 0, produced: 0 };
-                
                 stats[ps.playerId].played++;
-
                 const goals = parseInt(ps.goals || 0);
                 const assists = parseInt(ps.assists || 0);
-
-                // ¿Participó en el marcador?
                 if (goals > 0 || assists > 0) {
                     stats[ps.playerId].produced++;
                 }
@@ -17362,8 +17384,6 @@ function getOffensiveParticipationWidget() {
     });
 
     // 2. FILTRAR Y ORDENAR
-    // Convertimos a array, calculamos % y ordenamos.
-    // Filtramos jugadores con menos de 3 partidos para no desvirtuar (ej: jugó 1, marcó 1 = 100%)
     const ranking = Object.keys(stats)
         .map(pid => {
             const s = stats[pid];
@@ -17375,31 +17395,29 @@ function getOffensiveParticipationWidget() {
                 percent: percent
             };
         })
-        .filter(item => item.played >= 3) // Mínimo 3 partidos para salir en el ranking
+        .filter(item => item.played >= 3)
         .sort((a, b) => b.percent - a.percent);
 
     if (ranking.length === 0) return '';
 
-    // 3. GENERAR HTML
-    let listHTML = '';
+    // 3. GENERAR HTML CON TOGGLE
+    const LIMIT = 5; // Mostrar 5 jugadores inicialmente
+    let visibleHTML = '';
+    let hiddenHTML = '';
+    
+    // ID Único para el toggle
+    const uniqueId = 'offensive-impact-hidden';
 
-    ranking.forEach(item => {
+    ranking.forEach((item, index) => {
         const p = allPlayers.find(pl => pl.id === item.id) || { apodo: '?', foto: '' };
         
-        // Determinar Estilo según porcentaje
         let style = { label: 'Irrelevante', icon: '🚨', color: 'bg-gray-400', text: 'text-gray-400' };
-        
-        if (item.percent >= 75) {
-            style = { label: 'Omnipresente', icon: '🔥', color: 'bg-rose-500', text: 'text-rose-600' };
-        } else if (item.percent >= 50) {
-            style = { label: 'Decisivo', icon: '⚡', color: 'bg-emerald-500', text: 'text-emerald-600' };
-        } else if (item.percent >= 30) {
-            style = { label: 'Cumplidor', icon: '✅', color: 'bg-blue-500', text: 'text-blue-600' };
-        } else if (item.percent >= 10) {
-            style = { label: 'Frío', icon: '❄️', color: 'bg-sky-300', text: 'text-sky-400' };
-        }
+        if (item.percent >= 75) style = { label: 'Omnipresente', icon: '🔥', color: 'bg-rose-500', text: 'text-rose-600' };
+        else if (item.percent >= 50) style = { label: 'Decisivo', icon: '⚡', color: 'bg-emerald-500', text: 'text-emerald-600' };
+        else if (item.percent >= 30) style = { label: 'Cumplidor', icon: '✅', color: 'bg-blue-500', text: 'text-blue-600' };
+        else if (item.percent >= 10) style = { label: 'Frío', icon: '❄️', color: 'bg-sky-300', text: 'text-sky-400' };
 
-        listHTML += `
+        const rowHTML = `
             <div class="flex items-center gap-3 mb-3 last:mb-0 group">
                 <div class="w-28 flex items-center gap-2 shrink-0">
                     <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white">
@@ -17424,10 +17442,13 @@ function getOffensiveParticipationWidget() {
                 </div>
             </div>
         `;
+
+        if (index < LIMIT) visibleHTML += rowHTML;
+        else hiddenHTML += rowHTML;
     });
 
     return `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 h-auto transition-all duration-300">
             <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
                 <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                     🎯 Impacto Ofensivo
@@ -17438,8 +17459,23 @@ function getOffensiveParticipationWidget() {
             </div>
             
             <div class="flex flex-col">
-                ${listHTML}
+                ${visibleHTML}
             </div>
+
+            ${hiddenHTML ? `
+                <div id="${uniqueId}" class="flex flex-col hidden mt-3 pt-3 border-t border-dashed border-gray-100 transition-all">
+                    ${hiddenHTML}
+                </div>
+
+                <div class="mt-4 text-center">
+                    <button onclick="toggleWidgetSection('${uniqueId}', this)" 
+                            data-more="Ver {n} jugadores más ▼" 
+                            data-less="Ver menos ▲"
+                            class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200">
+                        Ver ${ranking.length - LIMIT} jugadores más ▼
+                    </button>
+                </div>
+            ` : ''}
 
             <div class="mt-4 text-[9px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
                 * Se requiere un mínimo de 3 partidos jugados para aparecer.
