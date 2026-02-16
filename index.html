@@ -3405,13 +3405,13 @@ function renderStats() {
             subsContainer.innerHTML = getSubstitutionHeatmapHTML(matches);
             
             // 2. Goles por Posición
-            const goalsByPosHTML = getGoalsByPositionWidget();    
-            subsContainer.innerHTML += `<div class="mt-6">${goalsByPosHTML}</div>`;
+            subsContainer.innerHTML += renderPositionStatsWidget();
 
             // 3. NUEVO: Jerarquía de Plantilla (Titularidad)
             const hierarchyHTML = getSquadHierarchyWidget();
             subsContainer.innerHTML += `<div class="mt-6">${hierarchyHTML}</div>`;
             subsContainer.innerHTML += `<div class="mt-6">${getOffensiveParticipationWidget()}</div>`;
+            subsContainer.innerHTML += `<div class="mt-6">${getSubsDistributionWidget()}</div>`;
         }
     }
 
@@ -4246,23 +4246,24 @@ function renderPerformanceMatrix(matches) {
         // ADVANCED STATISTICS
         // ==========================================
 
-        function renderAdvancedStats() {
+function renderAdvancedStats() {
             renderLineWarsChart();
             renderMinutesChart();
             renderTierList();
             renderGoalConnections();
+            
             setTimeout(() => {
-        if(typeof updateCompetitionChart === 'function') updateCompetitionChart();
-        if(typeof updateVictoryStyleChart === 'function') updateVictoryStyleChart();
-        if(typeof renderGoalsAssistsScatter === 'function') renderGoalsAssistsScatter();
-        if(typeof renderStreakChart === 'function') renderStreakChart();
-        if(typeof renderDependencyChart === 'function') renderDependencyChart();
-        if(typeof renderFactorXChart === 'function') renderFactorXChart();
-        if(typeof renderFormWaves === 'function') renderFormWaves();
-        if(typeof renderNetworkWidget === 'function')renderNetworkWidget();
-        if(typeof renderUnifiedConnections === 'function')renderUnifiedConnections();
+                if(typeof updateCompetitionChart === 'function') updateCompetitionChart();
+                if(typeof updateVictoryStyleChart === 'function') updateVictoryStyleChart();
+                if(typeof renderGoalsAssistsScatter === 'function') renderGoalsAssistsScatter();
+                if(typeof renderStreakChart === 'function') renderStreakChart();
+                if(typeof renderDependencyChart === 'function') renderDependencyChart();
+                if(typeof renderFactorXChart === 'function') renderFactorXChart();
+                if(typeof renderFormWaves === 'function') renderFormWaves();
+                if(typeof renderNetworkWidget === 'function') renderNetworkWidget();
+                if(typeof renderUnifiedConnections === 'function') renderUnifiedConnections();
+            }, 100);
 
-    }, 100);
             const matches = getData('matches');
             const players = getPlayers();
 
@@ -4305,6 +4306,37 @@ function renderPerformanceMatrix(matches) {
                 `;
             });
             document.getElementById('heatmap-container').innerHTML = heatmapHtml;
+
+            // ============================================================
+            // 🆕 BLOQUE CORREGIDO: INYECCIÓN AUTOMÁTICA DE WIDGETS
+            // ============================================================
+            const heatmapContainer = document.getElementById('heatmap-container');
+            
+            if (heatmapContainer) {
+                // 1. Buscamos si ya creamos nuestro contenedor "extra" para no duplicarlo
+                let extraContainer = document.getElementById('advanced-extra-widgets');
+                
+                // Si no existe, lo creamos y lo insertamos justo después del Heatmap
+                if (!extraContainer) {
+                    extraContainer = document.createElement('div');
+                    extraContainer.id = 'advanced-extra-widgets';
+                    extraContainer.className = 'mt-6 flex flex-col gap-6'; // Separación vertical
+                    heatmapContainer.insertAdjacentElement('afterend', extraContainer);
+                }
+
+                // 2. Limpiamos el contenedor (para que no se repitan si recargas)
+                extraContainer.innerHTML = '';
+
+                // 3. Inyectamos los widgets
+                if (typeof getSubsDistributionWidget === 'function') {
+                     extraContainer.innerHTML += getSubsDistributionWidget();
+                }
+                
+                if (typeof getGoalsByHalfWidget === 'function') {
+                     extraContainer.innerHTML += getGoalsByHalfWidget();
+                }
+            }
+            // ============================================================
 
             // 3. Monthly Report
             const monthlyData = {};
@@ -5229,6 +5261,7 @@ seasonHTML += `
     seasonHTML += getStarterVsSubHTML(player, matches); // <--- NUEVO WIDGET
     seasonHTML += getDisciplineByOutcomeHTML(player, matches); // <--- NUEVA
     seasonHTML += getFormSparklineHTML(player, matches); // <--- NUEVO SPARKLINE
+    seasonHTML += getCompletedMatchesWidget(player, matches); // <--- AÑADIR AQUÍ
 
     
     // 3. Pestaña Historial
@@ -16980,13 +17013,83 @@ function getDisciplineByOutcomeHTML(player, matches) {
     `;
 }
 // ==========================================
-// WIDGET: GOLES POR POSICIÓN TÁCTICA (CON TOGGLE)
+// WIDGET UNIFICADO: ESTADÍSTICAS POR POSICIÓN (GOLES Y ASISTENCIAS)
 // ==========================================
-function getGoalsByPositionWidget() {
+
+// Variable global para controlar la pestaña activa (por defecto 'goals')
+let activePositionTab = 'goals'; 
+
+function renderPositionStatsWidget() {
+    const containerId = 'position-stats-widget-container';
+    
+    // Si ya existe el contenedor, solo actualizamos el contenido interior
+    let container = document.getElementById(containerId);
+    
+    if (!container) {
+        // Si no existe, devolvemos la estructura inicial (se llamará la primera vez)
+        return `
+            <div id="${containerId}" class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-auto transition-all duration-300 mt-6">
+                ${getPositionStatsContent()}
+            </div>
+        `;
+    } else {
+        // Si ya existe (al cambiar de pestaña), actualizamos el HTML interno
+        container.innerHTML = getPositionStatsContent();
+        return ''; // Ya hemos manipulado el DOM directamente
+    }
+}
+
+// Función auxiliar para generar el HTML interno según la pestaña activa
+function getPositionStatsContent() {
+    const isGoals = activePositionTab === 'goals';
+    
+    // Estilos de botones
+    const btnActive = "bg-slate-800 text-white shadow-md font-bold";
+    const btnInactive = "text-gray-500 hover:text-gray-700 font-medium hover:bg-gray-100";
+
+    // Generar el contenido de la lista (Goles o Asistencias)
+    const listHTML = getPositionListHTML(isGoals ? 'goals' : 'assists');
+
+    return `
+        <div class="flex justify-between items-center mb-6 border-b border-gray-50 pb-4">
+            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                ${isGoals ? '🥅 Goles' : '🅰️ Asistencias'} por Posición
+            </h3>
+            
+            <div class="flex bg-gray-100 rounded-lg p-1 gap-1">
+                <button onclick="togglePositionStatsTab('goals')" 
+                        class="px-3 py-1.5 rounded-md text-xs transition-all ${isGoals ? btnActive : btnInactive}">
+                    ⚽ Goles
+                </button>
+                <button onclick="togglePositionStatsTab('assists')" 
+                        class="px-3 py-1.5 rounded-md text-xs transition-all ${!isGoals ? btnActive : btnInactive}">
+                    🅰️ Asist.
+                </button>
+            </div>
+        </div>
+        
+        <div class="flex flex-col min-h-[200px]">
+            ${listHTML}
+        </div>
+
+        <div class="mt-4 text-[10px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
+            * Datos asignados según la posición ocupada en la pizarra del partido.
+        </div>
+    `;
+}
+
+// Función para cambiar de pestaña
+window.togglePositionStatsTab = function(tab) {
+    activePositionTab = tab;
+    renderPositionStatsWidget(); // Re-renderiza el contenido
+};
+
+// --- LÓGICA DE PROCESAMIENTO DE DATOS ---
+function getPositionListHTML(type) {
     const matches = getData('matches') || [];
     const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
 
-    // 1. DEFINIR ROLES
+    // Definición de Roles (Igual que antes)
     const FORMATION_SLOTS = {
         '4-3-3': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'MCD', 'MC', 'MC', 'EI', 'DC', 'ED'],
         '4-4-2': ['POR', 'LI', 'DFC', 'DFC', 'LD', 'EI', 'MC', 'MC', 'ED', 'DC', 'DC'],
@@ -17007,8 +17110,9 @@ function getGoalsByPositionWidget() {
         'POR':{ color: 'bg-gray-500',    label: 'Portero' }
     };
 
-    // 2. PROCESAR GOLES
+    // Procesar Datos (Generic para Goles o Asistencias)
     let positionStats = {};
+    let hasData = false;
 
     matches.filter(m => m.outcome).forEach(m => {
         if (!m.playerStats) return;
@@ -17016,41 +17120,46 @@ function getGoalsByPositionWidget() {
         const schema = FORMATION_SLOTS[formation];
 
         m.playerStats.forEach(ps => {
-            const goals = parseInt(ps.goals || 0);
-            if (goals > 0 && ps.pitchSlot !== undefined && ps.pitchSlot !== null && schema) {
+            // Aquí la magia: leemos 'goals' o 'assists' según el parámetro 'type'
+            const value = parseInt(ps[type] || 0);
+            
+            if (value > 0 && ps.pitchSlot !== undefined && ps.pitchSlot !== null && schema) {
                 const role = schema[ps.pitchSlot];
-                
-                if (!positionStats[role]) positionStats[role] = { total: 0, players: {} };
-                positionStats[role].total += goals;
-                
-                if (!positionStats[role].players[ps.playerId]) positionStats[role].players[ps.playerId] = 0;
-                positionStats[role].players[ps.playerId] += goals;
+                if (role) {
+                    if (!positionStats[role]) positionStats[role] = { total: 0, players: {} };
+                    positionStats[role].total += value;
+                    if (!positionStats[role].players[ps.playerId]) positionStats[role].players[ps.playerId] = 0;
+                    positionStats[role].players[ps.playerId] += value;
+                    hasData = true;
+                }
             }
         });
     });
 
-    if (Object.keys(positionStats).length === 0) return '';
+    if (!hasData) return `<div class="text-center text-gray-400 py-8 italic">No hay datos registrados.</div>`;
 
-    // 3. ORDENAR Y PREPARAR HTML
+    // Ordenar
     const sortedRoles = Object.keys(positionStats).sort((a, b) => positionStats[b].total - positionStats[a].total);
-    
-    // --- LÓGICA DE TOGGLE ---
-    const LIMIT = 3; // Mostrar solo las 3 posiciones más goleadoras al principio
+
+    // Generar HTML con Toggle
+    const LIMIT = 3;
     let visibleHTML = '';
     let hiddenHTML = '';
+    const uniqueId = `pos-stats-${type}-hidden`; // ID único dinámico
 
     sortedRoles.forEach((role, index) => {
         const data = positionStats[role];
         const style = ROLE_STYLES[role] || { color: 'bg-gray-400', label: role };
         
-        // Ordenar jugadores
         const sortedPlayers = Object.entries(data.players).sort((a, b) => b[1] - a[1]);
-        const maxGoalsInRole = sortedPlayers[0][1];
+        const maxValInRole = sortedPlayers[0][1];
 
-        // HTML JUGADORES
+        // HTML Jugadores
         let playersHTML = sortedPlayers.map(([pid, count]) => {
             const p = allPlayers.find(pl => pl.id === pid) || { apodo: '?', foto: '' };
-            const percent = (count / maxGoalsInRole) * 100;
+            const percent = (count / maxValInRole) * 100;
+            // Emoji dinámico
+            const emoji = type === 'goals' ? '⚽' : '🅰️';
             
             return `
                 <div class="flex items-center gap-3 mb-1.5 text-xs group">
@@ -17061,12 +17170,11 @@ function getGoalsByPositionWidget() {
                     <div class="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden">
                         <div class="h-full ${style.color} rounded-full" style="width: ${percent}%"></div>
                     </div>
-                    <div class="w-12 text-right font-bold text-gray-700">${count} ⚽</div>
+                    <div class="w-12 text-right font-bold text-gray-700">${count} ${emoji}</div>
                 </div>
             `;
         }).join('');
 
-        // BLOQUE HTML DE LA POSICIÓN COMPLETA
         const blockHTML = `
             <div class="mb-5 last:mb-0">
                 <div class="flex justify-between items-end mb-2 border-b border-gray-100 pb-1">
@@ -17086,49 +17194,28 @@ function getGoalsByPositionWidget() {
             </div>
         `;
 
-        // Distribuir en visible u oculto
-        if (index < LIMIT) {
-            visibleHTML += blockHTML;
-        } else {
-            hiddenHTML += blockHTML;
-        }
+        if (index < LIMIT) visibleHTML += blockHTML;
+        else hiddenHTML += blockHTML;
     });
 
-    // ID único para este widget
-    const uniqueId = 'goals-by-pos-hidden';
-
-    // 4. RETURN FINAL
-    // Nota: Uso h-auto para que crezca correctamente
-    return `
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-auto transition-all duration-300">
-            <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
-                🥅 Goles por Demarcación
-            </h3>
-            
-            <div class="flex flex-col">
-                ${visibleHTML}
+    // Montaje final con botón
+    let finalHTML = visibleHTML;
+    if (hiddenHTML) {
+        finalHTML += `
+            <div id="${uniqueId}" class="hidden mt-4 pt-4 border-t border-dashed border-gray-100 transition-all">
+                ${hiddenHTML}
             </div>
-
-            ${hiddenHTML ? `
-                <div id="${uniqueId}" class="flex flex-col hidden border-t border-dashed border-gray-100 mt-4 pt-4 transition-all">
-                    ${hiddenHTML}
-                </div>
-                
-                <div class="mt-4 text-center">
-                    <button onclick="toggleWidgetSection('${uniqueId}', this)" 
-                            data-more="Ver {n} demarcaciones más ▼" 
-                            data-less="Ver menos ▲"
-                            class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200">
-                        Ver ${sortedRoles.length - LIMIT} demarcaciones más ▼
-                    </button>
-                </div>
-            ` : ''}
-
-            <div class="mt-4 text-[10px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
-                * Goles asignados según la posición ocupada en la pizarra del partido.
+            <div class="mt-4 text-center">
+                <button onclick="toggleWidgetSection('${uniqueId}', this)" 
+                        data-more="Ver {n} posiciones más ▼" 
+                        data-less="Ver menos ▲"
+                        class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200">
+                    Ver ${sortedRoles.length - LIMIT} posiciones más ▼
+                </button>
             </div>
-        </div>
-    `;
+        `;
+    }
+    return finalHTML;
 }
 // ==========================================
 // WIDGET: CURVA DE FORMA (SPARKLINE)
@@ -17484,6 +17571,332 @@ function getOffensiveParticipationWidget() {
     `;
 }
 // ==========================================
+// WIDGET: DISTRIBUCIÓN DE CAMBIOS (HISTOGRAMA)
+// ==========================================
+function getSubsDistributionWidget() {
+    const matches = getData('matches') || [];
+
+    // 1. INICIALIZAR CONTADORES (0 a 5 cambios)
+    const distribution = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let totalMatches = 0;
+    let totalSubsUsed = 0;
+
+    // 2. PROCESAR PARTIDOS
+    matches.filter(m => m.outcome).forEach(m => {
+        if (!m.playerStats) return;
+
+        // Contar suplentes que jugaron (minutos > 0 y no titulares)
+        let subsCount = m.playerStats.filter(ps => !ps.isStarter && ps.minutes > 0).length;
+        
+        // Agrupar 5 o más en el último cubo (por si hay prórrogas con 6 cambios)
+        if (subsCount > 5) subsCount = 5;
+        
+        distribution[subsCount]++;
+        totalMatches++;
+        totalSubsUsed += subsCount;
+    });
+
+    if (totalMatches === 0) return '';
+
+    // 3. CÁLCULOS ESTADÍSTICOS
+    const avgSubs = (totalSubsUsed / totalMatches).toFixed(1);
+    
+    // Encontrar el valor máximo para escalar las barras (la barra más larga será el 100%)
+    let maxFrequency = 0;
+    let mode = 0; // La moda (número de cambios más habitual)
+    
+    Object.entries(distribution).forEach(([subs, count]) => {
+        if (count > maxFrequency) {
+            maxFrequency = count;
+            mode = parseInt(subs);
+        }
+    });
+
+    // Etiquetas de contexto según la cantidad
+    const getLabel = (n) => {
+        if (n === 0) return '⛔ Once de Hierro';
+        if (n === 1) return '🤏 Mínimo retoque';
+        if (n === 2) return '😐 Conservador';
+        if (n === 3) return '⚖️ Estándar';
+        if (n === 4) return '🔄 Agitación';
+        if (n === 5) return '🌪️ Revolución';
+        return '';
+    };
+
+    // 4. GENERAR HTML
+    let barsHTML = '';
+
+    // Recorremos de 0 a 5
+    for (let i = 0; i <= 5; i++) {
+        const count = distribution[i];
+        const percentMatches = Math.round((count / totalMatches) * 100);
+        
+        // Longitud visual de la barra (relativa al máximo frecuencia, no al 100% total)
+        // Esto hace que la barra más frecuente siempre llene el ancho
+        const barWidth = maxFrequency > 0 ? (count / maxFrequency) * 100 : 0;
+        
+        // Destacar la fila más habitual (Moda)
+        const isMode = i === mode && count > 0;
+        const barColor = isMode ? 'bg-blue-500' : 'bg-gray-300';
+        const textColor = isMode ? 'text-blue-700 font-bold' : 'text-gray-500';
+        const rowBg = isMode ? 'bg-blue-50/50' : '';
+
+        // Si es 0, dejamos una línea finita para que se vea que existe la opción
+        const visualWidth = count === 0 ? '2px' : `${barWidth}%`;
+
+        barsHTML += `
+            <div class="flex items-center gap-3 text-xs py-1.5 ${rowBg} rounded px-1">
+                <div class="w-4 font-mono font-bold text-gray-400 text-center">${i}</div>
+                
+                <div class="flex-1 h-full">
+                    <div class="flex items-center gap-2 h-full">
+                        <div class="h-2.5 rounded-full ${barColor} transition-all duration-500 min-w-[2px]" 
+                             style="width: ${visualWidth}"></div>
+                        
+                        <span class="text-[10px] ${textColor}">
+                            ${percentMatches}% <span class="text-gray-300 font-normal">(${count})</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="w-24 text-right text-[9px] text-gray-400 uppercase tracking-tight truncate">
+                    ${isMode ? '🔥 ' : ''}${getLabel(i)}
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 h-auto">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🔄 Gestión de Cambios
+                </h3>
+                <div class="text-right">
+                    <span class="block text-2xl font-black text-blue-600 leading-none">${avgSubs}</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold">Media por partido</span>
+                </div>
+            </div>
+            
+            <div class="flex flex-col gap-1">
+                <div class="flex text-[9px] text-gray-300 uppercase font-bold mb-1 px-1">
+                    <div class="w-4 text-center">#</div>
+                    <div class="flex-1">Frecuencia</div>
+                    <div class="w-24 text-right">Estilo</div>
+                </div>
+                
+                ${barsHTML}
+            </div>
+
+            <div class="mt-4 text-[9px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
+                * Cantidad de partidos según el número de sustituciones realizadas.
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: GOLES POR PARTE (1ª vs 2ª)
+// ==========================================
+function getGoalsByHalfWidget() {
+    const matches = getData('matches') || [];
+
+    // 1. CONTADORES
+    let stats = {
+        firstHalf: 0,
+        secondHalf: 0,
+        total: 0
+    };
+
+    // 2. PROCESAR PARTIDOS
+    matches.filter(m => m.outcome).forEach(m => {
+        if (!m.playerStats) return;
+
+        m.playerStats.forEach(ps => {
+            // Buscamos goles detallados (minutos)
+            if (ps.detailGoals) {
+                // detailGoals suele ser un string: "23, 45+2, 88"
+                const goalsArray = ps.detailGoals.toString().split(',');
+
+                goalsArray.forEach(timeStr => {
+                    const t = timeStr.trim();
+                    if (t) {
+                        // parseInt "45+2" devuelve 45, perfecto para la lógica
+                        const minute = parseInt(t);
+                        
+                        if (!isNaN(minute)) {
+                            if (minute <= 45) stats.firstHalf++;
+                            else stats.secondHalf++;
+                            stats.total++;
+                        }
+                    }
+                });
+            } else if (ps.goals) {
+                // FALLBACK: Si no hay minutos detallados pero hay goles totales,
+                // no podemos saber el minuto, así que los ignoramos para este gráfico
+                // o los asignamos equitativamente (pero mejor ser precisos y no contar).
+            }
+        });
+    });
+
+    if (stats.total === 0) return '';
+
+    // 3. CÁLCULOS
+    const pct1 = Math.round((stats.firstHalf / stats.total) * 100);
+    const pct2 = Math.round((stats.secondHalf / stats.total) * 100); // O 100 - pct1
+
+    // 4. ETIQUETA DINÁMICA
+    let badge = { text: '⚖️ Equilibrados', color: 'bg-blue-100 text-blue-700' };
+    
+    if (pct1 >= 60) {
+        badge = { text: '🚀 Arrancadores', color: 'bg-emerald-100 text-emerald-700' };
+    } else if (pct2 >= 60) {
+        badge = { text: '🐢 Remontadores', color: 'bg-amber-100 text-amber-700' };
+    }
+
+    // 5. GENERAR HTML
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 h-auto">
+            <div class="flex justify-between items-center mb-6 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    ⚽ Goles por Parte
+                </h3>
+                <span class="text-[10px] font-bold ${badge.color} px-2 py-1 rounded-full border border-white shadow-sm uppercase tracking-wide">
+                    ${badge.text}
+                </span>
+            </div>
+
+            <div class="flex items-center w-full h-8 rounded-full overflow-hidden mb-2 shadow-inner bg-gray-100">
+                <div class="h-full bg-emerald-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-700 relative group" 
+                     style="width: ${pct1}%">
+                    ${pct1 > 10 ? pct1 + '%' : ''}
+                    <div class="absolute bottom-full mb-1 bg-gray-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        1ª Parte (${stats.firstHalf} goles)
+                    </div>
+                </div>
+                
+                <div class="h-full bg-amber-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-700 relative group" 
+                     style="width: ${pct2}%">
+                    ${pct2 > 10 ? pct2 + '%' : ''}
+                     <div class="absolute bottom-full mb-1 bg-gray-800 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                        2ª Parte (${stats.secondHalf} goles)
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-2">
+                <div class="text-left">
+                    <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-0.5">1ª Parte</div>
+                    <div class="text-2xl font-black text-gray-800 leading-none">${stats.firstHalf}</div>
+                    <div class="text-[9px] text-gray-400">goles</div>
+                </div>
+
+                <div class="text-center px-4 border-x border-gray-50 flex flex-col justify-center">
+                     <span class="text-[10px] text-gray-400 font-bold uppercase">Total</span>
+                     <span class="text-sm font-bold text-gray-600">${stats.total}</span>
+                </div>
+
+                <div class="text-right">
+                    <div class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-0.5">2ª Parte</div>
+                    <div class="text-2xl font-black text-gray-800 leading-none">${stats.secondHalf}</div>
+                    <div class="text-[9px] text-gray-400">goles</div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-[9px] text-gray-400 text-center italic border-t border-gray-50 pt-2">
+                * Minuto 1-45 (1ª Parte) vs 46-90+ (2ª Parte).
+            </div>
+        </div>
+    `;
+}
+// ==========================================
+// WIDGET: PARTIDOS COMPLETOS (RESISTENCIA)
+// ==========================================
+function getCompletedMatchesWidget(player, matches) {
+    let totalPlayed = 0;
+    let completed = 0;
+    let totalMinutes = 0;
+
+    // 1. PROCESAR DATOS
+    matches.filter(m => m.outcome).forEach(m => {
+        const ps = m.playerStats ? m.playerStats.find(s => s.playerId === player.id) : null;
+        
+        if (ps && ps.minutes > 0) {
+            totalPlayed++;
+            totalMinutes += parseInt(ps.minutes);
+            
+            // Consideramos completo si jugó 90 mins o más
+            if (parseInt(ps.minutes) >= 90) {
+                completed++;
+            }
+        }
+    });
+
+    if (totalPlayed === 0) return '';
+
+    // 2. CÁLCULOS
+    const percent = Math.round((completed / totalPlayed) * 100);
+    const avgMinutes = Math.round(totalMinutes / totalPlayed);
+
+    // 3. DETERMINAR ESTILO / ETIQUETA
+    let status = { label: 'Revulsivo', icon: '⚡', color: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50' };
+
+    if (percent >= 80) {
+        status = { label: 'Incansable', icon: '🫁', color: 'bg-purple-600', text: 'text-purple-700', bg: 'bg-purple-50' };
+    } else if (percent >= 50) {
+        status = { label: 'Habitual', icon: '🛡️', color: 'bg-blue-600', text: 'text-blue-700', bg: 'bg-blue-50' };
+    } else if (percent >= 20) {
+        status = { label: 'Gestionado', icon: '🔄', color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' };
+    }
+
+    // 4. GENERAR HTML
+    return `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mt-6">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                    🔋 Resistencia
+                </h3>
+                <span class="text-[10px] font-bold ${status.text} ${status.bg} px-2 py-0.5 rounded-full border border-gray-100 uppercase tracking-wide">
+                    ${status.icon} ${status.label}
+                </span>
+            </div>
+
+            <div class="mb-2">
+                <div class="flex justify-between text-xs mb-1">
+                    <span class="text-gray-500 font-medium">Partidos Completos (90')</span>
+                    <span class="font-bold text-gray-800">${percent}%</span>
+                </div>
+                <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden relative shadow-inner">
+                    <div class="h-full ${status.color} rounded-full transition-all duration-1000 relative group" 
+                         style="width: ${percent}%">
+                        <div class="absolute top-0 left-0 w-full h-full bg-white opacity-20 transform -skew-x-12"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mt-4 text-center">
+                <div class="flex flex-col">
+                    <span class="text-xl font-black text-gray-800 leading-none">${completed}</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold">Completos</span>
+                </div>
+                <div class="w-px h-8 bg-gray-100"></div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-black text-gray-800 leading-none">${totalPlayed}</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold">Jugados</span>
+                </div>
+                <div class="w-px h-8 bg-gray-100"></div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-black text-blue-600 leading-none">${avgMinutes}'</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold">Media Min.</span>
+                </div>
+            </div>
+
+            <div class="mt-3 text-[9px] text-gray-400 text-center italic">
+                * Porcentaje de partidos finalizados sin ser sustituido.
+            </div>
+        </div>
+    `;
+}
+// ==========================================
 // FUNCIÓN GLOBAL: EXPANDIR / CONTRAER LISTAS
 // ==========================================
 window.toggleWidgetSection = function(targetId, btn) {
@@ -17516,6 +17929,7 @@ window.toggleWidgetSection = function(targetId, btn) {
         btn.innerHTML = textMore.replace('{n}', count);
     }
 };
+
 </script>
 </body>
 </html>    
