@@ -17971,17 +17971,33 @@ function getRecentLoadWidget() {
         .map(pid => {
             const data = recentStats[pid];
             const percent = Math.round((data.minutes / maxPossibleMinutes) * 100);
-            const avgMins = Math.round(data.minutes / matchesCount); // Media sobre los 5 partidos (juegue o no)
+            const avgMins = Math.round(data.minutes / matchesCount);
+            
+            // Buscamos al jugador aquí para poder filtrar por su posición
+            const playerInfo = allPlayers.find(pl => String(pl.id) === String(pid));
+
             return {
                 id: pid,
                 totalMins: data.minutes,
                 avgMins: avgMins,
-                percent: percent
+                percent: percent,
+                playerData: playerInfo // Guardamos sus datos
             };
         })
-        // Solo jugadores que hayan jugado al menos 1 minuto en este periodo
-        .filter(p => p.totalMins > 0)
-        // Ordenar de más quemados a menos
+        .filter(item => {
+            // REGLA 1: Debe haber jugado más de 0 minutos
+            if (item.totalMins <= 0) return false;
+            
+            // REGLA 2: El jugador debe existir en la BD (evita los "fantasma" con '?')
+            if (!item.playerData) return false;
+            
+            // REGLA 3: Excluir a los Porteros (su rotación no se mide igual)
+            const pos = (item.playerData.posicion || '').toLowerCase();
+            if (pos === 'portero' || pos === 'por' || pos === 'gk') return false;
+
+            return true;
+        })
+        // Ordenar de más cargados a menos
         .sort((a, b) => b.totalMins - a.totalMins);
 
     if (ranking.length === 0) return '';
@@ -17993,7 +18009,7 @@ function getRecentLoadWidget() {
     const uniqueId = 'recent-load-hidden';
 
     ranking.forEach((item, index) => {
-        const p = allPlayers.find(pl => pl.id === item.id) || { apodo: '?', foto: '' };
+        const p = item.playerData; // Ya tenemos sus datos seguros gracias al filtro
         
         // ETIQUETAS Y COLORES
         let style = { label: 'Residual', icon: '❄️', color: 'bg-gray-400', text: 'text-gray-500' };
@@ -18006,7 +18022,7 @@ function getRecentLoadWidget() {
                 <div class="w-28 flex items-center gap-2 shrink-0">
                     <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white shadow-sm" onerror="this.src='https://via.placeholder.com/40x40'">
                     <div class="flex flex-col overflow-hidden">
-                        <span class="truncate text-xs font-bold text-gray-700">${p.apodo}</span>
+                        <span class="truncate text-xs font-bold text-gray-700">${p.apodo || p.nombre}</span>
                         <span class="text-[9px] text-gray-400">${item.avgMins}' de media</span>
                     </div>
                 </div>
@@ -18041,7 +18057,7 @@ function getRecentLoadWidget() {
                     <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                         🔋 Estado Físico (Rotación)
                     </h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Basado en los últimos ${matchesCount} partidos</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Jugadores de campo (Últimos ${matchesCount} partidos)</p>
                 </div>
                 <div class="text-right">
                     <span class="text-xl font-black text-slate-700 leading-none">${maxPossibleMinutes}'</span>
