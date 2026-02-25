@@ -18088,15 +18088,34 @@ function getRecentLoadWidget() {
 // ==========================================
 function getPlayerStatsByCoachWidget(playerId, matches) {
     const coachStats = {};
+    const allPlayers = typeof getPlayers === 'function' ? getPlayers() : []; // Necesitamos la lista para buscar el nombre del DT
 
     // 1. AGRUPAR DATOS POR ENTRENADOR
     matches.filter(m => m.outcome).forEach(m => {
-        const ps = m.playerStats?.find(s => String(s.playerId) === String(playerId));
+        if (!m.playerStats) return;
         
-        // Solo contamos si el jugador jugó al menos 1 minuto
+        const ps = m.playerStats.find(s => String(s.playerId) === String(playerId));
+        
+        // Solo contamos si el jugador jugó al menos 1 minuto en este partido
         if (ps && ps.minutes > 0) {
-            // Buscamos el nombre del entrenador (Ajusta 'entrenador' si tu variable se llama diferente)
-            const coachName = m.entrenador || m.coach || 'Desconocido';
+            
+            // --- NUEVA LÓGICA: BUSCAR AL ENTRENADOR EN ESTE PARTIDO ---
+            let coachName = 'Desconocido';
+            
+            // Buscamos quién de los "jugadores" de este partido es el DT
+            const coachStat = m.playerStats.find(stat => {
+                const pInfo = allPlayers.find(pl => String(pl.id) === String(stat.playerId));
+                // Lo identificamos si su posición es 'entrenador', su dorsal es 'DT' o su ID empieza por 'dt'
+                return pInfo && (pInfo.posicion === 'entrenador' || pInfo.dorsal === 'DT' || String(pInfo.id).toLowerCase().startsWith('dt'));
+            });
+
+            if (coachStat) {
+                const coachObj = allPlayers.find(pl => String(pl.id) === String(coachStat.playerId));
+                if (coachObj) {
+                    coachName = coachObj.apodo || `${coachObj.nombre} ${coachObj.apellido}`.trim();
+                }
+            }
+            // ---------------------------------------------------------
             
             if (!coachStats[coachName]) {
                 coachStats[coachName] = {
