@@ -3139,13 +3139,15 @@ function renderStats() {
     // 1. GESTIÓN VISUAL DE CABECERAS (LIMPIEZA TOTAL)
     // ---------------------------------------------------------
     
+
+    if(typeof renderConsistencyWidget === 'function') renderConsistencyWidget();
     // Seleccionamos TODOS los th que tengan ID empezando por "th-"
     const allHeaders = document.querySelectorAll('th[id^="th-"]');
 
     allHeaders.forEach(th => {
         // A. RESETEAR COLORES:
         // Quitamos el "amarillo activo" y el fondo oscuro
-        th.classList.remove('text-amber-400', 'bg-blue-600');
+        th.classList.remove('text-amber-400', 'bg-slate-700');
         
         // Ponemos el color por defecto (Gris/Blanco suave)
         th.classList.add('text-gray-200'); 
@@ -3166,15 +3168,13 @@ function renderStats() {
         // Quitamos el gris apagado
         activeTh.classList.remove('text-gray-200');
 
-        // Ponemos el estilo ACTIVO (Texto Ámbar + Fondo Azul visible)
-        activeTh.classList.add('text-amber-400', 'bg-blue-600'); 
+        // Ponemos el estilo ACTIVO (Texto Ámbar + Fondo Slate)
+        activeTh.classList.add('text-amber-400', 'bg-slate-700'); 
 
         // Añadimos la flecha nueva
         const arrow = currentSortOrder === 'asc' ? ' ▲' : ' ▼';
         activeTh.innerText = activeTh.innerText + arrow;
     }
-
-    if(typeof renderConsistencyWidget === 'function') renderConsistencyWidget();
 
     // 2. FILTRAR PARTIDOS
     let filteredMatches = matches;
@@ -3412,6 +3412,9 @@ function renderStats() {
             subsContainer.innerHTML += `<div class="mt-6">${hierarchyHTML}</div>`;
             subsContainer.innerHTML += `<div class="mt-6">${getOffensiveParticipationWidget()}</div>`;
             subsContainer.innerHTML += `<div class="mt-6">${getSubsDistributionWidget()}</div>`;
+            if (typeof getRecentLoadWidget === 'function') {
+                subsContainer.innerHTML += `<div class="mt-6">${getRecentLoadWidget()}</div>`;
+            }
         }
     }
 
@@ -3424,6 +3427,7 @@ function renderStats() {
     if(typeof renderFormationStats === 'function') renderFormationStats();
     if(typeof renderHomeAwayStats === 'function') renderHomeAwayStats(filteredMatches);
     if (typeof renderSeasonEvolutionChart === 'function')renderSeasonEvolutionChart(filteredMatches);
+
 }
 
 function renderCoachStats() {
@@ -17929,6 +17933,149 @@ window.toggleWidgetSection = function(targetId, btn) {
         btn.innerHTML = textMore.replace('{n}', count);
     }
 };
+// ==========================================
+// WIDGET: CARGA RECIENTE Y ROTACIÓN (Últimos 5 Partidos)
+// ==========================================
+function getRecentLoadWidget() {
+    const matches = getData('matches') || [];
+    const allPlayers = typeof getPlayers === 'function' ? getPlayers() : [];
+
+    // 1. OBTENER LOS ÚLTIMOS 5 PARTIDOS JUGADOS
+    const playedMatches = matches.filter(m => m.outcome).sort((a, b) => new Date(b.date) - new Date(a.date));
+    const last5Matches = playedMatches.slice(0, 5);
+    
+    const matchesCount = last5Matches.length;
+    if (matchesCount === 0) return '';
+
+    const maxPossibleMinutes = matchesCount * 90; // Ej: 450 min si hay 5 partidos
+
+    // 2. ACUMULAR MINUTOS POR JUGADOR EN ESE PERIODO
+    const recentStats = {};
+
+    last5Matches.forEach(m => {
+        if (!m.playerStats) return;
+        m.playerStats.forEach(ps => {
+            const mins = parseInt(ps.minutes || 0);
+            if (mins > 0) {
+                if (!recentStats[ps.playerId]) {
+                    recentStats[ps.playerId] = { minutes: 0, matchesPlayed: 0 };
+                }
+                recentStats[ps.playerId].minutes += mins;
+                recentStats[ps.playerId].matchesPlayed += 1;
+            }
+        });
+    });
+
+    // 3. CALCULAR MÉTRICAS, FILTRAR Y ORDENAR
+    const ranking = Object.keys(recentStats)
+        .map(pid => {
+            const data = recentStats[pid];
+            const percent = Math.round((data.minutes / maxPossibleMinutes) * 100);
+            const avgMins = Math.round(data.minutes / matchesCount); // Media sobre los 5 partidos (juegue o no)
+            return {
+                id: pid,
+                totalMins: data.minutes,
+                avgMins: avgMins,
+                percent: percent
+            };
+        })
+        // Solo jugadores que hayan jugado al menos 1 minuto en este periodo
+        .filter(p => p.totalMins > 0)
+        // Ordenar de más quemados a menos
+        .sort((a, b) => b.totalMins - a.totalMins);
+
+    if (ranking.length === 0) return '';
+
+    // 4. GENERAR HTML CON TOGGLE
+    const LIMIT = 5; // Mostrar los 5 más cargados por defecto
+    let visibleHTML = '';
+    let hiddenHTML = '';
+    const uniqueId = 'recent-load-hidden';
+
+    ranking.forEach((item, index) => {
+        const p = allPlayers.find(pl => pl.id === item.id) || { apodo: '?', foto: '' };
+        
+        // ETIQUETAS Y COLORES
+        let style = { label: 'Residual', icon: '❄️', color: 'bg-gray-400', text: 'text-gray-500' };
+        if (item.percent >= 85) style = { label: 'Sobrecarga', icon: '⚠️', color: 'bg-red-500', text: 'text-red-600' };
+        else if (item.percent >= 55) style = { label: 'Ritmo Óptimo', icon: '🔥', color: 'bg-emerald-500', text: 'text-emerald-600' };
+        else if (item.percent >= 25) style = { label: 'Rotación', icon: '🔄', color: 'bg-blue-400', text: 'text-blue-600' };
+
+        const rowHTML = `
+            <div class="flex items-center gap-3 mb-3 last:mb-0 group">
+                <div class="w-28 flex items-center gap-2 shrink-0">
+                    <img src="${p.foto}" class="w-6 h-6 rounded-full object-cover border border-gray-100 bg-white shadow-sm" onerror="this.src='https://via.placeholder.com/40x40'">
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="truncate text-xs font-bold text-gray-700">${p.apodo}</span>
+                        <span class="text-[9px] text-gray-400">${item.avgMins}' de media</span>
+                    </div>
+                </div>
+
+                <div class="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden relative">
+                    <div class="h-full ${style.color} rounded-full transition-all duration-700 relative group-hover:opacity-80" 
+                         style="width: ${item.percent}%">
+                    </div>
+                </div>
+
+                <div class="w-12 text-right flex flex-col items-end">
+                    <span class="text-xs font-bold text-gray-700 font-mono">${item.totalMins}'</span>
+                    <span class="text-[9px] font-bold ${style.text}">${item.percent}%</span>
+                </div>
+
+                <div class="w-24 text-right hidden sm:block">
+                    <span class="text-[9px] font-bold ${style.text} bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 whitespace-nowrap">
+                        ${style.icon} ${style.label}
+                    </span>
+                </div>
+            </div>
+        `;
+
+        if (index < LIMIT) visibleHTML += rowHTML;
+        else hiddenHTML += rowHTML;
+    });
+
+    return `
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-6 h-auto transition-all duration-300">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-50 pb-2">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                        🔋 Estado Físico (Rotación)
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Basado en los últimos ${matchesCount} partidos</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xl font-black text-slate-700 leading-none">${maxPossibleMinutes}'</span>
+                    <span class="block text-[9px] text-gray-400 uppercase font-bold">Minutos Posibles</span>
+                </div>
+            </div>
+            
+            <div class="flex flex-col">
+                ${visibleHTML}
+            </div>
+
+            ${hiddenHTML ? `
+                <div id="${uniqueId}" class="flex flex-col hidden mt-3 pt-3 border-t border-dashed border-gray-100 transition-all">
+                    ${hiddenHTML}
+                </div>
+
+                <div class="mt-4 text-center">
+                    <button onclick="toggleWidgetSection('${uniqueId}', this)" 
+                            data-more="Ver {n} jugadores más ▼" 
+                            data-less="Ver menos ▲"
+                            class="px-4 py-1.5 bg-gray-50 hover:bg-gray-100 text-xs font-bold text-gray-500 hover:text-gray-700 rounded-full transition-colors border border-gray-200 shadow-sm">
+                        Ver ${ranking.length - LIMIT} jugadores más ▼
+                    </button>
+                </div>
+            ` : ''}
+
+            <div class="mt-4 flex flex-wrap justify-center gap-3 text-[9px] text-gray-400 border-t border-gray-50 pt-2">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> >85% Alerta Roja</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> >55% Óptimo</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-400"></span> >25% Rotación</span>
+            </div>
+        </div>
+    `;
+}
 
 </script>
 </body>
